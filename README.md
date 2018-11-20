@@ -61,4 +61,9 @@ Hi sushengbuhuo! You've successfully authenticated, but GitHub does not provide 
                              v
  ```                            
 [搭建博客](https://alvabill.ml/hexo%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2--%E5%9F%BA%E7%A1%80%E7%AF%87/) 
+
 [hexo](https://www.jianshu.com/p/21c94eb7bcd1)
+
+[Hexo+Pages静态博客-Next主题篇](https://blog.csdn.net/mango_haoming/article/details/78207534)
+
+[绝配：hexo+next主题及我走过的坑](https://www.jianshu.com/p/21c94eb7bcd1)
