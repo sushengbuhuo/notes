@@ -60,3 +60,5 @@ Hi sushengbuhuo! You've successfully authenticated, but GitHub does not provide 
                             Lov
                              v
  ```                            
+[搭建博客](https://alvabill.ml/hexo%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2--%E5%9F%BA%E7%A1%80%E7%AF%87/) 
+[hexo](https://www.jianshu.com/p/21c94eb7bcd1)
