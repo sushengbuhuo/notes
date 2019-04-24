@@ -14,7 +14,10 @@ owner = itchat.get_friends()
 # 获取所有好友的所在位置
 for i in owner:
     province = i['Province']
-    List.append(province)
+    if len(province) > 0 :
+    	List.append(province)
+
+    
 # 获取每个位置对应的好友人数
 for s in List:
     if List.count(s) >= 1:
