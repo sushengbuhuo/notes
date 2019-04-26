@@ -38,4 +38,6 @@ maps.add('', name, value, maptype='china', is_visualmap=True, visual_text_color=
 # visual_text_color   --->    两端文本颜色
 # is_label_show       --->    是否正常显示标签。标签即各点的数据项信息
 # visual_range        --->    指定允许的最小值与最大值
-maps.render('微信好友位置分布图.html')       # 生成HTML文件
+maps.render()       # 生成HTML文件
+#['California', '北京', '福建', '上海', 'Poltava', '安徽', 'Offaly', '浙江', '四川', '辽宁', '天津', '广东', '河北', 'Northern Territory', '河南', '江西', '山东', '云南', '贵州', '湖南', '江苏', 'New South Wales', '湖北', 'Vienna', '重庆', 'Firenze']
+#[1, 22, 3, 11, 1, 3, 1, 4, 3, 3, 1, 17, 1, 1, 4, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2, 1]
