@@ -17,6 +17,7 @@ def save_avatar(avatar_dir):
     # 初始化机器人，扫码登陆
     bot = Bot()
     friends = bot.friends(update=True)
+    #print(friends.stats_text())
 
     # 下载好友头像
     num = 0

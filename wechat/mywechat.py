@@ -42,7 +42,7 @@ def jiebaclearText(text):
     return ' '.join(mywordList)
 # 生成词云图
 def make_wordcloud(text1,i):
-	bg = plt.imread(r"love.jpg")
+	bg = plt.imread("love.jpg")
 	# 生成
 	wc = WordCloud(# FFFAE3
 		background_color="#FFFFFF",  # 设置背景为白色，默认为黑色
@@ -64,7 +64,7 @@ def make_wordcloud(text1,i):
 	plt.axis("off")
 	# 画云图，显示
 	# 保存云图
-	wc.to_file(r"render_0%d.png"%i)
+	wc.to_file("render_0%d.png"%i)
 # 微信昵称
 nick_name = ''
 # 微信个性签名
@@ -77,8 +77,8 @@ for friend in my_friends:
 
 nick_name = jiebaclearText(nick_name)
 wx_signature = jiebaclearText(wx_signature)
-make_wordcloud(nick_name,1)
-make_wordcloud(wx_signature,2)
+make_wordcloud(nick_name,5)
+make_wordcloud(wx_signature,6)
 wx_public_name = ''
 # 公众号简介https://gitee.com/ShaErHu/wxpy_matplotlib_learning
 wx_pn_signature = ''
@@ -89,9 +89,9 @@ for wx_pn in my_wx_pn:
 	wx_pn_signature = wx_pn_signature + wx_pn.raw['Signature']
 
 wx_public_name = jiebaclearText(wx_public_name)
-make_wordcloud(wx_public_name,3)
+make_wordcloud(wx_public_name,7)
 wx_pn_signature = jiebaclearText(wx_pn_signature)
-make_wordcloud(wx_pn_signature,4)
+make_wordcloud(wx_pn_signature,8)
 # labels = ['男性', '女性', '其他']
 # sizes = [57.1, 32.2, 10.7]
 # explode = (0, 0.1, 0)
@@ -132,4 +132,33 @@ TOP 10 城市
 黄浦: 2 (1.45%)
 合肥: 2 (1.45%)
 大连: 2 (1.45%)
+
+梦想旅程 共有 1123 位微信好友
+
+男性: 690 (61.4%)
+女性: 317 (28.2%)
+
+TOP 10 省份
+北京: 305 (27.16%)
+广东: 106 (9.44%)
+上海: 80 (7.12%)
+浙江: 55 (4.90%)
+江西: 44 (3.92%)
+江苏: 33 (2.94%)
+福建: 16 (1.42%)
+河北: 16 (1.42%)
+四川: 14 (1.25%)
+河南: 12 (1.07%)
+
+TOP 10 城市
+朝阳: 103 (9.17%)
+海淀: 87 (7.75%)
+深圳: 72 (6.41%)
+杭州: 48 (4.27%)
+吉安: 28 (2.49%)
+浦东新区: 24 (2.14%)
+广州: 23 (2.05%)
+南京: 15 (1.34%)
+成都: 12 (1.07%)
+西安: 12 (1.07%)
 """
