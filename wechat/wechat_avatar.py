@@ -4,7 +4,7 @@ from wxpy import *
 import math
 from PIL import Image
 import os
-
+print('双击exe执行，用微信扫描弹出的二维码，确认后等待一段时间，会在本地生成合成文件wechat.png，有问题@梦想旅程')
 # 创建头像下载存放文件夹
 def creat_filepath():
     avatar_dir = os.getcwd() + "\\wechat\\"
