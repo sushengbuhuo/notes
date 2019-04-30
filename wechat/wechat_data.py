@@ -23,7 +23,12 @@ from cv2 import imread
 from cv2 import cvtColor
 from cv2 import COLOR_BGR2GRAY
 
-
+# echarts-countries-pypkg 是全球国家地图
+#pip install echarts-countries-pypkg
+# echarts-china-provinces-pypkg是中国省级地图
+#pip install echarts-china-provinces-pypkg
+# echarts-china-cities-pypkg是中国城市地图
+#pip install echarts-china-cities-pypkg
 # 引入打开文件所用的库https://github.com/shengqiangzhang/examples-of-web-crawlers/blob/master/8.%E4%B8%80%E9%94%AE%E7%94%9F%E6%88%90%E5%BE%AE%E4%BF%A1%E4%B8%AA%E4%BA%BA%E4%B8%93%E5%B1%9E%E6%95%B0%E6%8D%AE%E6%8A%A5%E5%91%8A(%E4%BA%86%E8%A7%A3%E4%BD%A0%E7%9A%84%E5%BE%AE%E4%BF%A1%E7%A4%BE%E4%BA%A4%E5%8E%86%E5%8F%B2)/generate_wx_data.py
 # Window与Linux和Mac OSX有所不同
 # lambda用来定义一个匿名函数，可实现类似c语言的define定义
@@ -527,7 +532,7 @@ def group_common_in():
     bar.render('data/共同所在群聊分析.html')
 
 
-# 运行前，请先确保安装了所需库文件
+# 运行前，请先确保安装了所需库文件https://segmentfault.com/a/1190000018935358
 # 若没安装，请执行以下命令:pip install -r requirement.txt
 if __name__ == '__main__':
 
