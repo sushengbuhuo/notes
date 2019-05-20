@@ -2,6 +2,7 @@
 title: laravel cache facade
 date: 2019-01-08 14:03:46
 tags:
+- laravel
 ---
 本文使用版本为laravel5.5
 

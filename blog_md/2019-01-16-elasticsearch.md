@@ -2,6 +2,7 @@
 title: elasticsearch
 date: 2019-01-16 20:34:55
 tags:
+- elasticsearch
 ---
 ### 安装java
 elasticsearch 需要 java8 以上；我们到 https://www.oracle.com/technetwork/java/javase/downloads/index.html 下载安装最新版的 java11 jdk，

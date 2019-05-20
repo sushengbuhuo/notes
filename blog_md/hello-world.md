@@ -559,9 +559,147 @@ vi  D:\blog\themes\hexo-theme-next\layout_partials\ footer.swig
   <span class="post-count">博客全站共{{ totalcount(site) }}字</span>
 </div>
 ```
+### 备份文章
+```javascript
+将themes/next/(我用的是NexT主题)中的.git/删除，否则无法将主题文件夹push；
+在本地blog文件夹下创建文件.gitignore(一般都自带一个)，打开后写入
+ 
+ https://yfzhou.coding.me/2018/09/17/Hexo-Next%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%EF%BC%88Hexo%E5%8D%9A%E5%AE%A2%E5%A4%87%E4%BB%BD%EF%BC%89/
+.DS_Store
+Thumbs.db
+db.json
+*.log
+node_modules/
+public/
+.deploy*/
+在本地blog文件夹下执行命令
+#git初始化
+git init
+#创建hexo分支，用来存放源码
+git checkout -b hexo
+#git 文件添加
+git add .
+#git 提交
+git commit -m "init"
+#添加远程仓库
+git remote add origin git@github.com:sushengbuhuo/sushengbuhuo.github.io.git
+#push到hexo分支
+git push origin hexo
+执行hexo d -g生成网站并部署到GitHub上
+
+这样一来，在GitHub上的git@github.com:sushengbuhuo/sushengbuhuo.github.io.git仓库就有两个分支，
+一个hexo分支用来存放网站的原始文件，一个master分支用来存放生成的静态网页。
+
+当重装电脑之后，或者想在其他电脑上修改博客，可以使用下列步骤：
+
+1、先安装hexo
+$ npm install -g hexo-cli
+2、存在github上的git clone下来
+git clone git@github.com:sushengbuhuo/sushengbuhuo.github.io.git
+3、项目文件夹下npm
+cd项目名/ 
+npm install –no-bin-links
+$ npm install hexo-deployer-git
+4、重新配置github和coding的公钥
+
+
+每次写作之后,可以使用下列步骤：
+
+hexo d#生成网站并部署到GitHub上
+git add .
+git commit -m 'update'
+git push origin hexo
+```
+### 添加gitter在线交流
+用GitHub登录 https://gitter.im
+```javascript
+vi next/layout/_third-party/gitter.swig
+
+<script>
+  ((window.gitter = {}).chat = {}).options = {
+    //room替换成自己的聊天室名称即可，room的名称规则是：username/roomname
+    //http://www.xetlab.com/2019/04/14/%E7%BB%99%E5%9F%BA%E4%BA%8EHEXO%E7%9A%84%E5%8D%9A%E5%AE%A2%E6%B7%BB%E5%8A%A0gitter%E5%9C%A8%E7%BA%BF%E4%BA%A4%E6%B5%81/
+    room: 'sushengbuhuo/chat'
+  };
+</script>
+<script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async defer></script>
+
+vi next/layout/layout/_layout.swig
+
+{% include '_third-party/gitter.swig' %}
+```
+### 增加评论utterance
+```javascript
+https://www.njphper.com/posts/a4cd94b2.html
+通过https://github.com/apps/utterances 用GitHub登录，然后设置一个公开目录接受评论。比如 sushengbuhuo/laravel_ioc_demo
+<script src="https://utteranc.es/client.js"
+        repo="sushengbuhuo/laravel_ioc_demo"
+        issue-term="pathname"
+        label="susheng"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+vi _confgi.yml 增加
+utterance:
+  enable: true
+  repo: sushengbuhuo/laravel_ioc_demo
+  theme: github-light
+  issue-term: pathname
+评论主题的 theme 选项如下:
+
+github-light
+github-dark
+github-dark-orange
+icy-dark
+dark-blue
+photon-dark
+评论 issue-term 映射配置选项如下：
+
+pathname
+url
+title
+og:title
+issue-number
+specific-term
+
+vi thems\next\layout\_third-party\comments\utterance.swig
+<script type="text/javascript">
+    (function() {
+        // 匿名函数，防止污染全局变量
+        var utterances = document.createElement('script');
+        utterances.type = 'text/javascript';
+        utterances.async = true;
+        utterances.setAttribute('issue-term','{{ theme.utterance.issue-item }}')
+        utterances.setAttribute('theme','{{ themm.utterance.theme }}')
+        utterances.setAttribute('repo','{{ theme.utterance.repo }}')
+        utterances.crossorigin = 'anonymous';
+        utterances.src = 'https://utteranc.es/client.js';
+        // content 是要插入评论的地方
+        document.getElementById('gitment-container').appendChild(utterances);
+    })();
+</script>
+vi thems\next\layout\_partials\comments.swig
+{% endif %}之前添加
+{% elif theme.utterance.enable %}
+          <div class="comments" id="comments">
+             <div id="gitment-container"></div>
+         </div>
+ vi thems\next\layout\_third-party\comments\index.swig  
+  {% include 'utterance.swig' %}        
+       
+  评论后内容在 https://github.com/sushengbuhuo/laravel_ioc_demo/issues
+```
 [新写文章文档](https://hexo.io/zh-cn/docs/writing.html)
 
 ### 资源
+[Next 主题增加新的第三方评论系统 utterance](https://www.njphper.com/posts/a4cd94b2.html)
+
+[Github Pages部署教程](https://juejin.im/post/5b14b2f06fb9a01e5e3d3121)
+
+[GitHub.io 个人站点绑定独立的域名](https://www.playpi.org/2018112701.html)
+
 [打造个性超赞博客Hexo+NexT+GitHubPages的超深度优化](https://reuixiy.github.io/technology/computer/computer-aided-art/2017/06/09/hexo-next-optimization.html#附上我的-custom-styl)
 
 [用Github+Hexo搭建你的个人博客：美化篇](https://www.makcyun.top/hexo02.html)
@@ -612,4 +750,8 @@ vi  D:\blog\themes\hexo-theme-next\layout_partials\ footer.swig
 
 [无后端评论系统](https://valine.js.org/)
 
+[hexo博客专题](https://yfzhou.coding.me/categories/Hexo/)
+
 [hexo博客添加标签功能](https://swoole.app/2016/07/23/hexo%E5%8D%9A%E5%AE%A2%E6%B7%BB%E5%8A%A0%E6%A0%87%E7%AD%BE%E5%8A%9F%E8%83%BD/)
+
+[第三方评论系统 utterance](https://www.njphper.com/posts/a4cd94b2.html)

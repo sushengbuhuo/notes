@@ -3,6 +3,7 @@ title: laravel swoole
 date: 2018-12-10 15:03:09
 tags:
 - laravel
+- swoole
 ---
 
 ### laravel 响应慢
@@ -260,6 +261,10 @@ php -S localhost:8080 -t ./public
 
 php artisan serve --port=8080
 ```
+[基于swoole实现的微信机器人](https://github.com/kcloze/swoole-bot)
+
+[ swoole 协程之旅](https://learnku.com/articles/28112#topnav)
+
 [轻松部署 Laravel 应用](https://github.com/wi1dcard/laravel-deployment)
 
 [《Laravel 入门教程》](https://github.com/summerblue/laravel-tutorial)
@@ -269,6 +274,8 @@ php artisan serve --port=8080
 [-从生命周期看 Dingo API 是如何接管 Laravel 路由的](https://laravel-china.org/articles/19945#a44a83)
 
 [配置 Supervisor 管理 Laravel 队列](https://laravel-china.org/articles/22321#e655a4)
+
+[swoole 协程之旅](https://learnku.com/articles/28112)
 
 [workerman实现服务间通讯](https://www.goozp.com/article/64.html)
 
@@ -389,3 +396,7 @@ php artisan serve --port=8080
 [基于 Laravel 框架的 rbac 后台管理系统](https://learnku.com/articles/20539)
 
 [Laravel5配置读写分离和源码分析](http://www.luckybird.me/laravel5%E9%85%8D%E7%BD%AE%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%92%8C%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90.html)
+
+[Laravel-swoole 开发部署的在线聊天室](https://github.com/shisiying/webim)
+
+[PHP 与 Swoole 浅析与学习](https://learnku.com/articles/28607)
