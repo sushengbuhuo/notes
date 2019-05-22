@@ -734,6 +734,8 @@ vi thems\next\layout\_partials\comments.swig
 
 [Hugo是由Go语言实现的静态网站生成器](http://www.gohugo.org/)
 
+[将 Hexo 博客发布到自己的服务器上](https://blog.mutoe.com/2017/deploy-hexo-website-to-self-server/)
+
 [yilia主题](https://github.com/litten/hexo-theme-yilia)
 
 [使用 Hugo 搭建博客](https://segmentfault.com/a/1190000012975914#articleHeader7)
