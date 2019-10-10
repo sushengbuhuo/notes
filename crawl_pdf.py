@@ -247,7 +247,6 @@ X-Version:1.10.17
 
 def handle_link(text):
     soup = BeautifulSoup(text, "html.parser")
-
     mention = soup.find_all('e', attrs={'type' : 'mention'})
     if len(mention):
         for m in mention:
@@ -255,7 +254,6 @@ def handle_link(text):
             new_tag = soup.new_tag('span')
             new_tag.string = mention_name
             m.replace_with(new_tag)
-
     hashtag = soup.find_all('e', attrs={'type' : 'hashtag'})
     if len(hashtag):
         for tag in hashtag:
@@ -263,7 +261,6 @@ def handle_link(text):
             new_tag = soup.new_tag('span')
             new_tag.string = tag_name
             tag.replace_with(new_tag)
-
     links = soup.find_all('e', attrs={'type' : 'web'})
     if len(links):
         for link in links:
@@ -272,7 +269,6 @@ def handle_link(text):
             new_a_tag = soup.new_tag('a', href=href)
             new_a_tag.string = title
             link.replace_with(new_a_tag)
-
     text = str(soup)
     text = re.sub(r'<e[^>]*>', '', text).strip()
     text = text.replace('\n', '<br>')
