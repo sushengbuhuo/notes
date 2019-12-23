@@ -676,7 +676,6 @@ vi thems\next\layout\_third-party\comments\utterance.swig
         utterances.setAttribute('repo','{{ theme.utterance.repo }}')
         utterances.crossorigin = 'anonymous';
         utterances.src = 'https://utteranc.es/client.js';
-        // content 是要插入评论的地方
         document.getElementById('gitment-container').appendChild(utterances);
     })();
 </script>
