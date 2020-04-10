@@ -16,14 +16,14 @@ import numpy as np
 from pyquery import PyQuery
 #参考https://github.com/96chh/crawl-zsxq
 ZSXQ_ACCESS_TOKEN = '2B9BA4A2-8CAB-3A7C-32E7-' # 登录后Cookie中的Token
-GROUP_ID = '141281112142'                                  # 知识星球中的小组ID 141281112142  每日分享554228114224
-PDF_FILE_NAME = '2019知识星球.pdf'                               # 生成PDF文件的名字
+GROUP_ID = '222122511881'                                  # 知识星球中的小组ID 141281112142  每日分享554228114224
+PDF_FILE_NAME = '知识星球.pdf'                               # 生成PDF文件的名字
 DOWLOAD_PICS = True                                        # 是否下载图片 True | False 下载会导致程序变慢
 DOWLOAD_COMMENTS = True                                    # 是否下载评论
-ONLY_DIGESTS = True                                       # True-只精华 | False-全部
+ONLY_DIGESTS = False                                       # True-只精华 | False-全部
 FROM_DATE_TO_DATE = False                                  # 按时间区间下载
 EARLY_DATE = '2017-05-25T00:00:00.000+0800'                # 最早时间 当FROM_DATE_TO_DATE=True时生效 为空表示不限制 形如'2017-05-25T00:00:00.000+0800'
-LATE_DATE = '2020-01-05T00:00:00.000+0800'                 # 最晚时间 当FROM_DATE_TO_DATE=True时生效 为空表示不限制 形如'2017-05-25T00:00:00.000+0800'
+LATE_DATE = '2020-04-05T00:00:00.000+0800'                 # 最晚时间 当FROM_DATE_TO_DATE=True时生效 为空表示不限制 形如'2017-05-25T00:00:00.000+0800'
 DELETE_PICS_WHEN_DONE = True                               # 运行完毕后是否删除下载的图片
 DELETE_HTML_WHEN_DONE = True                               # 运行完毕后是否删除生成的HTML
 COUNTS_PER_TIME = 30                                       # 每次请求加载几个主题 最大可设置为30
@@ -71,21 +71,22 @@ def get_data(url):
 
     global htmls, num
         
-     
+     #从https://api.zsxq.com/v1.10/groups/这个接口抓取header
     header = """
-authority:wx.zsxq.com
-method:GET
-path:/dweb2/index/group/141281112142
-scheme:https
-accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
-accept-encoding:gzip, deflate, br
-accept-language:zh-CN
-cache-control:max-age=0
-cookie:UM_distinctid=16cfc3fe067151-0e1b7ef6d268ea-380c2f5d-1fa400-16cfc3fe068966; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2216777c5cbc1c06-0e956f1670bd95-38082f5c-2073600-16777c5cbc2ab6%22%2C%22%24device_id%22%3A%2216777c5cbc1c06-0e956f1670bd95-38082f5c-2073600-16777c5cbc2ab6%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E8%87%AA%E7%84%B6%E6%90%9C%E7%B4%A2%E6%B5%81%E9%87%8F%22%2C%22%24latest_referrer%22%3A%22https%3A%2F%2Fwww.google.com.hk%2F%22%2C%22%24latest_referrer_host%22%3A%22www.google.com.hk%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC%22%7D%7D; _bl_uid=9qk701n8n7t0ygej7gvndst0bqgX; abtest_env=product; zsxq_access_token=AA57901C-0664-4678-2411-BEF5C2BDB46F
-dnt:1
-referer:https://wx.zsxq.com/dweb2/load?code=061u3d3429D4aR0IEW142sTc342u3d3T&state=
-upgrade-insecure-requests:1
-user-agent:Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36 Maxthon/5.2.7.5000
+Accept:application/json, text/plain, */*
+Accept-Encoding:gzip, deflate, br
+Accept-Language:zh-CN
+Connection:keep-alive
+Cookie:sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2216777c5cbc1c06-0e956f1670bd95-38082f5c-2073600-16777c5cbc2ab6%22%2C%22%24device_id%22%3A%2216777c5cbc1c06-0e956f1670bd95-38082f5c-2073600-16777c5cbc2ab6%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E8%87%AA%E7%84%B6%E6%90%9C%E7%B4%A2%E6%B5%81%E9%87%8F%22%2C%22%24latest_referrer%22%3A%22https%3A%2F%2Fwww.google.com.hk%2F%22%2C%22%24latest_referrer_host%22%3A%22www.google.com.hk%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC%22%7D%7D; zsxq_access_token=E8384764-C10A-1977-8F78-FDACF943B689_91DFAAC3EC4F809D; abtest_env=product
+DNT:1
+Host:api.zsxq.com
+Origin:https://wx.zsxq.com
+Referer:https://wx.zsxq.com/dweb2/index/group/222122511881
+User-Agent:Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36 Maxthon/5.2.7.5000
+X-Request-Id:58151a1e4-0e10-9d9a-504b-cdd4fcd900b
+X-Signature:ea2b13006a1182e88446c603f7f9728b306c8409
+X-Timestamp:1585884037
+X-Version:1.10.40
     """
     headers = headers_to_dict(header)
     t = []
@@ -139,7 +140,7 @@ user-agent:Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like G
             cretime = (topic.get('create_time')[:23]).replace('T', ' ')
 
             text = content.get('text', '')
-            #f2.write(text)
+            f2.write(text)
 
             text = handle_link(text)
             dr = re.compile(r'<[^>]+>',re.S)
@@ -366,7 +367,7 @@ if __name__ == '__main__':
     data = get_data(url)
     #print(data[1])
     wordimage(data[1])
-    #make_pdf(data[0])
+    make_pdf(data[0])
 
     if DOWLOAD_PICS and DELETE_PICS_WHEN_DONE:
         shutil.rmtree(images_path) 
