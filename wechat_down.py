@@ -1,10 +1,10 @@
-import requests,pdfkit,json,time,datetime,os,re
+import requests,pdfkit,json,time,datetime,os,re,html
 from random import randint
 pass_ticket = 'zFEbbhJChxULq08vTWCQuVPe9nbv78Az7RapqXMzD0J/hHPc7G6Y6RNM8iNvMaE1'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MzAxNDQxODgxNg=='
-uin = '=='
-key = 'db05a393ddcddd3db538d0dcb7116be15de3ed1af23818035d1ecac972ea7a081c8ca3414be68845839dc44a079720ca668cc21d62a3f7e87ddc33afaa68770873e931ba962f49e7c3ad30559db9bc548991fc3a6524aa17eb0b1941c256408e1e9b145c701bd5bc90f0a94e7a04e4b865d8ae9a550c28895b4cc098fec49e71'
+biz = 'MzIyMDIwMzI4NQ=='
+uin = 'xx'
+key = '5f3b85b4917a467a7c429ea5b82788d6e9ada1762f38e8798cdcbaf6b76a94778a9575452b4e7cf88e323b6069cabd62501549ccc39351bca469819fb55ac01b8214ac6455e4f8b5e8202fb06c8dced41b3d4fbffa397d60b9d43e4ec2ff56431af409fd340fbd51e71793b008ad4c085d1a4a1c6ad35bc399283704b0b9f158'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -44,7 +44,9 @@ def down(offset, biz, uin, key,pass_ticket):
         try:
             # 文章发布时间
             date = time.strftime('%Y-%m-%d', time.localtime(data['comm_msg_info']['datetime']))
-            # if data['comm_msg_info']['datetime'] < 1593532800:
+            # if data['comm_msg_info']['datetime'] > 1587657600:
+                # continue
+            # if data['comm_msg_info']['datetime'] < 1579795200:
                 # can_msg_continue = 0
                 # return True
             msg_info = data['app_msg_ext_info']
@@ -55,45 +57,55 @@ def down(offset, biz, uin, key,pass_ticket):
                 title = msg_info['title']
                 # 头条文章链接 如果删了为空
                 url = msg_info['content_url']
-                #次条文章数组
+                #次条文章数组字段解释https://zhuanlan.zhihu.com/p/104318974 is_multi=1有多篇文章 https://github.com/5zjk5/gongzonghao/blob/master/code/analysic.py https://python123.io/python/muxiatong/5dd14d1b71efdc10be55ee22
                 child_msg_info = msg_info['multi_app_msg_item_list']
                 for child in child_msg_info:
                     if child['content_url']:
-                        res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
-                        content = res.text.replace('data-src', 'src')
-                        #生成HTML
-                        try:
-                            with open(date+'_'+child['title']+'.html', 'w', encoding='utf-8') as f:
-                                f.write(content)
-                        except Exception as err:
-                            with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                                f.write(content)
-                    with open('公众号文章列表备份.md', 'a+', encoding='utf-8') as f:
-                        f.write('[{}]'.format(date+'_'+child['title']) + '({})'.format(child['content_url'])+ '\n\n'+'文章简介:'+child['digest']+ '\n\n')
+                        # res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
+                        # content = res.text.replace('data-src', 'src')
+                        # #生成HTML 文件名不能有\/:*?"<>|
+                        # try:
+                        #     with open(date+'_'+child['title'].replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.html', 'w', encoding='utf-8') as f:
+                        #         f.write(content)
+                        # except Exception as err:
+                        #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                        #         f.write(content)
+                        #生成PDF
+                        # try:
+                        #    pdfkit.from_string(content,'./' + date + '_' + child['title'].replace(' ', '').replace('|', '，')+'.pdf')
+                        # except Exception as err:
+                        #    print(err)
+                        # print(url + child['title'] + date + '成功')
+                        # with open('Java团长公众号文章列表.csv', 'a+', encoding='gbk') as f:
+                            # f.write(date+','+child['title'] + ','+child['content_url']+ ','+child['digest']+ '\n')
+                        with open('公众号文章列表.md', 'a+', encoding='utf-8') as f:
+                            f.write('[{}]'.format(date+'_'+child['title']) + '({})'.format(child['content_url'])+ '\n\n'+'文章简介:'+child['digest']+ '\n\n'+'文章作者:'+child['author']+ '\n\n')
+                            # f.write(html.unescape(child['content_url'])+'\n')
                 #文章摘要digest
                 #文章封面cover
                 if url:
-                    res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
-                    content = res.text.replace('data-src', 'src')
+                    # res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
+                    # content = res.text.replace('data-src', 'src')
                     #csv
-                    # with open('方糖公众号文章列表.csv', 'a+', encoding='gbk') as f:
+                    # with open('Java团长公众号文章列表.csv', 'a+', encoding='gbk') as f:
                         # f.write(date+','+title + ','+url+ ','+msg_info['digest']+ '\n')
                     #生成markdown
-                    with open('公众号文章列表备份.md', 'a+', encoding='utf-8') as f:
+                    with open('公众号文章列表.md', 'a+', encoding='utf-8') as f:
                         # f.write('文章标题:'+date+'_'+title + '文章链接'+url+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面图地址:'+msg_info['cover']+ '\n')
-                        f.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+msg_info['digest']+ '\n\n')
+                        f.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+msg_info['digest']+ '\n\n'+'文章作者:'+msg_info['author']+ '\n\n')
+                        # f.write(html.unescape(url)+'\n')
                         # f.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'简介:'+msg_info['digest']+ '\n\n'+'封面图地址:'+msg_info['cover']+ '\n\n')
                         # f.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面:'+'![{}]'.format(title) + '({})'.format(msg_info['cover'])+ '\n')
                     #生成HTML
-                    try:
-                        with open(date+'_'+title+'.html', 'w', encoding='utf-8') as f:
-                            f.write(content)
-                    except Exception as err:
-                        with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                            f.write(content)
+                    # try:
+                    #     with open(date+'_'+title.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.html', 'w', encoding='utf-8') as f:
+                    #         f.write(content)
+                    # except Exception as err:
+                    #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                    #         f.write(content)
                     #生成PDF
                     # try:
-                    #    pdfkit.from_string(content,'./' + date + '_' + title.replace(' ', '')+'.pdf')
+                    #    pdfkit.from_string(content,'./' + date + '_' + title.replace(' ', '').replace('|', '，')+'.pdf')
                     # except Exception as err:
                     #    print(err)
                     # print(url + title + date + '成功')
@@ -141,4 +153,4 @@ def down(offset, biz, uin, key,pass_ticket):
         print('done')
         return False
 
-down(0,biz,uin,key,pass_ticket)
+down(0,biz,uin,key,pass_ticket)#设置一个offset取之前数据
