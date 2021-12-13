@@ -1,11 +1,12 @@
 import requests,pdfkit,json,time,datetime,os,re,html
 from random import randint
-import traceback
+import traceback,urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 pass_ticket = 'zFEbbhJChxULq08vTWCQuVPe9nbv78Az7RapqXMzD0J/hHPc7G6Y6RNM8iNvMaE1'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MzA4NDYzMzkwOA=='
-uin = 'MTU0MTQzNjQwMw=='
-key = '33b3ce9713fe05560b14e96ea5597cea654018e3885c2d566d788f8aa4664a879d2e6e5db021a7c9d08cf7a8a28b8731ac9c3e37b9317f707065792c0296e8e7451f78b1445725bdbbc52f9100531630b88241da68bd3a1374621bccef7ea7f4aced708f5173253d7a6d10815dea3ee32f3b54f888497b0006cf040ea68808dc'
+biz = 'MjM5MjQwODU0MA=='
+uin = 'NjQ3OTQwMTAy'
+key = 'ac46451f47ae34ecbdf23fad6eb106b0653d9e683772ea101d356805ce6ae8df4ed8f85fde4fb726dbc98aed639db282c4a63e392519d0c97a8ceef51f26f5306843d38af6cf43c055ea0788c1ed7032a85f0d13f6f09dd5f7b3e5463ae3e8809c6a68de1bc395d6543048811f782d6ba1ca32543eab74d300daaa248e94658b'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -46,9 +47,13 @@ def down(offset, biz, uin, key,pass_ticket):
     # return True
     time.sleep(2)
     htmls = []
-    is_down = 0
+    is_down = 1
+    is_down_video = 1
+    is_down_audio = 1
+    is_down_view = 0
+    fname = '酸菜馆播客'+'公众号文章列表'
     if offset == 0:
-        with open('华东师范大学图书馆公众号文章列表.csv', 'a+', encoding='gbk') as f:
+        with open(f'{fname}.csv', 'a+', encoding='gbk') as f:
             f.write('发布日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ '\n')
     
     # print(data_list)
@@ -80,28 +85,42 @@ def down(offset, biz, uin, key,pass_ticket):
                             res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
                             content = res.text.replace('data-src', 'src')
                             # #生成HTML 文件名不能有\/:*?"<>| 'gbk' codec can't encode character '\u200b' in position 293: illegal multibyte sequence
-                            try:
-                                with open(date+'_'+child['title'].replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.html', 'w', encoding='utf-8') as f:
-                                    f.write(content)
-                            except Exception as err:
-                                with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                                    f.write(content)
+                            # try:
+                            #     with open(date+'_'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
+                            #         f.write(content)
+                            # except Exception as err:
+                            #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                            #         f.write(content)
                             #生成PDF
                             # try:
                             #    pdfkit.from_string(content,'./' + date + '_' + child['title'].replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
                             # except Exception as err:
                             #    print(err)
                             # print(url + child['title'] + date + '成功')
-                        # with open('广东画院公众号文章列表.txt', 'a+', encoding='gbk') as f:
+                        # with open(f'{fname}.txt', 'a+', encoding='gbk') as f:
                             # f.write(title + '\n')
+                        #下载视频
+                        if is_down_video:
+                            try:
+                                video(res,headers)
+                            except Exception as e:
+                                print(e)
+                        #下载音频
+                        if is_down_audio:
+                            try:
+                                audio(res,headers,trimName(child['title']))
+                            except Exception as e:
+                                print(e)
                         try:
-                            read_num,like_num,old_like_num = view(html.unescape(child['content_url']))
+                            read_num,like_num,old_like_num='0','0','0'
+                            if is_down_view == 1:
+                                read_num,like_num,old_like_num = view(html.unescape(child['content_url']))
                         except Exception as e:
                             read_num,like_num,old_like_num='0','0','0'
                         # print(read_num,like_num,old_like_num,child['content_url'])
-                        with open('华东师范大学图书馆公众号文章列表.csv', 'a+', encoding='gbk') as f:
+                        with open(f'{fname}.csv', 'a+', encoding='gbk') as f:
                             f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+read_num+','+like_num+','+old_like_num+'\n')
-                        with open('华东师范大学图书馆公众号文章列表.md', 'a+', encoding='utf-8') as f2:
+                        with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                             f2.write('[{}]'.format(date+'_'+child['title']) + '({})'.format(html.unescape(child['content_url']))+ '\n\n'+'文章简介:'+child['digest']+ '\n\n'+'文章作者:'+child['author']+ '\n\n')
                             # f.write(html.unescape(child['content_url'])+'\n')
                 #文章摘要digest
@@ -111,30 +130,44 @@ def down(offset, biz, uin, key,pass_ticket):
                         res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
                         content = res.text.replace('data-src', 'src')
                         #生成HTML
-                        try:
-                            with open(date+'_'+title.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.html', 'w', encoding='utf-8') as f:
-                                f.write(content)
-                        except Exception as err:
-                            with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                                f.write(content)
+                        # try:
+                        #     with open(date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+                        #         f.write(content)
+                        # except Exception as err:
+                        #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                        #         f.write(content)
                         #生成PDF
                         # try:
                         #    pdfkit.from_string(content,'./' + date + '_' + title.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
                         # except Exception as err:
                         #    print(err)
                         # print(url + title + date + '成功')
-                    # with open('盘口逻辑拆解公众号文章列表.txt', 'a+', encoding='gbk') as f:
+                    # with open(f'{fname}.txt', 'a+', encoding='gbk') as f:
                         # f.write(title +'\n')
                     #获取阅读数在看数点赞数
                     try:
-                        read_num,like_num,old_like_num = view(html.unescape(url))
+                        read_num,like_num,old_like_num='0','0','0'
+                        if is_down_view == 1:
+                            read_num,like_num,old_like_num = view(html.unescape(url))
                     except Exception as e:
                         read_num,like_num,old_like_num='0','0','0'
+                    #下载视频
+                    if is_down_video:
+                        try:
+                            video(res,headers)
+                        except Exception as e:
+                            print(e)
+                    #下载音频
+                    if is_down_audio:
+                        try:
+                            audio(res,headers,trimName(title))
+                        except Exception as e:
+                            print(e)
                     #csv
-                    with open('华东师范大学图书馆公众号文章列表.csv', 'a+', encoding='gbk') as f:
+                    with open(f'{fname}.csv', 'a+', encoding='gbk') as f:
                         f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+ ','+read_num+','+like_num+','+old_like_num+ '\n')
                     #生成markdown
-                    with open('华东师范大学图书馆公众号文章列表.md', 'a+', encoding='utf-8') as f2:
+                    with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                         # f.write('文章标题:'+date+'_'+title + '文章链接'+url+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面图地址:'+msg_info['cover']+ '\n')
                         f2.write('[{}]'.format(date+'_'+title) + '({})'.format(html.unescape(url))+ '\n\n'+'文章简介:'+msg_info['digest']+ '\n\n'+'文章作者:'+msg_info['author']+ '\n\n')
                         # f.write(html.unescape(url)+'\n')
@@ -199,9 +232,9 @@ def view(url):
     "appmsg_type": "9", # https://www.its203.com/article/wnma3mz/78570580 https://github.com/wnma3mz/wechat_articles_spider
     }
     #appmsg_token和cookie变化
-    appmsg_token='1143_adqr4JQT5PL5%2FV%2BOFnp-qITNptEZxIO0ip_ipcAHndnUaQnSiwVUeN67Ecs5NILMibltgEcb78qud7xr'
+    appmsg_token='1143_EMRBrjfbHd%2BBpuBnRFaRoCXgoHUjuozM4zJuqPGLtfaf78h4R4Nqa6aMfbEGsvF3I4avOtR-QGCIpOft'
     headers = {
-    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;rewardsn=;wxuin=1541436403;lang=zh_CN;wxtokenkey=777;appmsg_token=1143_adqr4JQT5PL5%2FV%2BOFnp-qITNptEZxIO0ip_ipcAHndnUaQnSiwVUeN67Ecs5NILMibltgEcb78qud7xr;devicetype=Windows10x64;version=63040026;pass_ticket=BcJWQNZUDJSARUBXZRmr8kwsVQu6ISQkmP8TGKxwdg8MfYIvDvE0P+YhaVKSv2DL;wap_sid2=CPPngd8FEp4BeV9IQXQ5Zk82V3drOVpCb2xhSy1qeVlKMEQwS0Z5a29idHRsbGlHTDlicDJYaVR3NndxZWpFNEd4Z2tvVUttWW1KcTR6djIxZTIwTW5ZLURnVUVLLVBPcWhMYmpvMVYtbk1RRUpQaEZmLTJVbGVWUWVnUWZlZElvTGc5Wmg0aDkzSXVYZVpQdlkxNHZFNWU3YnVDbm5Xd0xOVUVnQUEwkP3MjQY4DUAB;',
+    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;wxuin=647940102;lang=zh_CN;pass_ticket=iiZU4YgnxGrtGUdI8SlsNjV2p2qDbHZDLsLYvU0voRpz5kn7ZanVgpX3xqnT3IJY;rewardsn=;wxtokenkey=777;appmsg_token=1143_EMRBrjfbHd%2BBpuBnRFaRoCXgoHUjuozM4zJuqPGLtfaf78h4R4Nqa6aMfbEGsvF3I4avOtR-QGCIpOft;devicetype=Windows10x64;version=63040026;wap_sid2=CIaQ+7QCEooBeV9ISV8zdjhFNG1UT3oyUnBsYUsydkJxaEFOLXBaV2NHcGlwdFpzRWNfYk41SlhncUZpVVp3RzQ5OFFYVWF3dWdWTDBDbE9rSlNQVms0ZHV0ZXFoOGJuZjZHSnltZ2s5RE1NVWxZcWJmR1lUUGlXOE9hc3NoMEhMZ1NabTlDVUhNcW1GVVNBQUF+MOCQ3I0GOA1AAQ==;',
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
@@ -209,6 +242,27 @@ def view(url):
     res = requests.post(appmsgext_url, headers=headers, data=data).json()
     print(appmsgext_url,res)
     return str(res["appmsgstat"]["read_num"]), str(res["appmsgstat"]["like_num"]), str(res["appmsgstat"]["old_like_num"])
+def video(res, headers):
+    vid = re.search(r'wxv_.{19}',res.text).group(0)
+    time.sleep(2)
+    if vid:
+        url = f'https://mp.weixin.qq.com/mp/videoplayer?action=get_mp_video_play_url&preview=0&vid={vid}'
+        data = requests.get(url,headers=headers).json()
+        video_url = data['url_info'][0]['url']
+        video_data = requests.get(video_url,headers=headers)
+        print('正在下载视频：'+trimName(data['title'])+'.mp4')
+        with open(trimName(data['title'])+'.mp4','wb') as f4:
+            f4.write(video_data.content)
+
+def audio(res,headers,title):
+    aid = re.search(r'"voice_id":"(.*?)"',res.text).group(1)
+    time.sleep(2)
+    if aid:
+        url = f'https://res.wx.qq.com/voice/getvoice?mediaid={aid}'
+        audio_data = requests.get(url,headers=headers)
+        print('正在下音频频：'+title+'.mp3')
+        with open(title+'.mp3','wb') as f5:
+            f5.write(audio_data.content)
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，')
-down(434,biz,uin,key,pass_ticket)#设置一个offset取之前数据
+down(0,biz,uin,key,pass_ticket)#设置一个offset取之前数据
