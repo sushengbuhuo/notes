@@ -4,9 +4,9 @@ import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 pass_ticket = 'zFEbbhJChxULq08vTWCQuVPe9nbv78Az7RapqXMzD0J/hHPc7G6Y6RNM8iNvMaE1'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MjM5MjQwODU0MA=='
-uin = 'NjQ3OTQwMTAy'
-key = 'ac46451f47ae34ecbdf23fad6eb106b0653d9e683772ea101d356805ce6ae8df4ed8f85fde4fb726dbc98aed639db282c4a63e392519d0c97a8ceef51f26f5306843d38af6cf43c055ea0788c1ed7032a85f0d13f6f09dd5f7b3e5463ae3e8809c6a68de1bc395d6543048811f782d6ba1ca32543eab74d300daaa248e94658b'
+biz = 'MzI3NzExMjk5Mw=='
+uin = 'MTU0MTQzNjQwMw=='
+key = 'c19e4473eee71e58a2aa96608b4783d9a9fb77e86feb78c3dd575a74d1ae5a49141b712a05aafdc5fd6d8cd97b6f64b703decca65413ece21fea360ff35ee12e03255413b0cce336cbf10a5b216fd685d65b218a2ce0a0ea68fe6ab7a082ae9bc1977e312e8bebe98c69185d8ab0a0cead4a82b8f816387b33a916e8c36201f9'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -47,19 +47,20 @@ def down(offset, biz, uin, key,pass_ticket):
     # return True
     time.sleep(2)
     htmls = []
-    is_down = 1
-    is_down_video = 1
-    is_down_audio = 1
+    is_down = 0
+    is_down_video = 0
+    is_down_audio = 0
     is_down_view = 0
-    fname = '酸菜馆播客'+'公众号文章列表'
+    is_down_img = 0
+    fname = '公众号文章列表'
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding='gbk') as f:
-            f.write('发布日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ '\n')
+            f.write('发布日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'是否原创'+ ','+'位置'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ '\n')
     
     # print(data_list)
     for data in data_list:
         try:
-            # 文章发布时间 如何爬取微信公众号的所有文章https://xuzhougeng.top/archives/wechatarticleparseri
+            # 文章发布时间 如何爬取微信公众号的所有文章https://xuzhougeng.top/archives/wechatarticleparseri %Y-%m-%d %H:%M:%S
             date = time.strftime('%Y-%m-%d', time.localtime(data['comm_msg_info']['datetime']))
             # if data['comm_msg_info']['datetime'] > 1622531305:
             #     continue
@@ -79,18 +80,20 @@ def down(offset, biz, uin, key,pass_ticket):
                 # print(msg_info)
                 # exit(1)
                 # child_msg_info = []
+                position = 1
                 for child in child_msg_info:
+                    position+=1
                     if child['content_url']:
                         if is_down:
                             res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
                             content = res.text.replace('data-src', 'src')
                             # #生成HTML 文件名不能有\/:*?"<>| 'gbk' codec can't encode character '\u200b' in position 293: illegal multibyte sequence
-                            # try:
-                            #     with open(date+'_'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
-                            #         f.write(content)
-                            # except Exception as err:
-                            #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                            #         f.write(content)
+                            try:
+                                with open(date+'_'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
+                                    f.write(content)
+                            except Exception as err:
+                                with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                                    f.write(content)
                             #生成PDF
                             # try:
                             #    pdfkit.from_string(content,'./' + date + '_' + child['title'].replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
@@ -111,15 +114,26 @@ def down(offset, biz, uin, key,pass_ticket):
                                 audio(res,headers,trimName(child['title']))
                             except Exception as e:
                                 print(e)
+                        #下载封面
+                        if is_down_img:
+                            try:
+                                img_data = requests.get(child['cover'],verify=False, headers=headers)
+                                with open(date+'_____'+trimName(child['title'])+'_____'+trimName(child['digest'])+'.jpg','wb') as f6:
+                                    f6.write(img_data.content)
+                            except Exception as e:
+                                print(e)
                         try:
                             read_num,like_num,old_like_num='0','0','0'
                             if is_down_view == 1:
                                 read_num,like_num,old_like_num = view(html.unescape(child['content_url']))
                         except Exception as e:
                             read_num,like_num,old_like_num='0','0','0'
+                        copyright = '否'
+                        if child['copyright_stat'] == 11:
+                            copyright = '是'
                         # print(read_num,like_num,old_like_num,child['content_url'])
                         with open(f'{fname}.csv', 'a+', encoding='gbk') as f:
-                            f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+read_num+','+like_num+','+old_like_num+'\n')
+                            f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+child['author']+','+copyright+ ','+str(position)+ ','+read_num+','+like_num+','+old_like_num+'\n')
                         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                             f2.write('[{}]'.format(date+'_'+child['title']) + '({})'.format(html.unescape(child['content_url']))+ '\n\n'+'文章简介:'+child['digest']+ '\n\n'+'文章作者:'+child['author']+ '\n\n')
                             # f.write(html.unescape(child['content_url'])+'\n')
@@ -130,12 +144,12 @@ def down(offset, biz, uin, key,pass_ticket):
                         res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
                         content = res.text.replace('data-src', 'src')
                         #生成HTML
-                        # try:
-                        #     with open(date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
-                        #         f.write(content)
-                        # except Exception as err:
-                        #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                        #         f.write(content)
+                        try:
+                            with open(date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+                                f.write(content)
+                        except Exception as err:
+                            with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                                f.write(content)
                         #生成PDF
                         # try:
                         #    pdfkit.from_string(content,'./' + date + '_' + title.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
@@ -163,9 +177,20 @@ def down(offset, biz, uin, key,pass_ticket):
                             audio(res,headers,trimName(title))
                         except Exception as e:
                             print(e)
+                    #下载封面
+                    if is_down_img:
+                        try:
+                            img_data = requests.get(msg_info['cover'],verify=False, headers=headers)
+                            with open(date+'_____'+trimName(title)+'_____'+trimName(msg_info['digest'])+'.jpg','wb') as f7:
+                                f7.write(img_data.content)
+                        except Exception as e:
+                            print(e)
+                    copyright = '否'
+                    if msg_info['copyright_stat'] == 11:
+                        copyright = '是'
                     #csv
                     with open(f'{fname}.csv', 'a+', encoding='gbk') as f:
-                        f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+ ','+read_num+','+like_num+','+old_like_num+ '\n')
+                        f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+','+ msg_info['author'] + ','+copyright+ ','+'1'+ ','+read_num+','+like_num+','+old_like_num+ '\n')
                     #生成markdown
                     with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                         # f.write('文章标题:'+date+'_'+title + '文章链接'+url+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面图地址:'+msg_info['cover']+ '\n')
@@ -232,9 +257,9 @@ def view(url):
     "appmsg_type": "9", # https://www.its203.com/article/wnma3mz/78570580 https://github.com/wnma3mz/wechat_articles_spider
     }
     #appmsg_token和cookie变化
-    appmsg_token='1143_EMRBrjfbHd%2BBpuBnRFaRoCXgoHUjuozM4zJuqPGLtfaf78h4R4Nqa6aMfbEGsvF3I4avOtR-QGCIpOft'
+    appmsg_token='1143_p%2F%2BbORDHyzPV53MB2mFErQwnNYksPbctFGrx6TlfT9rN9skuOiF-sd-g1_FnQkfygE3laI63WXESO__-'
     headers = {
-    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;wxuin=647940102;lang=zh_CN;pass_ticket=iiZU4YgnxGrtGUdI8SlsNjV2p2qDbHZDLsLYvU0voRpz5kn7ZanVgpX3xqnT3IJY;rewardsn=;wxtokenkey=777;appmsg_token=1143_EMRBrjfbHd%2BBpuBnRFaRoCXgoHUjuozM4zJuqPGLtfaf78h4R4Nqa6aMfbEGsvF3I4avOtR-QGCIpOft;devicetype=Windows10x64;version=63040026;wap_sid2=CIaQ+7QCEooBeV9ISV8zdjhFNG1UT3oyUnBsYUsydkJxaEFOLXBaV2NHcGlwdFpzRWNfYk41SlhncUZpVVp3RzQ5OFFYVWF3dWdWTDBDbE9rSlNQVms0ZHV0ZXFoOGJuZjZHSnltZ2s5RE1NVWxZcWJmR1lUUGlXOE9hc3NoMEhMZ1NabTlDVUhNcW1GVVNBQUF+MOCQ3I0GOA1AAQ==;',
+    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;wxuin=647940102;lang=zh_CN;rewardsn=;wxtokenkey=777;appmsg_token=1143_p%2F%2BbORDHyzPV53MB2mFErQwnNYksPbctFGrx6TlfT9rN9skuOiF-sd-g1_FnQkfygE3laI63WXESO__-;devicetype=Windows10x64;version=63040026;pass_ticket=ismIYkhcZkadenzuu/os20NrBAp+NaVabqMWQwcAkWdHpJO8l1Nr8IXBDusuyRuI;wap_sid2=CIaQ+7QCEooBeV9IQVdNdzFuRzVMdDRlUURjSF9kWldUZ2s5dFktSjdkQVF3d1FjcUpSUXp3OWU0VzktRWRhR3JCRlg4OUFRbHJHUkxTR2JnMndEY1pBdk11RTFucFp0VjNqNWlzRkh4cnBtVHY2RVZLTFItQ0VPckYtWjNmNldGUVBiYjB2TEUtNXBWVVNBQUF+MPSM4I0GOA1AAQ==;',
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
