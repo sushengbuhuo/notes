@@ -4,9 +4,9 @@ import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 pass_ticket = 'zFEbbhJChxULq08vTWCQuVPe9nbv78Az7RapqXMzD0J/hHPc7G6Y6RNM8iNvMaE1'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MjM5MjUzODk0MA=='
-uin = 'MTU0MTQzNjQwMw=='
-key = 'f7f703924ac0da430f13f69131b9b9e9bb6c4684a558394c3cdb57a955f22568a55a5fb677c9e3d2ceac60d4e4c2d52bed4f0b64e9e5a8a0c90803ac7d827132341d7e60d2e21d0b12360b002a92f0db0d77c3e810dc887f70625b7644c6fe9979c0e46396f40f7b227eefe76a317cec9ca1b4f2b8cf038d85b200f573549791'
+biz = 'MzIxNDU5MTExNQ=='
+uin = 'NjQ3OTQwMTAy'
+key = '84acfc134dd6107444d5761bb54d0e11f0a1d26fb9feef52a9305f6518812ac7b95eeff94073e4cdb176480a813a18aabcdbc7a13148ee5ee1737ebfe965fc14af3543c77bfed4261f622c11398d0a93494ac0ffabb9dcce148ec08fc5e491b53a2ec3df47c70c9ab803aa9b199e86883703e5dcbc86a946cff51680ebcb10bf'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -47,13 +47,13 @@ def down(offset, biz, uin, key,pass_ticket):
     # return True
     time.sleep(2)
     htmls = []
-    is_down = 0
+    is_down = 1
     is_down_video = 0
-    is_down_audio = 0
-    is_down_view = 1
+    is_down_audio = 1
+    is_down_view = 0
     is_down_cover = 0
     is_down_img = 0
-    fname = '建设银行四川省分行公众号文章列表'
+    fname = '新闻公众号文章列表'
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding='gbk') as f:
             f.write('发布日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'是否原创'+ ','+'文章位置'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ '\n')
@@ -65,9 +65,9 @@ def down(offset, biz, uin, key,pass_ticket):
             date = time.strftime('%Y-%m-%d', time.localtime(data['comm_msg_info']['datetime']))
             # if data['comm_msg_info']['datetime'] > 1622531305:
             #     continue
-            if data['comm_msg_info']['datetime'] < 1609430400:
-                can_msg_continue = 0
-                return True
+            # if data['comm_msg_info']['datetime'] < 1609430400:
+            #     can_msg_continue = 0
+            #     return True
             msg_info = data['app_msg_ext_info']
             #原创 Python 也可以分析公众号https://cloud.tencent.com/developer/article/1698155
             # if msg_info['copyright_stat'] == 11:
@@ -112,7 +112,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         #下载音频
                         if is_down_audio:
                             try:
-                                audio(res,headers,trimName(child['title']))
+                                audio(res,headers,date,trimName(child['title']))
                             except Exception as e:
                                 print(e)
                         #下载图片
@@ -181,7 +181,7 @@ def down(offset, biz, uin, key,pass_ticket):
                     #下载音频
                     if is_down_audio:
                         try:
-                            audio(res,headers,trimName(title))
+                            audio(res,headers,date,trimName(title))
                         except Exception as e:
                             print(e)
                     #下载图片
@@ -292,14 +292,17 @@ def video(res, headers):
         with open(trimName(data['title'])+'.mp4','wb') as f4:
             f4.write(video_data.content)
 
-def audio(res,headers,title):
-    aid = re.search(r'"voice_id":"(.*?)"',res.text).group(1)
+def audio(res,headers,date,title):
+    # aid = re.search(r'"voice_id":"(.*?)"',res.text).group(1)
+    aids = re.findall(r'"voice_id":"(.*?)"',res.text)
     time.sleep(2)
-    if aid:
-        url = f'https://res.wx.qq.com/voice/getvoice?mediaid={aid}'
+    tmp = 0
+    for id in aids:
+        tmp +=1
+        url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        with open(title+'.mp3','wb') as f5:
+        with open(date+'___'+title+'___'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
 def imgs(content,headers,date,position):
     imgs=re.findall('data-src="(.*?)"',content)
@@ -314,4 +317,4 @@ def imgs(content,headers,date,position):
 
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，')
-down(200,biz,uin,key,pass_ticket)#设置一个offset取之前数据
+down(0,biz,uin,key,pass_ticket)#设置一个offset取之前数据
