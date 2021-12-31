@@ -4,9 +4,9 @@ import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 pass_ticket = 'zFEbbhJChxULq08vTWCQuVPe9nbv78Az7RapqXMzD0J/hHPc7G6Y6RNM8iNvMaE1'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MzIxNDU5MTExNQ=='
-uin = 'NjQ3OTQwMTAy'
-key = '84acfc134dd6107444d5761bb54d0e11f0a1d26fb9feef52a9305f6518812ac7b95eeff94073e4cdb176480a813a18aabcdbc7a13148ee5ee1737ebfe965fc14af3543c77bfed4261f622c11398d0a93494ac0ffabb9dcce148ec08fc5e491b53a2ec3df47c70c9ab803aa9b199e86883703e5dcbc86a946cff51680ebcb10bf'
+biz = 'MjM5NzEzNzQ3MQ=='
+uin = 'MTU0MTQzNjQwMw=='
+key = '33b3ce9713fe0556b9f93d9787a243eded2a9a3ac078405fea5b6972ba695c125dd744b1222d6c2218c39ee9e9e6651b97845731768c257fe09a0582c9cbc661086fd629c9cd080c57b6c53c8a30267fc2648d627c40de4cd303433f4fbe65fea2f1e1188529fd3c0daab2991ae0c264eea7980d312a99fbcc11d8938acbbf3f'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -34,8 +34,9 @@ def down(offset, biz, uin, key,pass_ticket):
     # print(param)
     response = requests.get(url, headers=headers, params=param, proxies=proxies)
     response_dict = response.json()
-    print(response_dict)
+    # print(response_dict)
     next_offset = response_dict['next_offset']
+    print(offset,next_offset)
     can_msg_continue = response_dict['can_msg_continue']
     general_msg_list = response_dict['general_msg_list']
     data_list = json.loads(general_msg_list)['list']
@@ -47,17 +48,20 @@ def down(offset, biz, uin, key,pass_ticket):
     # return True
     time.sleep(2)
     htmls = []
-    is_down = 1
+    is_down = 0
     is_down_video = 0
-    is_down_audio = 1
-    is_down_view = 0
+    is_down_audio = 0
+    is_down_view = 1
     is_down_cover = 0
     is_down_img = 0
-    fname = '新闻公众号文章列表'
+    fname = '公众号历史文章列表'
+    #csv gbk编码问题'gbk'，建议使用utf-8 codec can't encode character '\u200b' in position 293: illegal multibyte sequence wechat=pd.read_csv('公众号历史文章列表.csv',encoding='utf-8') wechat.to_csv('wechat_gbk.csv',encoding='utf_8_sig',index=False)
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding='gbk') as f:
             f.write('发布日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'是否原创'+ ','+'文章位置'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ '\n')
-    
+    # if offset:
+    #     can_msg_continue = 0
+    #     return True
     # print(data_list)
     for data in data_list:
         try:
@@ -65,9 +69,9 @@ def down(offset, biz, uin, key,pass_ticket):
             date = time.strftime('%Y-%m-%d', time.localtime(data['comm_msg_info']['datetime']))
             # if data['comm_msg_info']['datetime'] > 1622531305:
             #     continue
-            # if data['comm_msg_info']['datetime'] < 1609430400:
-            #     can_msg_continue = 0
-            #     return True
+            if data['comm_msg_info']['datetime'] < 1609430436:
+                can_msg_continue = 0
+                return True
             msg_info = data['app_msg_ext_info']
             #原创 Python 也可以分析公众号https://cloud.tencent.com/developer/article/1698155
             # if msg_info['copyright_stat'] == 11:
@@ -88,13 +92,13 @@ def down(offset, biz, uin, key,pass_ticket):
                         if is_down:
                             res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
                             content = res.text.replace('data-src', 'src')
-                            # #生成HTML 文件名不能有\/:*?"<>| 'gbk' codec can't encode character '\u200b' in position 293: illegal multibyte sequence
-                            # try:
-                            #     with open(date+'_'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
-                            #         f.write(content)
-                            # except Exception as err:
-                            #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                            #         f.write(content)
+                            # #生成HTML 文件名不能有\/:*?"<>| 
+                            try:
+                                with open(date+'_'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
+                                    f.write(content)
+                            except Exception as err:
+                                with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                                    f.write(content)
                             #生成PDF
                             # try:
                             #    pdfkit.from_string(content,'./' + date + '_' + child['title'].replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
@@ -151,12 +155,12 @@ def down(offset, biz, uin, key,pass_ticket):
                         res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
                         content = res.text.replace('data-src', 'src')
                         #生成HTML
-                        # try:
-                        #     with open(date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
-                        #         f.write(content)
-                        # except Exception as err:
-                        #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                        #         f.write(content)
+                        try:
+                            with open(date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+                                f.write(content)
+                        except Exception as err:
+                            with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                                f.write(content)
                         #生成PDF
                         # try:
                         #    pdfkit.from_string(content,'./' + date + '_' + title.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
@@ -187,7 +191,7 @@ def down(offset, biz, uin, key,pass_ticket):
                     #下载图片
                     if is_down_img:
                         try:
-                            imgs(res.text,headers,date,position)
+                            imgs(res.text,headers,date,position,trimName(title))
                         except Exception as e:
                             print(e)
                     #下载封面
@@ -248,7 +252,7 @@ def down(offset, biz, uin, key,pass_ticket):
                 #                     f.write(comment_time+','+nick_name + ','+content+ ','+str(like_num)+ '\n')
                 
         except Exception as err:
-            print(err)
+            print('错误信息',err)
     if can_msg_continue == 1:
         down(next_offset,biz,uin,key,pass_ticket)
         return True
@@ -270,9 +274,9 @@ def view(url):
     "appmsg_type": "9", # https://www.its203.com/article/wnma3mz/78570580 https://github.com/wnma3mz/wechat_articles_spider
     }
     #appmsg_token和cookie变化
-    appmsg_token='1144_BrDF0sr9Gs0RAXxMPstdaWjaeqOTcXwB-xHLRh98rNYGeUHr9DvbXpkKs-u_3p0UFt61V9bC2b8PzxkF'
+    appmsg_token='1146_kJbt7nW0XCUepKKVRD3Q1anFAFduN0DIo98IJyYJqyCZ6nmL1zhaESQC4G1Q9z5s7dcLfTwMZVGVfRxi'
     headers = {
-    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;wxuin=1541436403;lang=zh_CN;rewardsn=;wxtokenkey=777;appmsg_token=1144_BrDF0sr9Gs0RAXxMPstdaWjaeqOTcXwB-xHLRh98rNYGeUHr9DvbXpkKs-u_3p0UFt61V9bC2b8PzxkF;devicetype=Windows10x64;version=63040026;pass_ticket=ZaVVpZsM3d1Pm8Hpn4Z8Au5f2JjSpuptcpOugIHzjpdtx+CM8b14O3LFdKCBbj/1;wap_sid2=CPPngd8FEp4BeV9ITFNDdC1ndDlsendHdjdNdkU1ZXhBT3VxdXp6UkV5WTdCTXdjaUkzRzZ6bGJERDZ0eDdoZmlaWjRMeDVXODVvWXBKYzlIZDBLUld5OEkzTm55QUljU1dRd3V5dEd4c01scUxBeVhpdmpVSjFmdkk0N3JhUlZIdGQzVGFxUUlvSGpOd3dwREo2TUhqSV9idTd0VDI0MXk1VkVnQUEwptnxjQY4DUAB;',
+    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;wxuin=1541436403;lang=zh_CN;rewardsn=;wxtokenkey=777;pass_ticket=tg/QA0nSV8j7UQlxPuRP616CtNTuNeB0T503k4N9Wlacqlh8YWIZXdFGxKRqV3J5;appmsg_token=1146_kJbt7nW0XCUepKKVRD3Q1anFAFduN0DIo98IJyYJqyCZ6nmL1zhaESQC4G1Q9z5s7dcLfTwMZVGVfRxi;devicetype=Windows10x64;version=63040026;wap_sid2=CPPngd8FEp4BeV9IQ1BHSVdmTmlMcnpLanpYTW5rby0tVGlZODlhb2ZKdmd0aW5JU1cybEpIZUI1aU9pblFhNzVHUWtEY3ZfNC0zRUNuQTloMDJvd3pSei1fT1QyemwyMU54N0dLV2I1ZlBUMHc1a3FGWlYwZmFQNXJDRnRUbnRiTkI0T0hFZHk1dUw1enI5LXlOeVdwNTFteEVrTkZCT1loWEVnQUEwkNG7jgY4DUAB;',
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
@@ -302,9 +306,9 @@ def audio(res,headers,date,title):
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        with open(date+'___'+title+'___'+str(tmp)+'.mp3','wb') as f5:
+        with open(date+'___'+title+'.mp3','wb') as f5:
             f5.write(audio_data.content)
-def imgs(content,headers,date,position):
+def imgs(content,headers,date,position,title):
     imgs=re.findall('data-src="(.*?)"',content)
     time.sleep(2)
     num = 0
@@ -312,9 +316,9 @@ def imgs(content,headers,date,position):
         num+=1
         img_data = requests.get(i,headers=headers)
         print('正在下载图片：'+i)
-        with open(date+'___'+str(position)+'___'+str(num)+'.jpg','wb') as f6:
+        with open(date+'___'+title+'___'+str(position)+'___'+str(num)+'.jpg','wb') as f6:
             f6.write(img_data.content)
 
 def trimName(name):
-    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，')
+    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，')
 down(0,biz,uin,key,pass_ticket)#设置一个offset取之前数据
