@@ -19,12 +19,17 @@ from wordcloud import WordCloud,ImageColorGenerator
 from PIL import Image
 #python EDA\eda_api.py weibo/歌手李健/1744395855.csv
 pd.options.mode.chained_assignment = None
-
+# import pandas 
+# weibo = pandas.read_csv('weibo/班叔/5198011111.csv')
+# weibo['总数'] = weibo['点赞数']+weibo['转发数']+weibo['评论数']
+# weibo.sort_values(by='总数',ascending=False).head(15).to_csv('weibo.csv',encoding='utf_8_sig',index=False)
 abspath = osp.abspath('')
 
-plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
-sns.set(font='Arial Unicode MS')  # 解决Seaborn中文显示问题
-
+# plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
+# sns.set(font='Arial Unicode MS')  # 解决Seaborn中文显示问题
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文字体设置-黑体
+plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
+sns.set(font='SimHei')  # 解决Seaborn中文显示问题
 jieba.analyse.set_stop_words(f'{abspath}/EDA/stopwords.txt')
 
 

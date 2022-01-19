@@ -4,7 +4,7 @@ import json
 import os
 import pdfkit
 import shutil
-import datetime
+import datetime,time
 import urllib.request
 from bs4 import BeautifulSoup
 from urllib.parse import quote
@@ -209,6 +209,7 @@ def get_data(url):
             end_time = end_time[:24] + '0' + end_time[24:]
         next_url = start_url + '&end_time=' + end_time
         print(next_url)
+        time.sleep(3)
         get_data(next_url)
 
     return htmls
