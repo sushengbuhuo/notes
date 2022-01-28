@@ -4,9 +4,9 @@ import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 pass_ticket = 'zFEbbhJChxULq08vTWCQuVPe9nbv78Az7RapqXMzD0J/hHPc7G6Y6RNM8iNvMaE1'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MzI1NjYzMjU1Ng=='
+biz = 'MzA5NjM0MjMyNA=='
 uin = 'MTU0MTQzNjQwMw=='
-key = '5f897a3ec6573899d6feeb893f36f2f0df1542400be98ff86359bb524a67d073fe3a2444d9cd309d3404820eca7bb3653cf36805c1b40aac330351b618cfb3aa687666de01013fb5a6e1fd70bb25b2a149b8d5932abfe97086efe17a411b5e8a24110536e190de0146c47da1189c127951afd55dfc02ad1649f76df5fa3793cd'
+key = '2c175f80c0889439f951c3e7f2869df95061941bcf5448b70ca8fbcb27ab22632c57fdf3f1d3fa20115e0695d240dd3b14c5716057b5e6c16b461955538bda95ed4dfa23a827e71b62fbd1a198e2dc7e6b316ae4723b4c84405d94c051f060f36711c408a655b6abaf4f2ca016103af42cbdb32ef20a6584937e9dca92b37dc1'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -49,20 +49,20 @@ def down(offset, biz, uin, key,pass_ticket):
     time.sleep(2)
     htmls = []
     encoding = 'utf-8'
-    is_down = 1
+    is_down = 0
     is_down_video = 0
     is_down_audio = 0
     is_down_view = 0
     is_down_cover = 0
     is_down_img = 0
     is_all = 1
-    fname = '2021公众号历史文章列表'
-    #csv gbk编码问题'gbk'，建议使用utf-8 codec can't encode character '\u200b' in position 293: illegal multibyte sequence wechat=pd.read_csv('公众号历史文章列表.csv',encoding='utf-8') wechat.to_csv('wechat_gbk.csv',encoding='utf_8_sig',index=False)
-    #wechat=pd.read_csv('2021公众号历史文章列表.csv',encoding='utf-8',on_bad_lines='skip')
-    #wechat.to_csv('2021公众号历史文章列表2.csv',encoding='utf_8_sig',index=False)
+    fname = '公众号历史文章列表'
+    #csv gbk编码问题'gbk'，建议使用utf-8 codec can't encode character '\u200b' in position 293: illegal multibyte sequence wechat=pd.read_csv('公众号历史文章列表.csv',encoding='utf-8')
+    #wechat=pd.read_csv('2021刘备我祖公众号历史文章列表.csv',encoding='utf-8',on_bad_lines='skip')
+    #wechat.to_csv('2021刘备我祖公众号历史文章列表2.csv',encoding='utf_8_sig',index=False)
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write('发布日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'是否原创'+ ','+'文章位置'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ '\n')
+            f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'原文链接'+','+'是否原创'+ ','+'文章位置'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ '\n')
     # if offset:
     #     can_msg_continue = 0
     #     return True
@@ -71,11 +71,11 @@ def down(offset, biz, uin, key,pass_ticket):
         try:
             # 文章发布时间 如何爬取微信公众号的所有文章https://xuzhougeng.top/archives/wechatarticleparseri %Y-%m-%d %H:%M:%S
             date = time.strftime('%Y-%m-%d', time.localtime(data['comm_msg_info']['datetime']))
-            if data['comm_msg_info']['datetime'] > 1640967672:
-                continue
-            if data['comm_msg_info']['datetime'] < 1609431672:
-                can_msg_continue = 0
-                return True
+            # if data['comm_msg_info']['datetime'] > 1609430400:
+            #     continue
+            # if data['comm_msg_info']['datetime'] < 1577808018:
+            #     can_msg_continue = 0
+            #     return True
             msg_info = data['app_msg_ext_info']
             #原创 Python 也可以分析公众号https://cloud.tencent.com/developer/article/1698155
             # if msg_info['copyright_stat'] == 11:
@@ -148,7 +148,7 @@ def down(offset, biz, uin, key,pass_ticket):
                             copyright = '是'
                         # print(read_num,like_num,old_like_num,child['content_url'])
                         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                            f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+child['author']+','+copyright+ ','+str(position)+ ','+read_num+','+like_num+','+old_like_num+'\n')
+                            f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+child['author']+','+child['cover']+','+child['source_url']+','+copyright+ ','+str(position)+ ','+read_num+','+like_num+','+old_like_num+'\n')
                         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                             f2.write('[{}]'.format(date+'_'+child['title']) + '({})'.format(html.unescape(child['content_url']))+ '\n\n'+'文章简介:'+child['digest']+ '\n\n'+'文章作者:'+child['author']+ '\n\n')
                         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
@@ -212,7 +212,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         copyright = '是'
                     #csv
                     with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                        f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+','+ msg_info['author'] + ','+copyright+ ','+'1'+ ','+read_num+','+like_num+','+old_like_num+ '\n')
+                        f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+','+ msg_info['author'] +','+msg_info['cover']+','+msg_info['source_url']+ ','+copyright+ ','+'1'+ ','+read_num+','+like_num+','+old_like_num+ '\n')
                     #生成markdown
                     with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                         # f.write('文章标题:'+date+'_'+title + '文章链接'+url+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面图地址:'+msg_info['cover']+ '\n')
@@ -281,9 +281,9 @@ def view(url):
     "appmsg_type": "9", # https://www.its203.com/article/wnma3mz/78570580 https://github.com/wnma3mz/wechat_articles_spider
     }
     #appmsg_token和cookie变化
-    appmsg_token='1146_kJbt7nW0XCUepKKVRD3Q1anFAFduN0DIo98IJyYJqyCZ6nmL1zhaESQC4G1Q9z5s7dcLfTwMZVGVfRxi'
+    appmsg_token='1150_B8CYxkNtKhbKKt9ZiQrRm-Yfa8nSosvd9s-o4xvM91w3bMWfrTtcuXy9j-coikU7rkAJF7bolibCs_8a'
     headers = {
-    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;wxuin=1541436403;lang=zh_CN;rewardsn=;wxtokenkey=777;pass_ticket=tg/QA0nSV8j7UQlxPuRP616CtNTuNeB0T503k4N9Wlacqlh8YWIZXdFGxKRqV3J5;appmsg_token=1146_kJbt7nW0XCUepKKVRD3Q1anFAFduN0DIo98IJyYJqyCZ6nmL1zhaESQC4G1Q9z5s7dcLfTwMZVGVfRxi;devicetype=Windows10x64;version=63040026;wap_sid2=CPPngd8FEp4BeV9IQ1BHSVdmTmlMcnpLanpYTW5rby0tVGlZODlhb2ZKdmd0aW5JU1cybEpIZUI1aU9pblFhNzVHUWtEY3ZfNC0zRUNuQTloMDJvd3pSei1fT1QyemwyMU54N0dLV2I1ZlBUMHc1a3FGWlYwZmFQNXJDRnRUbnRiTkI0T0hFZHk1dUw1enI5LXlOeVdwNTFteEVrTkZCT1loWEVnQUEwkNG7jgY4DUAB;',
+    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;rewardsn=;wxtokenkey=777;wxuin=647940102;lang=zh_CN;pass_ticket=FtAJI1vKDXEUsKff/WjUJ/Legv34/ZL8FeF6Dt4018Nzb18ViGlB/7eSezw6eYl1;appmsg_token=1150_B8CYxkNtKhbKKt9ZiQrRm-Yfa8nSosvd9s-o4xvM91w3bMWfrTtcuXy9j-coikU7rkAJF7bolibCs_8a;devicetype=Windows10x64;version=63050021;wap_sid2=CIaQ+7QCEooBeV9IQ1VNWU1iZDlvSDBocDhKaXFMVEhiVFQwQWZnLVUwTmZZdlh6eXBWTDI3TlgtWjBPdmdkOGxqVGZEeUhNNnZIWGVSc1I3bGdjbTRkN2JVUEQ4S3p3d2Q4YlpDLUFESWtxcVZ0NmlheGN6NjZ0OWxSeVZhQlg3M0thZ0hlZUQ4dVBGc1NBQUF+MKS3zY8GOA1AAQ==;',
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
