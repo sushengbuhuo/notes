@@ -2,11 +2,11 @@ import requests,pdfkit,json,time,datetime,os,re,html,pandas,csv
 from random import randint
 import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-pass_ticket = 'ylNcWmToIHvpuf9ugJLN7Kk4fxRW4JjMEpS/c3sFRMoV28NaS9LbHAP1MqLTY6Mm'
+pass_ticket = 'LKcyZ+56JLdzxKqGt1th74JFIlCAxFFOAPleWWW/TSQq8gQCYsTTDib/e6SKPrsV'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MzIwMjU0MzA3NA=='
+biz = 'MzIyMjg2ODExMA=='
 uin = 'NjQ3OTQwMTAy'
-key = 'c5ac73bb09560f71da0c5191d7db445ce136358273f6a4a97363896fff7534ba9b2d9cb07845f47bad62be4d3a2ac89bd35287246f8a3af1ce03dd63776e9fa3ed9fcf674a7d474b86fba28b0406ab767ed8a76bbe8d801216a35ebd01f3e04e898f1e70bc618722180c0ce690309580344fdc23870e8071474050bf8219b296'
+key = 'c5ac73bb09560f71b172202400e7b61cdd7f6560a6f74ec31057d401ff67cde4caa28649a31422f8e829f161a316ca5b9a0d6445786e37538efd2055da54bd26193ec680257723fd29ee91bc6f5ff98fa07de19ed44554998801e7137e53bbe266897cbd5512fdab2c4c344b80d049434d37950605e968a3492183d9d4bb0da5'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -36,7 +36,7 @@ def down(offset, biz, uin, key,pass_ticket):
     response_dict = response.json()
     # print(response_dict)
     next_offset = response_dict['next_offset']
-    print(offset,next_offset)
+    print('抓取位置',offset,next_offset)
     can_msg_continue = response_dict['can_msg_continue']
     general_msg_list = response_dict['general_msg_list']
     data_list = json.loads(general_msg_list)['list']
@@ -57,13 +57,15 @@ def down(offset, biz, uin, key,pass_ticket):
     is_down_img = 0
     is_down_comment = 1
     is_all = 1
-    fname = '2022公众号历史文章列表'
+    fname = '2021苏生不惑公众号历史文章列表'
     #csv gbk编码问题'gbk'，建议使用utf-8 codec can't encode character '\u200b' in position 293: illegal multibyte sequence wechat=pd.read_csv('公众号历史文章列表.csv',encoding='utf-8')
     #wechat=pd.read_csv('2021刘备我祖公众号历史文章列表.csv',encoding='utf-8',on_bad_lines='skip')
     #wechat.to_csv('2021刘备我祖公众号历史文章列表2.csv',encoding='utf_8_sig',index=False)
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
             f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'原文链接'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+'\n')
+        # with open('公众号留言.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
+        # 	ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'\n')
     # if offset:
     #     can_msg_continue = 0
     #     return True
@@ -107,21 +109,23 @@ def down(offset, biz, uin, key,pass_ticket):
                         if is_down:
                             res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
                             content = res.text.replace('data-src', 'src')
+                            # if '海外网' not in content:
+                            #     continue
                             if is_down_comment == 1:
                             	try:
-                            		comments_num,comments_html = comments(res.text,date,headers,url_comment,biz,uin,key,pass_ticket)
+                            		comments_num,comments_html = comments(res.text,date,headers,url_comment,biz,uin,key,pass_ticket,child['content_url'])
                             	except Exception as e:
                             		print('获取评论数失败',e,child['content_url'])
                             	# print(comments_num,comments_html)
                             if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                                is_pay = '是'
                             # #生成HTML 文件名不能有\/:*?"<>| 
-                            # try:
-                            #     with open(date+'_'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
-                            #         f.write(content+comments_html)
-                            # except Exception as err:
-                            #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                            #         f.write(content+comments_html)
+                            try:
+                                with open(date+'_'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
+                                    f.write(content+comments_html)
+                            except Exception as err:
+                                with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                                    f.write(content+comments_html)
                             #生成PDF
                             # try:
                             #    pdfkit.from_string(content,'./' + date + '_' + child['title'].replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
@@ -133,7 +137,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         #下载视频
                         if is_down_video:
                             try:
-                                video(res,headers)
+                                video(res,headers,date)
                             except Exception as e:
                                 print('下载视频失败',e,child['content_url'])
                         #下载音频
@@ -161,6 +165,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         if child['copyright_stat'] == 11:
                             copyright = '是'
                         # print(read_num,like_num,old_like_num,child['content_url'])
+                        
                         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
                             f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+trimName(child['author'])+','+child['cover']+','+child['source_url']+','+copyright+ ','+str(position)+ ','+is_pay+ ','+read_num+','+like_num+','+old_like_num+','+comments_num+'\n')
                         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
@@ -184,21 +189,23 @@ def down(offset, biz, uin, key,pass_ticket):
                     if is_down:
                         res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
                         content = res.text.replace('data-src', 'src');
+                        # if '海外网' not in content:
+                        #     continue
                         if is_down_comment == 1:
                         	try:
-                        		comments_num,comments_html = comments(res.text,date,headers,url_comment,biz,uin,key,pass_ticket)
+                        		comments_num,comments_html = comments(res.text,date,headers,url_comment,biz,uin,key,pass_ticket,url)
                         	except Exception as e:
                         		print('获取评论数失败',e,url)
                         	# print(comments_num,comments_html)
                         if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                             is_pay = '是'
                         #生成HTML
-                        # try:
-                        #     with open(date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
-                        #         f.write(content+comments_html)
-                        # except Exception as err:
-                        #     with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                        #         f.write(content+comments_html)
+                        try:
+                            with open(date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+                                f.write(content+comments_html)
+                        except Exception as err:
+                            with open(date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                                f.write(content+comments_html)
                         #生成PDF
                         # try:
                         #    pdfkit.from_string(content,'./' + date + '_' + title.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
@@ -211,7 +218,7 @@ def down(offset, biz, uin, key,pass_ticket):
                     #下载视频
                     if is_down_video:
                         try:
-                            video(res,headers)
+                            video(res,headers,date)
                         except Exception as e:
                             print('下载视频失败',e,url)
                     #下载音频
@@ -238,6 +245,7 @@ def down(offset, biz, uin, key,pass_ticket):
                     if msg_info['copyright_stat'] == 11:
                         copyright = '是'
                     #csv
+                    
                     with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
                         f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+','+ trimName(msg_info['author']) +','+msg_info['cover']+','+msg_info['source_url']+ ','+copyright+ ','+'1'+ ','+is_pay+ ','+read_num+','+like_num+','+old_like_num+ ','+comments_num+'\n')
                     #生成markdown
@@ -277,9 +285,9 @@ def view(url):
     "appmsg_type": "9", # https://www.its203.com/article/wnma3mz/78570580 https://github.com/wnma3mz/wechat_articles_spider
     }
     #appmsg_token和cookie变化
-    appmsg_token='1153_pO3B13ObBV5G9YWvY8eIPhHm2xDaaCEWSkxlJ5qRIG4j8HvsyD7ml6orCGknIXzLmv7XsrfI4YHezZDd'
+    appmsg_token='1155_X%2FRUMzy4oev0Y10cEZnbHGidKd-uNYabAkM_pIVa71zd-xaAYHjvGF25Apx1YH0d2oIbdiuxLBhwOO78'
     headers = {
-    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;rewardsn=;wxtokenkey=777;wxuin=647940102;devicetype=Windows10x64;version=6305002e;lang=zh_CN;pass_ticket=ylNcWmToIHvpuf9ugJLN7Kk4fxRW4JjMEpS/c3sFRMoV28NaS9LbHAP1MqLTY6Mm;appmsg_token=1153_pO3B13ObBV5G9YWvY8eIPhHm2xDaaCEWSkxlJ5qRIG4j8HvsyD7ml6orCGknIXzLmv7XsrfI4YHezZDd;wap_sid2=CIaQ+7QCEooBeV9ITkhLbE5HVFVMQzBBNE9TcnM2WTVjNVFUcHhlMWxxRGdjcmNQM1o3NHdCUzZRc096c0xzdWxxeVdwSklObUV0NDRPZXU0akJ4cHVqOTJYRXBIRnd4Q2FSOUVsejZoZU9qVXZQNzEyeTU0bk1VVms0dVdxQVhReWZBVGxybHBNTEoxNFNBQUF+MMXrtpAGOA1AAQ==;',
+    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;rewardsn=;wxtokenkey=777;wxuin=647940102;lang=zh_CN;devicetype=Windows10x64;version=6305002e;pass_ticket=LKcyZ+56JLdzxKqGt1th74JFIlCAxFFOAPleWWW/TSQq8gQCYsTTDib/e6SKPrsV;appmsg_token=1155_X%2FRUMzy4oev0Y10cEZnbHGidKd-uNYabAkM_pIVa71zd-xaAYHjvGF25Apx1YH0d2oIbdiuxLBhwOO78;wap_sid2=CIaQ+7QCEp4BeV9ISHRsLVprRUMwUl9LTE1OSk5SbDZnVkZ0UlNUM1lldVNnMEFYdzhZWmVaY0l1TG9qSk5rTkF3eWVXUXNkclBDOWM0Mzl6ekVxbmJ4TVdfalRyS0RMMVB4WnB1dXRhN2xsWV81Z2ctLUtwOHR0cThSOXlRUjNnbkhVWlU1SFlidHlVOG1LcEx0M0pnWjFQbjlyd2twVTRsZ0VnQUEw5OWAkQY4DUAB;',
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
@@ -287,7 +295,7 @@ def view(url):
     res = requests.post(appmsgext_url, headers=headers, data=data).json()
     print('阅读数',res["appmsgstat"]["read_num"])
     return str(res["appmsgstat"]["read_num"]), str(res["appmsgstat"]["like_num"]), str(res["appmsgstat"]["old_like_num"])
-def video(res, headers):
+def video(res, headers,date):
     vid = re.search(r'wxv_.{19}',res.text).group(0)
     time.sleep(2)
     if vid:
@@ -296,7 +304,7 @@ def video(res, headers):
         video_url = data['url_info'][0]['url']
         video_data = requests.get(video_url,headers=headers)
         print('正在下载视频：'+trimName(data['title'])+'.mp4')
-        with open(trimName(data['title'])+'.mp4','wb') as f4:
+        with open(date+'___'+trimName(data['title'])+'.mp4','wb') as f4:
             f4.write(video_data.content)
 
 def audio(res,headers,date,title):
@@ -309,7 +317,7 @@ def audio(res,headers,date,title):
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        with open(date+'___'+title+'.mp3','wb') as f5:
+        with open(date+'___'+title+'___'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
 def imgs(content,headers,date,position,title):
     imgs=re.findall('data-src="(.*?)"',content)
@@ -321,7 +329,7 @@ def imgs(content,headers,date,position,title):
         print('正在下载图片：'+i)
         with open(date+'___'+title+'___'+str(position)+'___'+str(num)+'.jpg','wb') as f6:
             f6.write(img_data.content)
-def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket):
+def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
     str_comment = re.search(r'var comment_id = "(.*)" \|\| "(.*)" \* 1;', content)
     str_msg = re.search(r"var appmsgid = \"\" \|\| '' \|\| '(.*)'", content)
     str_token = re.search(r'window.appmsg_token = "(.*)";', content)
@@ -342,6 +350,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket):
         title_article = str_title.group(1)
         rand_title = str(randint(1,10))
         data_comments = []
+        comments_excel = []
         #https://github.com/happyjared/python-learning/blob/master/wechat/wx_mps.py
         #https://zhuanlan.zhihu.com/p/104318974 https://github.com/JustDoPython/python-100-day
         #抓包工具Charles安装https://xie.infoq.cn/article/4cfb8c32a7bb9a4121390c2e6
@@ -366,6 +375,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket):
                 reply_list = comment.get('reply_new')['reply_list']  # 回复数据
                 reply_content = reply_list[0]['content'] if len(reply_list) > 0 else ''
                 data_comments.append([comment_time,nick_name,content,like_num,reply_content])
+                comments_excel.append([date,title_article,url,nick_name,content,like_num,reply_content,comment_time])
                 # print(comment_time,nick_name,content,like_num)
                 comments_html = comments_html + f'<li class="js_comment_item discuss_item"><div class="discuss_item_hd"><div class="user_info"><div class="nickname_wrp"><img class="avatar" src="{logo_url}"><strong class="nickname">{nick_name}</strong></div></div></div><div class="discuss_message"><span class="discuss_status"></span><div class="discuss_message_content js_comment_content">{content}</div></div></li>'
                 # try:
@@ -379,8 +389,11 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket):
             #      writer = csv.writer(csvfile)
             #      writer.writerow(['评论时间','评论昵称','评论内容','评论点赞数','回复内容'])
             #      writer.writerows(data_comments)
-            # dataframe = pandas.DataFrame(data_comments,columns=['评论时间','评论昵称','评论内容','评论点赞数'])
+            # dataframe = pandas.DataFrame(data_comments,columns=['评论时间','评论昵称','评论内容','评论点赞数','回复内容'])
             # dataframe.to_csv(date+'_'+trimName(title_article)+'.csv',encoding='utf_8_sig',index=False)
+            # with open('公众号留言.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
+            #     writer = csv.writer(csvfile)
+            #     writer.writerows(comments_excel)
             comments_html = comments_html + '</ul></div></div>'
             return str(len(elected_comment)),comments_html
         return '0',''
