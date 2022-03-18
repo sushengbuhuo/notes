@@ -2,11 +2,11 @@ import requests,pdfkit,json,time,datetime,os,re,html,pandas,csv
 from random import randint
 import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-pass_ticket = 'kW9xtIB6C19NWKkFljh4tpVLLJKTz7fi4geJnR6jbFk9UrTwFGB6/QgOLoETlTVW'
+pass_ticket = 'aXdK4Pt0823LRBdYSs0E5bIan3SPWA7gqlpd3pbFxL7c3Z6XXSs+NxItohqnKBrK'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'Mzg2NTI3MjgxOA=='
-uin = 'MTU0MTQzNjQwMw=='
-key = '333d75e213d15d024c36b3d3f833ee55eabb7d74cc3b98277c966855bd5cfdb718e23aa4d2a097c7584f9c0a59a925839713a9f7818f1be3d872612b8fb05a7e68384e757e561fadc10cd449b0953ebfe1ea57047da2d71cf1e626ebf19638b39d8d5e535ac71d65b8ecdca3030ba872a2aab4b17454c0b1f874dd78c1a20076'
+biz = 'MzA4MzMxNTk3Ng=='
+uin = 'NjQ3OTQwMTAy'
+key = '9caa9e76b5389b0d263eb645f4e5b616128d58ae5b837180a797fe5cadf6f89f892fefdcfa1e357c2bb051ab71b74ba9896e070b23184372c1623f61e50b6b5aaddb9c50f5e656e67ee378d96c7751f8ca596bd9e8334f80ab142d856ef7013363390e491bb7d20e387fa50d3e069673583eb076a72eb02d5b53fcadef52e757'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -65,7 +65,7 @@ def down(offset, biz, uin, key,pass_ticket):
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
             f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'原文链接'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+'\n')
         # with open('公众号留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
-        	# ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'\n')
+        # 	ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'\n')
     # if offset:
     #     can_msg_continue = 0
     #     return True
@@ -108,7 +108,7 @@ def down(offset, biz, uin, key,pass_ticket):
                             read_num,like_num,old_like_num,comments_num='0','0','0','0'
                         if is_down:
                             res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
-                            content = res.text.replace('data-src', 'src')
+                            content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
                             # if '海外网' not in content:
                             #     continue
                             if is_down_comment == 1:
@@ -188,7 +188,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         read_num,like_num,old_like_num,comments_num='0','0','0','0'
                     if is_down:
                         res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
-                        content = res.text.replace('data-src', 'src')
+                        content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
                         # if '海外网' not in content:
                         #     continue
                         if is_down_comment == 1:
@@ -280,9 +280,9 @@ def view(url):
     "appmsg_type": "9", # https://www.its203.com/article/wnma3mz/78570580 https://github.com/wnma3mz/wechat_articles_spider
     }
     #appmsg_token和cookie变化
-    appmsg_token='1157_8u45z8F%2BVycr1xrQx5J_uQGn2O9wPtf4UGPGArnaqkgSh69Qv0akPYT-WMjQsKZSoQc6jtILzYMK5Hfz'
+    appmsg_token='1157_gg7DOzrziaamzpTkbAROYcc6g8zOfKH2Z_fbqc721Y2YzWZ5HUwtjfkTPdYxWJiwf83qVuMysXBJ6rii'
     headers = {
-    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;rewardsn=;wxtokenkey=777;wxuin=1541436403;lang=zh_CN;pass_ticket=QDWF01MoihDPgoiKb7YwZANhYEtadnftlP6nnS5oOQJRBB4ft2rn92UOP4Po2uNp;devicetype=Windows10x64;version=6305002e;appmsg_token=1157_8u45z8F%2BVycr1xrQx5J_uQGn2O9wPtf4UGPGArnaqkgSh69Qv0akPYT-WMjQsKZSoQc6jtILzYMK5Hfz;wap_sid2=CPPngd8FEp4BeV9IRzdZUWxqYlBCREotNGhoM0dIaDRfRzZkU3E1QnltUHBYeVdETHJaYWh0dmt6RjJoa00xb3ZCWXVXMVBrMmg2VDJaVDV3THJRNl9qdXdCMm1WYlltdF9LREtNN0cwSlh2OVRvMHY1V1pUakRicDR6OHFvS25wMFc4TjNfTUNOeEg0bHRMUUVJOVF6NFU4YTg2bW5xaGFsaUVnQUEwztvGkQY4DUAB;',
+    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;rewardsn=;wxtokenkey=777;wxuin=647940102;lang=zh_CN;devicetype=Windows10x64;version=6305002e;pass_ticket=aXdK4Pt0823LRBdYSs0E5bIan3SPWA7gqlpd3pbFxL7c3Z6XXSs+NxItohqnKBrK;appmsg_token=1157_gg7DOzrziaamzpTkbAROYcc6g8zOfKH2Z_fbqc721Y2YzWZ5HUwtjfkTPdYxWJiwf83qVuMysXBJ6rii;wap_sid2=CIaQ+7QCEp4BeV9IS0MxbnozTFdZSmJJSFpuVU1WM0d3aEc0enhoUGJYVTdvbExpWXZ1UGY4dnRLVmc0MTQ5X25ZRXRBa2RGQ1FIQWZYbnhYLTZiNUlOWjBGbHdoTDlzUHpvMU44R2FHdTNwQmJoX0JEWFZBbFFQY3BDTGs3blN5UkUzS09FY3pZSHBiZ2JBV01aMVRSaFc5T3dhcU5qWmJ0aUVnQUEwyN/QkQY4DUAB;',
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
@@ -387,9 +387,9 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             #      writer.writerows(data_comments)
             # dataframe = pandas.DataFrame(data_comments,columns=['评论时间','评论昵称','评论内容','评论点赞数','回复内容'])
             # dataframe.to_csv(date+'_'+trimName(title_article)+'.csv',encoding='utf_8_sig',index=False)
-            # with open('公众号留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
-            #     writer = csv.writer(csvfile)
-            #     writer.writerows(comments_excel)
+            with open('公众号留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerows(comments_excel)
             comments_html = comments_html + '</ul></div></div>'
             return str(len(elected_comment)),comments_html
         return '0',''
