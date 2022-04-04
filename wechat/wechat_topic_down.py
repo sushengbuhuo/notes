@@ -35,21 +35,21 @@ topic_url = input('公众号苏生不惑提示你，请输入话题地址：')
 biz=re.search(r'__biz=(.*?)&',topic_url).group(1)
 album_id=re.search(r'album_id=(.*?)&',topic_url).group(1)
 response = requests.get(topic_url, headers=headers)
-topic_url='https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MzkzNTI5NTc5NQ==&action=getalbum&album_id=2145881553845944326&scene=173&from_msgid=2247507484&from_itemidx=1&count=3&nolastread=1'
-response = requests.get(topic_url, headers=headers)
-voiceids = re.findall('data-voiceid="(.*)"',response.text)
-msgids = re.findall('data-msgid="(.*)"',response.text)
-links = re.findall('data-link="(.*)"',response.text)
-titles = re.findall('data-title="(.*)" data-voiceid',response.text)
-print(titles,len(voiceids))
-for i,j in zip(titles,voiceids):
-	voice_url = f'https://res.wx.qq.com/voice/getvoice?mediaid={j}'
-	# print(i,voice_url)
-	audio_data = requests.get(voice_url,headers=headers)
-	print('正在下载音频：'+i+'.mp3')
-	with open(i+'.mp3','wb') as f:
-		f.write(audio_data.content)
-sys.exit(1)
+# topic_url='https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MzkzNTI5NTc5NQ==&action=getalbum&album_id=2145881553845944326&scene=173&from_msgid=2247507484&from_itemidx=1&count=3&nolastread=1'
+# response = requests.get(topic_url, headers=headers)
+# voiceids = re.findall('data-voiceid="(.*)"',response.text)
+# msgids = re.findall('data-msgid="(.*)"',response.text)
+# links = re.findall('data-link="(.*)"',response.text)
+# titles = re.findall('data-title="(.*)" data-voiceid',response.text)
+# print(titles,len(voiceids))
+# for i,j in zip(titles,voiceids):
+# 	voice_url = f'https://res.wx.qq.com/voice/getvoice?mediaid={j}'
+# 	# print(i,voice_url)
+# 	audio_data = requests.get(voice_url,headers=headers)
+# 	print('正在下载音频：'+i+'.mp3')
+# 	with open(i+'.mp3','wb') as f:
+# 		f.write(audio_data.content)
+# sys.exit(1)
 
 encoding = 'utf-8-sig'
 fname = '公众号文章列表.csv'
@@ -84,7 +84,11 @@ def download(msgid):
 	response = requests.get(url, headers=headers)
 	response_dict = response.json()
 	if not response_dict.get('getalbum_resp').get('article_list'):
-		sys.exit(1)
+		url = f'https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&__biz={biz}&album_id={album_id}&count=10&begin_msgid={msgid}&begin_itemidx=2&uin=&key=&pass_ticket=&wxtoken=&devicetype=Windows10x64&clientversion=63040026&__biz=MzUyMzUyNzM4Ng%3D%3D&appmsg_token=&x5=0&f=json'
+		response = requests.get(url, headers=headers)
+		response_dict = response.json();print(url)
+		if not response_dict.get('getalbum_resp').get('article_list'):
+			sys.exit(1)
 	# print(response_dict['getalbum_resp']['continue_flag'])
 	for i in response_dict['getalbum_resp']['article_list']:
 		msgid = i['msgid']
