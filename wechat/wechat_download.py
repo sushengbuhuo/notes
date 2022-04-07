@@ -2,11 +2,11 @@ import requests,pdfkit,json,time,datetime,os,re,html,pandas,csv
 from random import randint
 import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-pass_ticket = 'aXdK4Pt0823LRBdYSs0E5bIan3SPWA7gqlpd3pbFxL7c3Z6XXSs+NxItohqnKBrK'
+pass_ticket = 'GbhJmJNOudUsGRMo2hVa6efhXSsWCJazd42NExWD8DuM4hagD+Ew4+Dw1VPOg/OJ'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MzA4MzMxNTk3Ng=='
+biz = 'MzU0MjYwNDU2Mw=='
 uin = 'NjQ3OTQwMTAy'
-key = '9caa9e76b5389b0d263eb645f4e5b616128d58ae5b837180a797fe5cadf6f89f892fefdcfa1e357c2bb051ab71b74ba9896e070b23184372c1623f61e50b6b5aaddb9c50f5e656e67ee378d96c7751f8ca596bd9e8334f80ab142d856ef7013363390e491bb7d20e387fa50d3e069673583eb076a72eb02d5b53fcadef52e757'
+key = 'c5ac73bb09560f715f375d11c723eaa6ce069d8f1fe2b92787c5d9b0a0123c83d8667d48291595b603b610452c29048cb715c5c09fcbbfcd22a657a6e433bf2fd42cbcfa52a7328d17a97351c69f98db23ea3a1c90b28f4baec273f26490c46402db0693b9e4894a05da50d7a02f75eadd8df41ee612aeac322788e650b61140'
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
@@ -49,22 +49,22 @@ def down(offset, biz, uin, key,pass_ticket):
     time.sleep(2)
     htmls = []
     encoding = 'utf-8-sig'
-    is_down = 0
+    is_down = 1
     is_down_video = 0
     is_down_audio = 0
-    is_down_view = 1
+    is_down_view = 0
     is_down_cover = 0
     is_down_img = 0
     is_down_comment = 0
     is_all = 1
-    fname = '公众号历史文章列表'
+    fname = '公众号记忆承载历史文章列表'
     #csv gbk编码问题'gbk'，建议使用utf-8 codec can't encode character '\u200b' in position 293: illegal multibyte sequence wechat=pd.read_csv('公众号历史文章列表.csv',encoding='utf-8')
     #wechat=pd.read_csv('2021刘备我祖公众号历史文章列表.csv',encoding='utf-8',on_bad_lines='skip')
     #wechat.to_csv('2021刘备我祖公众号历史文章列表2.csv',encoding='utf_8_sig',index=False)
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
             f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'原文链接'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+'\n')
-        # with open('公众号留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
+        # with open('公众号记忆承载留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
         # 	ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'\n')
     # if offset:
     #     can_msg_continue = 0
@@ -74,11 +74,11 @@ def down(offset, biz, uin, key,pass_ticket):
         try:
             # 文章发布时间 如何爬取微信公众号的所有文章https://xuzhougeng.top/archives/wechatarticleparseri %Y-%m-%d %H:%M:%S
             date = time.strftime('%Y-%m-%d', time.localtime(data['comm_msg_info']['datetime']))
-            if data['comm_msg_info']['datetime'] > 1643644800:
-                continue
-            if data['comm_msg_info']['datetime'] < 1640966400:
-                can_msg_continue = 0
-                return True
+            # if data['comm_msg_info']['datetime'] > 1648742400:
+            #     continue
+            # if data['comm_msg_info']['datetime'] < 1609430400:
+            #     can_msg_continue = 0
+            #     return True
             msg_info = data['app_msg_ext_info']
             #原创 Python 也可以分析公众号https://cloud.tencent.com/developer/article/1698155
             # if msg_info['copyright_stat'] == 11:
@@ -280,9 +280,9 @@ def view(url):
     "appmsg_type": "9", # https://www.its203.com/article/wnma3mz/78570580 https://github.com/wnma3mz/wechat_articles_spider
     }
     #appmsg_token和cookie变化
-    appmsg_token='1157_gg7DOzrziaamzpTkbAROYcc6g8zOfKH2Z_fbqc721Y2YzWZ5HUwtjfkTPdYxWJiwf83qVuMysXBJ6rii'
+    appmsg_token='1160_wAxt3BAiqEiQ1VuPZWT4LBkpc9KK5qyVodgVMBdHSaNDhSwsbbYG2lV9xpdElMxHh59QIU8BxqEi3heH'
     headers = {
-    "Cookie": 'pgv_pvid=3462479730;sd_userid=26861634200545809;sd_cookie_crttime=1634200545809;tvfe_boss_uuid=2462cb91e2efc262;ua_id=BbSW7iXpRV9kLjy3AAAAAJnbZGccv_XAw3N3660mGLU=;pac_uid=0_d6687c556b618;rewardsn=;wxtokenkey=777;wxuin=647940102;lang=zh_CN;devicetype=Windows10x64;version=6305002e;pass_ticket=aXdK4Pt0823LRBdYSs0E5bIan3SPWA7gqlpd3pbFxL7c3Z6XXSs+NxItohqnKBrK;appmsg_token=1157_gg7DOzrziaamzpTkbAROYcc6g8zOfKH2Z_fbqc721Y2YzWZ5HUwtjfkTPdYxWJiwf83qVuMysXBJ6rii;wap_sid2=CIaQ+7QCEp4BeV9IS0MxbnozTFdZSmJJSFpuVU1WM0d3aEc0enhoUGJYVTdvbExpWXZ1UGY4dnRLVmc0MTQ5X25ZRXRBa2RGQ1FIQWZYbnhYLTZiNUlOWjBGbHdoTDlzUHpvMU44R2FHdTNwQmJoX0JEWFZBbFFQY3BDTGs3blN5UkUzS09FY3pZSHBiZ2JBV01aMVRSaFc5T3dhcU5qWmJ0aUVnQUEwyN/QkQY4DUAB;',
+    "Cookie": 'rewardsn=;wxtokenkey=777;wxuin=1541436403;devicetype=Windows10x64;version=63060012;lang=zh_CN;pass_ticket=v6LtVDjJ+AOHJSfaI0/pC88e4HWemJdgHf9E0nRLiFwkzipuPkKMCLN+T7Eot51g;appmsg_token=1160_wAxt3BAiqEiQ1VuPZWT4LBkpc9KK5qyVodgVMBdHSaNDhSwsbbYG2lV9xpdElMxHh59QIU8BxqEi3heH;wap_sid2=CPPngd8FEooBeV9IRHFSYzR3UlVmQTJsVEtjb3FjSXFvQlBGLXVTSXItNVFTUlpHRlhfRHRTWlRIemdkbkdYUGM0MVRHV1Jzb0Y0YUlNa0Nub3J2YjJuQWxHbTRxM01tMnVlOWpZb0VvSm9adUM2TmlLZGM3WXVNRTktOHBkclpGUU5IMXRiXzdxc0cyVVNBQUF+MPfuuZIGOA1AAQ==;',
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
@@ -313,7 +313,7 @@ def audio(res,headers,date,title):
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        with open(date+'___'+title+'___'+str(tmp)+'.mp3','wb') as f5:
+        with open(date+'___'+trimName(title)+'___'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
 def imgs(content,headers,date,position,title):
     imgs=re.findall('data-src="(.*?)"',content)
@@ -373,7 +373,13 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
                 data_comments.append([comment_time,nick_name,content,like_num,reply_content])
                 comments_excel.append([date,title_article,url,nick_name,content,like_num,reply_content,comment_time])
                 # print(comment_time,nick_name,content,like_num)
-                comments_html = comments_html + f'<li class="js_comment_item discuss_item"><div class="discuss_item_hd"><div class="user_info"><div class="nickname_wrp"><img class="avatar" src="{logo_url}"><strong class="nickname">{nick_name}</strong></div></div></div><div class="discuss_message"><span class="discuss_status"></span><div class="discuss_message_content js_comment_content">{content}</div></div></li>'
+                comments_html = comments_html + f'<li class="js_comment_item discuss_item"><div class="discuss_item_hd"><div class="user_info"><div class="nickname_wrp"><img class="avatar" src="{logo_url}"><strong class="nickname">{nick_name}</strong></div></div></div><div class="discuss_message"><span class="discuss_status"></span><div class="discuss_message_content js_comment_content">{content}</div></div>'
+                for reply in reply_list:
+                    reply_nick_name = reply.get('nick_name')
+                    reply_nick_content = reply.get('content')
+                    reply_logo_url = reply.get('logo_url')
+                    comments_html = comments_html + f'<div class="reply_result js_reply_item "><div class="discuss_item_hd"><div class="user_info author_info"><div class="nickname_wrp"><div class="nickname">{reply_nick_name}</div></div></div></div><div class="discuss_message"><div class="discuss_message_content js_reply_content">{reply_nick_content}</div></div></div>'
+                comments_html = comments_html + '</li>'
                 # try:
                 #     with open(date+'_'+trimName(title_article)+'.csv', 'a+', encoding='utf-8') as f:
                 #         f.write(comment_time+','+nick_name + ','+trimName(content)+ ','+str(like_num)+ '\n')
@@ -387,9 +393,9 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             #      writer.writerows(data_comments)
             # dataframe = pandas.DataFrame(data_comments,columns=['评论时间','评论昵称','评论内容','评论点赞数','回复内容'])
             # dataframe.to_csv(date+'_'+trimName(title_article)+'.csv',encoding='utf_8_sig',index=False)
-            with open('公众号留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerows(comments_excel)
+            # with open('公众号记忆承载留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
+            #     writer = csv.writer(csvfile)
+            #     writer.writerows(comments_excel)
             comments_html = comments_html + '</ul></div></div>'
             return str(len(elected_comment)),comments_html
         return '0',''
