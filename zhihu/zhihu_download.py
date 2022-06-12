@@ -1,12 +1,13 @@
-import requests,json,time,os,re
-from tqdm import tqdm
-#https://github.com/L-M-Sherlock/zhihubackup
-def getdata(url):
-    headers = {
+import requests,json,time,os,re,execjs,hashlib,urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75",
         "x-api-version": "3.0.91",
+        "cookie": ''
     }
-    r = requests.get(url, headers=headers)
+#https://github.com/L-M-Sherlock/zhihubackup
+def getdata(url):
+    r = requests.get(url, headers=get_headers(url),verify=False)
     return json.loads(r.text)
 types = {"answer":"回答","article":"文章","pin":"想法"}
 def makedirs(username, target_type):
@@ -14,10 +15,23 @@ def makedirs(username, target_type):
         os.makedirs(os.path.join("./" ,username, target_type))
     except OSError:
         pass
-
+def get_headers(api_url):
+    star = 'd_c0='
+    end = ';'
+    cookie_mes = headers['cookie'][headers['cookie'].index(star):].replace(star, '')
+    cookie_mes = cookie_mes[:cookie_mes.index(end)]
+    parse_url = api_url.replace("https://www.zhihu.com", "")
+    f = "+".join(["101_3_2.0", parse_url, cookie_mes])
+    fmd5 = hashlib.new('md5', f.encode()).hexdigest()
+    with open('g_encrypt.js', 'r', encoding="utf-8") as f:
+        ctx1 = execjs.compile(f.read(), cwd='node_modules')
+    encrypt_str = "2.0_%s" % ctx1.call('b', fmd5)
+    headers["x-app-za"] = 'OS=Web'
+    headers["x-zse-93"] = "101_3_2.0"
+    headers["x-zse-96"] = encrypt_str
+    return headers
 def down(username):
     api = f"https://www.zhihu.com/api/v3/moments/{username}/activities?desktop=true"
-    t = tqdm()
     num = 0
     while True:
         jdata = getdata(api)
@@ -65,22 +79,10 @@ def down(username):
             title = '-' + validate_title(title) if title != '' else ''
             with open(os.path.join("./", username, target_type, "%s%s.html" % (time.strftime('%Y-%m-%d', time.localtime(created)), title)), 'w', encoding='utf-8') as f:
                 f.write('\n'.join(saved))
-            t.update(1)
         paging = jdata['paging']
         if paging['is_end']:
             break
         api = paging['next']
-
-def save_record(current_api, username):
-    with open(username, 'w') as f:
-        f.write(current_api)
-
-def read_record(username):
-    if os.path.isfile(username):
-        with open(username) as f:
-            return f.read().strip()
-    else:
-        return None
 
 def validate_title(title):
     rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
