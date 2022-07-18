@@ -1,11 +1,11 @@
-import requests,json,time,os,re,execjs,hashlib,urllib3
+import requests,json,time,os,re,execjs,hashlib,urllib3,random
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75",
         "x-api-version": "3.0.91",
         "cookie": ''
     }
-#https://github.com/L-M-Sherlock/zhihubackup
+#https://github.com/L-M-Sherlock/zhihubackup  npm install jsdom
 def getdata(url):
     r = requests.get(url, headers=get_headers(url),verify=False)
     return json.loads(r.text)
@@ -34,12 +34,15 @@ def down(username):
     api = f"https://www.zhihu.com/api/v3/moments/{username}/activities?desktop=true"
     num = 0
     while True:
-        jdata = getdata(api)
+        jdata = getdata(api);print('begin',api)
         for dd in jdata['data']:
+            time.sleep(random.randint(1,5))
             target = dd['target']
             if 'author' not in target or target["author"]["url_token"] != username:
                 continue
             target_type = types.get(target['type'])
+            if not target_type:
+                continue
             makedirs(username, target_type)
             saved = ["<meta charset=\"UTF-8\">"]
             if 'question' in target and 'title' in target['question']:
@@ -82,7 +85,7 @@ def down(username):
         paging = jdata['paging']
         if paging['is_end']:
             break
-        api = paging['next']
+        api = paging['next'];print('next',api)
 
 def validate_title(title):
     rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
