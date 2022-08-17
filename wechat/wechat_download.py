@@ -2,11 +2,11 @@ import requests,pdfkit,json,time,datetime,os,re,html,pandas,csv
 from random import randint
 import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-pass_ticket = 'ZxSVHlo15JG5Gg8RSfxvr5WEZBGELAVHMJQq17bWYs+Vx2ReBbKS6BebnAAxT8k9'
+pass_ticket = 'dH5hkrYxMPWIatWIA/qWb37EYKgOIZATpPsfTW0dYaR/3subFsavE/I9fT3yLfCM'
 app_msg_token = '1101_AOA3GqTDgjbfQwvJHH300bQWMJlT-3kgEn2eJQ~~'
-biz = 'MzI3OTAxMDU2OQ=='
+biz = 'MzU0NTg3ODUwMQ=='
 uin = 'MTU0MTQzNjQwMw=='
-key = '2c00bb6a030f6783b5df241b0da8fa2eab51b954591d15b99ea1850fefdc23cf23c4d75c740af2ae71bd0894693576bad4ee6d428c74759a6c080af254bafb50d20bd5af00fefae85240528f0f4294dd56d0830b5953767070c022629dc210426068db8ddc7e90c581b928230be6bf5be57cb425192090a26d349bb693dc36e9'
+key = '42fda77b115ac87dd11564deecd57d05f077429aa9175ca0d175408ab87ae2b5e4d5fd96942d080087cc4b7cc41484ed9ba9c79b58bf3bee62856ca21b0d424d3e725f3e114c78a1662cab24d6acf075886d41471fb4f00c665690ed66209f699e406c8e0628262c5c97675d143c2a02760c1bee8a197cda48d43eeaa30d6f86'
 nums = 1
 def down(offset, biz, uin, key,pass_ticket):
     url = "https://mp.weixin.qq.com/mp/profile_ext"
@@ -75,11 +75,11 @@ def down(offset, biz, uin, key,pass_ticket):
         try:
             # 文章发布时间 如何爬取微信公众号的所有文章https://xuzhougeng.top/archives/wechatarticleparseri %Y-%m-%d %H:%M:%S
             date = time.strftime('%Y-%m-%d', time.localtime(data['comm_msg_info']['datetime']))
-            # if data['comm_msg_info']['datetime'] > 1609430400:
+            # if data['comm_msg_info']['datetime'] > 1524672002:
             #     continue
-            # if data['comm_msg_info']['datetime'] < 1640966400:
-                # can_msg_continue = 0
-                # return True
+            # if data['comm_msg_info']['datetime'] < 1640966454:
+            #     can_msg_continue = 0
+            #     return True
             msg_info = data['app_msg_ext_info']
             #原创 Python 也可以分析公众号https://cloud.tencent.com/developer/article/1698155
             # if msg_info['copyright_stat'] == 11:
@@ -97,7 +97,7 @@ def down(offset, biz, uin, key,pass_ticket):
                 for child in child_msg_info:
                     position+=1
                     if child['content_url'] and is_all:# and child['copyright_stat'] == 11:
-                        print('文章链接',child['content_url'])
+                        print('文章链接',html.unescape(child['content_url']))
                         comments_html = ''
                         province_name = country_name = ''
                         is_pay = '否'
@@ -114,7 +114,7 @@ def down(offset, biz, uin, key,pass_ticket):
                             read_num,like_num,old_like_num,comments_num='0','0','0','0'
                         if is_down:
                             res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
-                            content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
+                            content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
                             try:
                                country_name=re.search("countryName: '(.*?)'",content).group(1)
                                province_name=re.search("provinceName: '(.*?)'",content).group(1)
@@ -133,12 +133,12 @@ def down(offset, biz, uin, key,pass_ticket):
                             if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                                is_pay = '是'
                             # #生成HTML 文件名不能有\/:*?"<>| 
-                            # try:
-                            #     with open(date+'-'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
-                            #         f.write(content+comments_html)
-                            # except Exception as err:
-                            #     with open(date+'-'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                            #         f.write(content+comments_html)
+                            try:
+                                with open(date+'-'+trimName(child['title'])+'.html', 'w', encoding='utf-8') as f:
+                                    f.write(content+comments_html)
+                            except Exception as err:
+                                with open(date+'-'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                                    f.write(content+comments_html)
                             #生成PDF
                             # try:
                             #    pdfkit.from_string(content,'./' + date + '_' + child['title'].replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
@@ -180,7 +180,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         # print(read_num,like_num,old_like_num,child['content_url'])
                         nums = nums+1
                         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                            f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+trimName(child['author'])+','+child['cover']+','+child['source_url']+','+copyright+ ','+str(position)+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+'\n')
+                            f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+trimName(child['author'])+','+child['cover']+','+child['source_url'].replace(',', '，')+','+copyright+ ','+str(position)+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+'\n')
                         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                             f2.write('[{}]'.format(date+'_'+child['title']) + '({})'.format(html.unescape(child['content_url']))+ '\n\n'+'文章简介:'+child['digest']+ '\n\n'+'文章作者:'+child['author']+ '\n\n')
                         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
@@ -189,7 +189,7 @@ def down(offset, biz, uin, key,pass_ticket):
                 #文章封面cover
                 if url:#  and msg_info['copyright_stat'] == 11:
                     #获取阅读数在看数点赞数
-                    print('文章链接',url)
+                    print('文章链接',html.unescape(url))
                     comments_html = ''
                     province_name = country_name = ''
                     is_pay = '否'
@@ -206,7 +206,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         read_num,like_num,old_like_num,comments_num='0','0','0','0'
                     if is_down:
                         res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
-                        content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
+                        content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
                         try:
                         	country_name=re.search("countryName: '(.*?)'",content).group(1)
                         	province_name=re.search("provinceName: '(.*?)'",content).group(1)
@@ -225,12 +225,12 @@ def down(offset, biz, uin, key,pass_ticket):
                         if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                             is_pay = '是'
                         #生成HTML
-                        # try:
-                        #     with open(date+'-'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
-                        #         f.write(content+comments_html)
-                        # except Exception as err:
-                        #     with open(date+'-'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                        #         f.write(content+comments_html)
+                        try:
+                            with open(date+'-'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+                                f.write(content+comments_html)
+                        except Exception as err:
+                            with open(date+'-'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                                f.write(content+comments_html)
                         #生成PDF
                         # try:
                         #    pdfkit.from_string(content,'./' + date + '_' + title.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，')+'.pdf')
@@ -272,7 +272,7 @@ def down(offset, biz, uin, key,pass_ticket):
                     nums = nums+1;
                     #csv
                     with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                        f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+','+ trimName(msg_info['author']) +','+msg_info['cover']+','+msg_info['source_url']+ ','+copyright+ ','+'1'+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+ ','+comments_num+'\n')
+                        f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+','+ trimName(msg_info['author']) +','+msg_info['cover']+','+msg_info['source_url'].replace(',', '，')+ ','+copyright+ ','+'1'+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+ ','+comments_num+'\n')
                     #生成markdown
                     with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                         # f.write('文章标题:'+date+'_'+title + '文章链接'+url+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面图地址:'+msg_info['cover']+ '\n')
@@ -306,9 +306,9 @@ def view(url):
     "appmsg_type": "9", # https://www.its203.com/article/wnma3mz/78570580 https://github.com/wnma3mz/wechat_articles_spider
     }
     #appmsg_token和cookie变化
-    appmsg_token='1172_R7kv%2BLWQ4HM9t68vorPGUzxMEy_lSHqY1jlN9nNKnevO5-NuckFAI8Z52DFv7M6ZaLz0_ovLvP_uFGOX'
+    appmsg_token='1179_M%2FDA6WtglnsGwbfzIujRP4SzuU8fdgwTT-KuTWg1cPj5GT9a03EAZMxIOA87N0UAYpLVx7EiMKVPyUFc'
     headers = {
-    "Cookie": 'rewardsn=;wxtokenkey=777;wxuin=647940102;devicetype=Windows10x64;version=6307001d;lang=zh_CN;pass_ticket=Yt43j2hvphR+10D8jmSRkiYM2tuwPb8dyknk9kXd8oWMtPWM31eIeCn7Zs3dYek/;appmsg_token=1172_R7kv%2BLWQ4HM9t68vorPGUzxMEy_lSHqY1jlN9nNKnevO5-NuckFAI8Z52DFv7M6ZaLz0_ovLvP_uFGOX;wap_sid2=CIaQ+7QCEooBeV9IT1R1S01HZVZmaHRUejBQVTJpUUFldnJ2eGh4U2JqYWZIUWNBcEwwdFBaNi0tMG9JRVdxQUdDM3JTTUxjN0p1cENidU5nUHAzSGpqdkhTTl85TXBBbkw2OEg3UHhhYlJPNFEyX1pibEE4bVQ0Zm14eUZVeFpJSFY5MFFzejFwVjRYRVNBQUF+MMfc9pUGOA1AAQ==;',
+    "Cookie": 'rewardsn=;wxtokenkey=777;wxuin=1541436403;devicetype=Windows10x64;version=63070517;lang=zh_CN;pass_ticket=dH5hkrYxMPWIatWIA/qWb37EYKgOIZATpPsfTW0dYaR/3subFsavE/I9fT3yLfCM;appmsg_token=1179_M%2FDA6WtglnsGwbfzIujRP4SzuU8fdgwTT-KuTWg1cPj5GT9a03EAZMxIOA87N0UAYpLVx7EiMKVPyUFc;wap_sid2=CPPngd8FEooBeV9ISzhiSkhPQTJobVVSaXVXa3pCS2t2V1JtZkZ1eE42VmpDbWsweTZVT054enN3X2F6cDJvbmk5VlMyenNmTE5pb0hQV1JMU0tMYlFPZTBYN1U2STh2MzlKQ0pzZU5NenBOcEd0eWY1OW12NVlEbTBuZHBIdVNVWUlvWFh2elh2TkRYZ1NBQUF+MMbo85cGOA1AAQ==;',
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
