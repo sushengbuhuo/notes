@@ -1,13 +1,14 @@
-import requests,json,time,os,re,execjs,hashlib,urllib3,random
+import requests,json,time,os,re,execjs,hashlib,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75",
         "x-api-version": "3.0.91",
         "cookie": ''
     }
-#https://github.com/L-M-Sherlock/zhihubackup  npm install jsdom
+#https://github.com/L-M-Sherlock/zhihubackup
 def getdata(url):
     r = requests.get(url, headers=get_headers(url),verify=False)
+    print(url)
     return json.loads(r.text)
 types = {"answer":"回答","article":"文章","pin":"想法"}
 def makedirs(username, target_type):
@@ -34,9 +35,8 @@ def down(username):
     api = f"https://www.zhihu.com/api/v3/moments/{username}/activities?desktop=true"
     num = 0
     while True:
-        jdata = getdata(api);print('begin',api)
+        jdata = getdata(api)
         for dd in jdata['data']:
-            time.sleep(random.randint(1,5))
             target = dd['target']
             if 'author' not in target or target["author"]["url_token"] != username:
                 continue
@@ -69,7 +69,7 @@ def down(username):
             else:
                 title = target['title']
                 created=target['created']
-            print('正在下载',target_type,target['url'])
+            # print('正在下载',target_type,target['url'])
             # if title != '':
             num+=1
             if 'api' in target['url']:
@@ -85,7 +85,8 @@ def down(username):
         paging = jdata['paging']
         if paging['is_end']:
             break
-        api = paging['next'];print('next',api)
+        api = paging['next']
+        time.sleep(1)
 
 def validate_title(title):
     rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
