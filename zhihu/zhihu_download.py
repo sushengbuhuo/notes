@@ -1,13 +1,13 @@
-import requests,json,time,os,re,execjs,hashlib,urllib3
+import requests,json,time,os,re,execjs,hashlib,urllib3,random
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75",
         "x-api-version": "3.0.91",
         "cookie": ''
     }
-#https://github.com/L-M-Sherlock/zhihubackup
+#https://github.com/L-M-Sherlock/zhihubackup npm install jsdom
 def getdata(url):
-    r = requests.get(url, headers=get_headers(url),verify=False)
+    r = requests.get(url, headers=get_headers(url),verify=False,timeout=2)
     print(url)
     return json.loads(r.text)
 types = {"answer":"回答","article":"文章","pin":"想法"}
@@ -76,9 +76,9 @@ def down(username):
                 target['url'] = target['url'].replace('api', 'www').replace('answers', 'answer')
             with open(os.path.join("./", username, "zhihu.csv"), 'a+', encoding='utf-8-sig') as f:
                 if num == 1:
-                    f.write(','.join(['标题','链接','类型', '\n']))
+                    f.write(','.join(['时间','标题','链接','类型', '\n']))
                 title = title.replace('\"', '').replace(',','，')
-                f.write(','.join([title, target['url'].replace("https://",""), target_type, '\n']))
+                f.write(','.join([time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(created)),title, target['url'].replace("https://",""), target_type, '\n']))
             title = '-' + validate_title(title) if title != '' else ''
             with open(os.path.join("./", username, target_type, "%s%s.html" % (time.strftime('%Y-%m-%d', time.localtime(created)), title)), 'w', encoding='utf-8') as f:
                 f.write('\n'.join(saved))
@@ -86,7 +86,7 @@ def down(username):
         if paging['is_end']:
             break
         api = paging['next']
-        time.sleep(1)
+        time.sleep(random.randint(1,3))
 
 def validate_title(title):
     rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
