@@ -200,7 +200,7 @@ if __name__ == '__main__':
     data = []
     for detail in movie_details:
         data.append(detail)
-        writeToFile(str(detail))
+        #writeToFile(str(detail))
         # print(detail)
     # df = pd.DataFrame(data)
     # df.to_csv("douban250.csv",encoding="utf_8_sig")
