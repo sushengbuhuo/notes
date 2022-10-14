@@ -95,7 +95,7 @@ func main() {
 		},
 	}
 	live()
-	url := fmt.Sprintf("http://i.zhibo.sina.com.cn/api/zhibo/feed?zhibo_id=152&id=%v", 100)
+	url := fmt.Sprintf("id=%v", 100)
 	arr := []interface{}{1, "fd"}
 	params := map[string]interface{}{"docId": "x"}
 	bb, _ := params["docId"].(string)

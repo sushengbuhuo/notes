@@ -8,7 +8,7 @@ tags:
 sentry 是一个
 
 ### 配置sentry
-可以在sentry.io注册账号获取配置https://sentry.io/settings/sina-tl/sina/keys/ ，如 http://root:root@127.0.0.1:1234/2
+
 当然也可以自己搭建服务器，参考 https://laravel-china.org/articles/4285/build-your-own-sentry-service
 
 ### sentry扩展
@@ -104,9 +104,7 @@ while (true) {
             $raven_client->__destruct();
 ```
 ### 查看错误日志
-```javascript
-https://sentry.io/sina-tl/sina/issues/845243592/?query=is%3Aunresolved 
-```
+ 
 [php sentry](https://juejin.im/post/5a992115f265da239f06d0d7)
 
 [Docker部署Sentry监控Django应用并使用email+钉钉通知](https://blog.ansheng.me/article/docker-sentry-django-email-dingtalk/)
