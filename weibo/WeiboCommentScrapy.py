@@ -1,35 +1,20 @@
 # -*- coding: utf-8 -*-
-# author:           inspurer(月小水长)
-# pc_type           lenovo
-# create_time:      2019/8/16 16:10
-# file_name:        WeiboCommentScrapy.py
-# github            https://github.com/inspurer
-# qq邮箱            2391527690@qq.com
-# 微信公众号         月小水长(ID: inspurer)
 
 import requests
-
 requests.packages.urllib3.disable_warnings()
-
 from lxml import etree
-
 from datetime import datetime, timedelta
-
 from threading import Thread
-
 import csv
-
 from math import ceil
-
 import os
-
 import re
 from time import sleep
 from random import randint
 
 headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
-    'Cookie': 'WEIBOCN_WM=3333_2001; SCF=ApfT0zkMMj-E-kwErnXs_hyP5c7B3IDoprhQkOU9JzWNbtcUOmW-YpWg5zaou4IsRj6rQxIGXmcuzQ7gy4l5FT8.; SUB=_2A25MrCzODeRhGeNG7FoQ9CjKyT6IHXVsbrSGrDV6PUJbktAKLU3gkW1NSxKupDj_6IOlpv0nGOgDm-3jbjwiUmgX; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WW99FVYO.z1mi3U4juCgVa-5JpX5K-hUgL.Fo-RS0npShqceoz2dJLoI0YLxKqL1KMLBoqLxK-L1h-L1h.LxK-LBozL1h2LxKqL1-eL1hnLxKML1-2L1hBLxK-LBo.LBoBLxKnLB.BLB--t; SSOLoginState=1638423710; ALF=1641015710; _T_WM=5ae497e0f4a08bd540b577f9842cdf07'
+    'Cookie': ''' '''
 }
 
 class WeiboCommentScrapy(Thread):
@@ -163,5 +148,5 @@ class WeiboCommentScrapy(Thread):
             sleep(randint(1,5))
 
 if __name__ =="__main__":
-    WeiboCommentScrapy(wid='Is0XboARR')
+    WeiboCommentScrapy(wid='KgV4B3uVq')#https://weibo.com/1638782947/KgV4B3uVq
 

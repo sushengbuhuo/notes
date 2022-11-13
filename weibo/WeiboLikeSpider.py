@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-# author:           inspurer(月小水长)
-# create_time:      2021/11/6 23:23
-# 运行环境           Python3.6+
-# github            https://github.com/inspurer
-# 微信公众号         月小水长
-
 import requests
 
 import os
@@ -209,8 +203,5 @@ class WeiboLikeSpider(object):
 
 
 if __name__ == '__main__':
-    # proxies = {
-    #     'http': 'http://115.29.170.58:8118',
-    #     'https': 'http://115.29.170.58:8118',
-    # }
+ 
     WeiboLikeSpider(wid='4467107636950632').run()

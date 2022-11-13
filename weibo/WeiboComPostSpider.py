@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-# author:           inspurer(月小水长)
-# create_time:      2021/9/11 21:20
-# 运行环境           Python3.6+
-# github            https://github.com/inspurer
-# 微信公众号         月小水长
-
 import requests
 
 from lxml import etree
@@ -35,7 +29,7 @@ class WeiboComPostSpider():
         'sec-fetch-dest': 'empty',
         'referer': 'https://weibo.com/u/1516153080?tabtype=article',
         'accept-language': 'zh-CN,zh;q=0.9,en-CN;q=0.8,en;q=0.7,es-MX;q=0.6,es;q=0.5',
-        'cookie': '看不见我'
+        'cookie': ' '
     }
 
     params = {

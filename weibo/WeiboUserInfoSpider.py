@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-# author:           inspurer(月小水长)
-# create_time:      2021/9/3 21:01
-# 运行环境           Python3.6+
-# github            https://github.com/inspurer
-# 微信公众号         月小水长
-
 import requests
 
 import pandas as pd
@@ -25,7 +19,7 @@ headers = {
     'sec-fetch-dest': 'empty',
     'referer': 'https://weibo.com/1192329374/KnnG78Yf3?filter=hot&root_comment_id=0&type=comment',
     'accept-language': 'zh-CN,zh;q=0.9,en-CN;q=0.8,en;q=0.7,es-MX;q=0.6,es;q=0.5',
-    'cookie': '介里，患曲奇'
+    'cookie': ' '
 }
 
 

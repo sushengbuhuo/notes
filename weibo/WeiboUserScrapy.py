@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
-# author:           inspurer(月小水长)
-# pc_type           lenovo
-# create_time:      2020/8/12 10:06
-# file_name:        WeiboUserScrapy.py
-# github            https://github.com/inspurer
-# qq邮箱            2391527690@qq.com
-# 微信公众号         月小水长(ID: inspurer)
-
-
+# pc_type           https://github.com/Python3Spiders/WeiboSuperSpider
 import csv
 import os
 import random
@@ -23,11 +15,8 @@ requests.packages.urllib3.disable_warnings()
 from lxml import etree
 import json
 
-Cookie = '替换你自己weibo.cn的cookie'
+Cookie = ' '
 User_Agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0'
-
-if os.path.exists('user'):
-    os.mkdir('user')
 
 
 class WeiboUserScrapy():
@@ -94,13 +83,13 @@ class WeiboUserScrapy():
             self.get_nickname()  # 获取用户昵称
             user_info = selector.xpath("//div[@class='tip2']/*/text()")
 
-            self.weibo_num = user_info[0][3:-1]
+            self.weibo_num = int(user_info[0][3:-1])
             print('微博数: ' + str(self.weibo_num))
 
-            self.following = user_info[1][3:-1]
+            self.following = int(user_info[1][3:-1])
             print('关注数: ' + str(self.following))
 
-            self.followers = user_info[2][3:-1]
+            self.followers = int(user_info[2][3:-1])
             print('粉丝数: ' + str(self.followers))
             print('*' * 100)
         except Exception as e:
@@ -440,7 +429,7 @@ class WeiboUserScrapy():
                 result_headers.insert(5, '是否为原创微博')
             result_data = [w.values() for w in self.weibo][wrote_num:]
 
-            with open('./user/{}_{}.csv'.format(self.user_id,self.nickname),'a',encoding='utf-8-sig',newline='') as f:
+            with open('./user/{}_{}.csv'.format(self.user_id,self.nickname),'a+',encoding='utf-8-sig',newline='') as f:
                 writer = csv.writer(f)
                 if wrote_num == 0:
                     writer.writerows([result_headers])
@@ -517,4 +506,4 @@ class WeiboUserScrapy():
             print(traceback.format_exc())
 
 if __name__ == '__main__':
-    WeiboUserScrapy(user_id=1506711913, filter=0)
+    WeiboUserScrapy(user_id=6521452365, filter=0)

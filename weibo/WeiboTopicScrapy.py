@@ -1,12 +1,4 @@
 # -*- coding: utf-8 -*-
-# 作者:             inspurer(月小水长)
-# 创建时间:          2020/11/1 17:38
-# 运行环境           Python3.6+
-# github            https://github.com/inspurer
-# qq邮箱            2391527690@qq.com
-# 微信公众号         月小水长(ID: inspurer)
-# 文件备注信息       todo
-
 import requests
 
 from lxml import etree
@@ -29,7 +21,7 @@ import os
 from datetime import datetime, timedelta
 import sys
 
-Cookie = '改成你自己的 Cookie'
+Cookie = '  Cookie'
 
 User_Agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0'
 
