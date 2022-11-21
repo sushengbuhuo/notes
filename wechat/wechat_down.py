@@ -36,12 +36,16 @@ def audio(res,headers,date,title):
         with open('audio/'+date+'_'+trimName(title)+'_'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
 def video(res, headers,date):
-    vid = re.search(r'wxv_.{19}',res.text)
+    # vid = re.search(r'wxv_.{19}',res.text)
+    vids = re.findall(r'vid=(wxv_\d{19})',res.text)
+    videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",res.text)
     if not os.path.exists('video'):
         os.mkdir('video')
     # time.sleep(2)
-    if vid:
-        vid = vid.group(0)
+    for i in videos:
+        print(f'腾讯视频地址：http://v.qq.com/x/page/{i}.html')
+    for vid in vids:
+        # vid = vid.group(0)
         print('视频id',vid)
         url = f'https://mp.weixin.qq.com/mp/videoplayer?action=get_mp_video_play_url&preview=0&vid={vid}'
         data = requests.get(url,headers=headers,timeout=1).json()
@@ -58,7 +62,7 @@ if not url:
 response = requests.get(url, headers=headers)
 urls = re.findall('<a.*?href="(https?://mp.weixin.qq.com/s\?.*?)"',response.text)
 urls.insert(0,url)
-print('文章总数',len(urls))
+print('文章总数：',len(urls))
 
 for mp_url in urls:
     res = requests.get(html.unescape(mp_url),proxies={'http': None,'https': None},verify=False, headers=headers)
@@ -85,7 +89,7 @@ for mp_url in urls:
         if not os.path.exists('html'):
             os.mkdir('html')
         with open('html/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
-            f.write(content)
+            f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
         with open(str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
             f.write(content);print(err)
