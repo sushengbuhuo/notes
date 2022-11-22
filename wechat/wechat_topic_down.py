@@ -20,17 +20,21 @@ def audio(res,headers,date,title):
     aids = re.findall(r'"voice_id":"(.*?)"',res.text)
     time.sleep(2)
     tmp = 0
+    if not os.path.exists('audio'):
+        os.mkdir('audio')
     for id in aids:
         tmp +=1
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        with open(date+'___'+trimName(title)+'___'+str(tmp)+'.mp3','wb') as f5:
+        with open('audio/'+date+'___'+trimName(title)+'___'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，')
 def video(res, headers,date):
     vid = re.search(r'wxv_.{19}',res.text)
+    if not os.path.exists('video'):
+        os.mkdir('video')
     # time.sleep(2)
     if vid:
         vid = vid.group(0)
@@ -39,7 +43,7 @@ def video(res, headers,date):
         video_url = data['url_info'][0]['url']
         video_data = requests.get(video_url,headers=headers)
         print('正在下载视频：'+trimName(data['title'])+'.mp4')
-        with open(date+'___'+trimName(data['title'])+'.mp4','wb') as f:
+        with open('video/'+date+'___'+trimName(data['title'])+'.mp4','wb') as f:
             f.write(video_data.content)
 topic_url = ''
 if len(sys.argv) > 1:
@@ -127,14 +131,22 @@ def download(msgid,mp_name):
 		print('开始下载',i['url'],i['title'])
 		res = requests.get(i['url'],proxies={'http': None,'https': None},verify=False, headers=headers)
 		content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
-		
+		cover = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content)
 		try:
 			title = re.search(r'var msg_title = \'(.*)\'', content).group(1)
 			ct = re.search(r'var ct = "(.*)";', content).group(1)
+			cover = cover.group(1)
 			date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
+			cover_data = requests.get(cover,headers=headers)
+			if not os.path.exists('cover'):
+				os.mkdir('cover')
+			with open('cover/'+date+'_'+trimName(i['title'])+'_封面.jpg','wb') as f:
+				f.write(cover_data.content)
 			audio(res,headers,date,title)
 			video(res,headers,date)
-			with open(mp_name+'_'+date+'_'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
+			if not os.path.exists('html'):
+				os.mkdir('html')
+			with open('html/'+mp_name+'_'+date+'_'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 				save_history(html.unescape(i['url']))
 		except Exception as err:

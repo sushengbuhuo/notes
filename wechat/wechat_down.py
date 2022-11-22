@@ -7,7 +7,18 @@ headers = {
     }
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，')
+def get_history():
+    history = []
+    with open('wechat_list.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
 
+def save_history(url):
+    with open('wechat_list.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
 def images(res,headers,date,title):
     imgs=re.findall('data-src="(.*?)"',res.text)
     time.sleep(1)
@@ -35,7 +46,7 @@ def audio(res,headers,date,title):
         print('正在下载音频：'+title+'.mp3')
         with open('audio/'+date+'_'+trimName(title)+'_'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
-def video(res, headers,date):
+def video(res, headers,date,title,article_url):
     # vid = re.search(r'wxv_.{19}',res.text)
     vids = re.findall(r'vid=(wxv_\d{19})',res.text)
     videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",res.text)
@@ -44,6 +55,8 @@ def video(res, headers,date):
     # time.sleep(2)
     for i in videos:
         print(f'腾讯视频地址：http://v.qq.com/x/page/{i}.html')
+        with open('视频链接合集.csv','a+') as f4:
+            f4.write(date+','+trimName(title)+','+f'http://v.qq.com/x/page/{i}.html'+','+article_url+'\n')
     for vid in vids:
         # vid = vid.group(0)
         print('视频id',vid)
@@ -51,6 +64,8 @@ def video(res, headers,date):
         data = requests.get(url,headers=headers,timeout=1).json()
         video_url = data['url_info'][0]['url']
         video_data = requests.get(video_url,headers=headers)
+        with open('视频链接合集.csv','a+') as f4:
+            f4.write(date+','+trimName(data['title'])+','+video_url+','+article_url+'\n')
         print('正在下载视频：'+trimName(data['title'])+'.mp4')
         with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
             f.write(video_data.content)
@@ -63,8 +78,11 @@ response = requests.get(url, headers=headers)
 urls = re.findall('<a.*?href="(https?://mp.weixin.qq.com/s\?.*?)"',response.text)
 urls.insert(0,url)
 print('文章总数：',len(urls))
-
+urls_history = get_history()
 for mp_url in urls:
+    if html.unescape(mp_url) in urls_history:
+        print('已经下载过文章:'+html.unescape(mp_url))
+        continue
     res = requests.get(html.unescape(mp_url),proxies={'http': None,'https': None},verify=False, headers=headers)
     content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
     try:
@@ -81,13 +99,16 @@ for mp_url in urls:
         date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
         print(date,title)
         cover_data = requests.get(cover,headers=headers)
-        with open(date+'_'+trimName(title)+'_封面.jpg','wb') as f:
+        if not os.path.exists('cover'):
+            os.mkdir('cover')
+        with open('cover/'+date+'_'+trimName(title)+'_封面.jpg','wb') as f:
             f.write(cover_data.content)
         audio(res,headers,date,title)
-        video(res,headers,date)
+        video(res,headers,date,title,mp_url)
         images(res,headers,date,title)
         if not os.path.exists('html'):
             os.mkdir('html')
+        save_history(html.unescape(mp_url))
         with open('html/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
