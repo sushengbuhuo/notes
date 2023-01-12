@@ -114,7 +114,7 @@ def down(offset, biz, uin, key,pass_ticket):
                             read_num,like_num,old_like_num,comments_num,reward_num='0','0','0','0','0'
                         if is_down:
                             res = requests.get(child['content_url'],proxies={'http': None,'https': None},verify=False, headers=headers)
-                            content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
+                            content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com').replace('因网络连接问题，剩余内容暂无法加载。', '')+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
                             try:
                                country_name=re.search("countryName: '(.*?)'",content).group(1)
                                province_name=re.search("provinceName: '(.*?)'",content).group(1)
@@ -206,7 +206,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         read_num,like_num,old_like_num,comments_num,reward_num='0','0','0','0','0'
                     if is_down:
                         res = requests.get(url,proxies={'http': None,'https': None},verify=False, headers=headers)
-                        content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
+                        content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com').replace('因网络连接问题，剩余内容暂无法加载。', '')+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
                         try:
                         	country_name=re.search("countryName: '(.*?)'",content).group(1)
                         	province_name=re.search("provinceName: '(.*?)'",content).group(1)
@@ -384,7 +384,7 @@ def imgs(content,headers,date,position,title):
     return str(num)
 def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
     str_comment = re.search(r'var comment_id = "(.*)" \|\| "(.*)" \* 1;', content) or re.search(r"d.comment_id = xml \? getXmlValue\('comment_id.DATA'\) : '(.*)';", content)
-    str_msg = re.search(r"var appmsgid = \"\" \|\| '' \|\| '(.*)'", content) or re.search(r"window.appmsgid = '' \|\| '' \|\| '(.*)';", content)
+    str_msg = re.search(r"var appmsgid = \"\" \|\| '' \|\| '(.*)'", content) or re.search(r"window.appmsgid = '' \|\| '' \|\| '(.*)';", content)  or re.search(r"var appmsgid = \"(.*)\" \|\| '' \|\| '';",content)
     str_token = re.search(r'window.appmsg_token = "(.*)";', content)
     str_title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r"window.msg_title = '(.*)' \|\| '';", content)
     comments_html = """

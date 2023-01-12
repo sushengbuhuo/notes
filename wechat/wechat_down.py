@@ -35,6 +35,8 @@ def images(res,headers,date,title):
             f.write(img_data.content)
 def audio(res,headers,date,title):
     aids = re.findall(r'"voice_id":"(.*?)"',res.text)
+    if not aids:
+        aids = re.findall(r'voiceid : "(.*?)"',res.text)
     time.sleep(2)
     tmp = 0
     if not os.path.exists('audio'):
@@ -86,13 +88,14 @@ for mp_url in urls:
     res = requests.get(html.unescape(mp_url),proxies={'http': None,'https': None},verify=False, headers=headers)
     content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
     try:
-        title = re.search(r'var msg_title = \'(.*)\'', content)
-        ct = re.search(r'var ct = "(.*)";', content)
+        title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
+        ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
         cover = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content)
         if not title:
            title = re.search(r'window\.msg_title = \'(.*?)\'', content)
         if not ct:
            ct = re.search(r'window\.ct = \'(.*?)\'', content)
+        # print(cover,title,ct)
         cover = cover.group(1)
         title = title.group(1)
         ct = ct.group(1)
@@ -113,4 +116,4 @@ for mp_url in urls:
             f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
         with open(str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-            f.write(content);print(err)
+            f.write(content);print(err,mp_url)

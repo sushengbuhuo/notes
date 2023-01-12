@@ -32,12 +32,12 @@ def audio(res,headers,date,title):
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，')
 def video(res, headers,date):
-    vid = re.search(r'wxv_.{19}',res.text)
+    vids = re.findall(r'vid=(wxv_\d{19})',res.text)
     if not os.path.exists('video'):
         os.mkdir('video')
     # time.sleep(2)
-    if vid:
-        vid = vid.group(0)
+    for vid in vids:
+        # vid = vid.group(0)
         url = f'https://mp.weixin.qq.com/mp/videoplayer?action=get_mp_video_play_url&preview=0&vid={vid}'
         data = requests.get(url,headers=headers,timeout=1).json()
         video_url = data['url_info'][0]['url']
@@ -81,49 +81,54 @@ with open(fname, 'a+', encoding=encoding) as f:
 msgids = re.findall('data-msgid="(.*)"',response.text)
 links = re.findall('data-link="(.*)"',response.text)
 titles = re.findall('data-title="(.*)"',response.text)
+itemidxs = re.findall('data-itemidx="(.*)"',response.text)
 print(msgids,links,titles)
-
-for i,j,k in zip(msgids,links,titles):
+if not os.path.exists('cover'):
+	os.mkdir('cover')
+if not os.path.exists('html'):
+	os.mkdir('html')
+for i,j,k,g in zip(msgids,links,titles,itemidxs):
 	msgid = i
+	itemidx = g
 	if html.unescape(j) in urls:
 		print('已经下载过文章:'+html.unescape(j))
 		continue
 	print('开始下载',j,k)
 	res = requests.get(j,proxies={'http': None,'https': None},verify=False, headers=headers)
 	content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
-	
+	cover = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content)
 	try:
 		title = re.search(r'var msg_title = \'(.*)\'', content).group(1)
 		ct = re.search(r'var ct = "(.*)";', content).group(1)
 		date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-
+		cover_data = requests.get(cover.group(1),headers=headers)
+		with open('cover/'+date+'_'+trimName(k)+'_封面.jpg','wb') as f:
+			f.write(cover_data.content)
 		audio(res,headers,date,title)
 		video(res,headers,date)
-		with open(mp_name+'_'+date+'_'+trimName(k)+'.html', 'w', encoding='utf-8') as f:
+		with open('html/'+mp_name+'_'+date+'_'+trimName(k)+'.html', 'w', encoding='utf-8') as f:
 			f.write(content)
 			save_history(html.unescape(j))
 	except Exception as err:
 		with open(mp_name+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-			f.write(content);print(err)
+			f.write(content);print(err,j)
 	with open(fname, 'a+', encoding=encoding) as f2:
 		f2.write(''+','+k + ','+html.unescape(j)+ ','+''+'\n')
-def download(msgid,mp_name):
-	url = f'https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&__biz={biz}&album_id={album_id}&count=10&begin_msgid={msgid}&begin_itemidx=1&uin=&key=&pass_ticket=&wxtoken=&devicetype=Windows10x64&clientversion=63040026&__biz=MzUyMzUyNzM4Ng%3D%3D&appmsg_token=&x5=0&f=json'
-	response = requests.get(url, headers=headers);print(111,url)
+def download(msgid,mp_name,itemidx):
+	url = f'https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&__biz={biz}&album_id={album_id}&count=10&begin_msgid={msgid}&begin_itemidx={itemidx}&uin=&key=&pass_ticket=&wxtoken=&devicetype=Windows10x64&clientversion=63040026&__biz=MzUyMzUyNzM4Ng%3D%3D&appmsg_token=&x5=0&f=json'
+	response = requests.get(url, headers=headers)
 	response_dict = response.json()
 	if not response_dict.get('getalbum_resp').get('article_list'):
-		url = f'https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&__biz={biz}&album_id={album_id}&count=10&begin_msgid={msgid}&begin_itemidx=2&uin=&key=&pass_ticket=&wxtoken=&devicetype=Windows10x64&clientversion=63040026&__biz=MzUyMzUyNzM4Ng%3D%3D&appmsg_token=&x5=0&f=json'
-		response = requests.get(url, headers=headers)
-		response_dict = response.json();print(url)
-		if not response_dict.get('getalbum_resp').get('article_list'):
-			url = f'https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&__biz={biz}&album_id={album_id}&count=10&begin_msgid={msgid}&begin_itemidx=6&uin=&key=&pass_ticket=&wxtoken=&devicetype=Windows10x64&clientversion=63040026&__biz=MzUyMzUyNzM4Ng%3D%3D&appmsg_token=&x5=0&f=json'
-			response = requests.get(url, headers=headers)
-			response_dict = response.json();print(url)
-			if not response_dict.get('getalbum_resp').get('article_list'):
-				sys.exit(1)
-	# print(response_dict['getalbum_resp']['continue_flag'])
-	for i in response_dict['getalbum_resp']['article_list']:
+		return False
+		sys.exit(1)
+	#最后一条是对象，前面是数组
+	articles = response_dict['getalbum_resp']['article_list']
+	if isinstance(articles,dict):
+		articles = [articles]
+	for i in articles:
+		# print(response_dict)
 		msgid = i['msgid']
+		itemidx = i['itemidx']
 		if html.unescape(i['url']) in urls:
 			print('已经下载过文章:'+html.unescape(i['url']))
 			continue
@@ -138,25 +143,21 @@ def download(msgid,mp_name):
 			cover = cover.group(1)
 			date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
 			cover_data = requests.get(cover,headers=headers)
-			if not os.path.exists('cover'):
-				os.mkdir('cover')
 			with open('cover/'+date+'_'+trimName(i['title'])+'_封面.jpg','wb') as f:
 				f.write(cover_data.content)
 			audio(res,headers,date,title)
 			video(res,headers,date)
-			if not os.path.exists('html'):
-				os.mkdir('html')
 			with open('html/'+mp_name+'_'+date+'_'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 				save_history(html.unescape(i['url']))
 		except Exception as err:
 			with open(mp_name+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-				f.write(content);print(err)
+				f.write(content);print(err,i['url'])
 		with open(fname, 'a+', encoding=encoding) as f2:
 			f2.write(date+','+i['title'] + ','+html.unescape(i['url'])+ ','+i['cover_img_1_1']+'\n')
 	if response_dict['getalbum_resp']['continue_flag'] == '1':
 		# print(msgid)
 		time.sleep(1)
-		download(msgid,mp_name)
+		download(msgid,mp_name,itemidx)
 
-download(msgid,mp_name)
+download(msgid,mp_name,itemidx)
