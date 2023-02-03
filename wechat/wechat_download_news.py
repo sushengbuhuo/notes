@@ -4,8 +4,8 @@ import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 pass_ticket = ''
 app_msg_token = ' '
-biz = '=='
-uin = ''
+biz = ''
+uin = 'MTU0MTQzNjQwMw=='
 key = ''
 nums =1
 def down(offset, biz, uin, key,pass_ticket):
@@ -60,11 +60,11 @@ def down(offset, biz, uin, key,pass_ticket):
     is_all = 1
     fname = '公众号历史文章'
     #csv gbk编码问题'gbk'，建议使用utf-8 codec can't encode character '\u200b' in position 293: illegal multibyte sequence wechat=pd.read_csv('公众号历史文章列表.csv',encoding='utf-8',error_bad_lines=False) For Pandas < 1.3.0
-    #wechat=pd.read_csv('历史文章列表.csv',encoding='utf-8',on_bad_lines='skip')
-    #wechat.to_csv('历史文章列表2.csv',encoding='utf_8_sig',index=False)
+    #wechat=pd.read_csv('公众号历史文章列表.csv',encoding='utf-8',on_bad_lines='skip')
+    #wechat.to_csv('公众号历史文章列表2.csv',encoding='utf_8_sig',index=False)
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'原文链接'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
+            f.write('文章日期'+','+'收录合集' +','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'原文链接'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
         # with open('文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
         # 	ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
     # if offset:
@@ -77,18 +77,18 @@ def down(offset, biz, uin, key,pass_ticket):
             date = time.strftime('%Y-%m-%d', time.localtime(data['comm_msg_info']['datetime']))
             # if data['comm_msg_info']['datetime'] > 1672502400:
             #     continue
-            if data['comm_msg_info']['datetime'] < 1556640000:
-                can_msg_continue = 0
-                return True
+            # if data['comm_msg_info']['datetime'] < 1604160000:
+            #     can_msg_continue = 0
+            #     return True
             msg_info = data['app_msg_ext_info']
-            # 分析公众号 https://cloud.tencent.com/developer/article/1698155
+            #分析公众号 https://cloud.tencent.com/developer/article/1698155
             # if msg_info['copyright_stat'] == 11:
             if msg_info:
                 # 文章标题
                 title = msg_info['title']
                 # 头条文章链接 如果删了为空
                 url = msg_info['content_url']
-                # is_multi=1有多篇文章 https://github.com/5zjk5/gongzonghao/blob/master/code/analysic.py https://python123.io/python/muxiatong/5dd14d1b71efdc10be55ee22
+                #is_multi=1有多篇文章 https://github.com/5zjk5/gongzonghao/blob/master/code/analysic.py https://python123.io/python/muxiatong/5dd14d1b71efdc10be55ee22
                 child_msg_info = msg_info['multi_app_msg_item_list']
                 # print(msg_info)
                 # exit(1)
@@ -100,6 +100,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         print('文章链接',html.unescape(child['content_url']))
                         comments_html = ''
                         province_name = country_name = ''
+                        columns = ''
                         is_pay = '否'
                         print('文章数量',nums)
                         if nums > 32000:
@@ -120,6 +121,9 @@ def down(offset, biz, uin, key,pass_ticket):
                                province_name=re.search("provinceName: '(.*?)'",content).group(1)
                             except Exception as e:
                                pass
+                            if '收录于合集' in content:
+                                tags = re.findall('<span.*? class="article-tag__item">(.*)?</span>', content)
+                                columns = '，'.join(tags)
                             # if 'xxx' not in content and 'xxx' not in content:
                             #     continue
                             # if '壁纸' not in child['title']:
@@ -180,7 +184,7 @@ def down(offset, biz, uin, key,pass_ticket):
                         # print(read_num,like_num,old_like_num,child['content_url'])
                         nums = nums+1
                         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                            f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+trimName(child['author'])+','+child['cover']+','+child['source_url'].replace(',', '，')+','+copyright+ ','+str(position)+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+                            f.write(date+','+columns +','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(child['digest'])+ ','+trimName(child['author'])+','+child['cover']+','+child['source_url'].replace(',', '，')+','+copyright+ ','+str(position)+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
                         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                             f2.write('[{}]'.format(date+'_'+child['title']) + '({})'.format(html.unescape(child['content_url']))+ '\n\n'+'文章简介:'+child['digest']+ '\n\n'+'文章作者:'+child['author']+ '\n\n')
                         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
@@ -192,6 +196,7 @@ def down(offset, biz, uin, key,pass_ticket):
                     print('文章链接',html.unescape(url))
                     comments_html = ''
                     province_name = country_name = ''
+                    columns = ''
                     is_pay = '否'
                     print('文章数量',nums)
                     if nums > 32000:
@@ -212,6 +217,9 @@ def down(offset, biz, uin, key,pass_ticket):
                         	province_name=re.search("provinceName: '(.*?)'",content).group(1)
                         except Exception as e:
                         	pass
+                        if '收录于合集' in content:
+                            tags = re.findall('<span.*? class="article-tag__item">(.*)?</span>', content)
+                            columns = '，'.join(tags)
                         # if 'xxx' not in content and 'xxx' not in content:
                         #     continue
                         # if '壁纸' not in title:
@@ -272,7 +280,7 @@ def down(offset, biz, uin, key,pass_ticket):
                     nums = nums+1;
                     #csv
                     with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                        f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+','+ trimName(msg_info['author']) +','+msg_info['cover']+','+msg_info['source_url'].replace(',', '，')+ ','+copyright+ ','+'1'+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+ ','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+                        f.write(date+','+columns +','+trimName(title) + ','+html.unescape(url)+ ','+trimName(msg_info['digest'])+','+ trimName(msg_info['author']) +','+msg_info['cover']+','+msg_info['source_url'].replace(',', '，')+ ','+copyright+ ','+'1'+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+ ','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
                     #生成markdown
                     with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                         # f.write('文章标题:'+date+'_'+title + '文章链接'+url+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面图地址:'+msg_info['cover']+ '\n')
@@ -318,7 +326,7 @@ def view(url):
     reward_num = 0
     if 'reward_total_count' in res:
         reward_num = res['reward_total_count']
-    print('阅读数',res["appmsgstat"]["read_num"])
+    print('阅读数：',res["appmsgstat"]["read_num"])
     return str(res["appmsgstat"]["read_num"]), str(res["appmsgstat"]["like_num"]), str(res["appmsgstat"]["old_like_num"]),str(reward_num)
 def video(res, headers,date,article_url,title):
     # vid = re.search(r'wxv_.{19}',res.text).group(0)
