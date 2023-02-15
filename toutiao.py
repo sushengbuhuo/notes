@@ -17,7 +17,7 @@ class NewToutiao():
         self.get_ttwebid()
         self.get_MONITOR_WEB_ID()
         self.cookie = self.get_cookie()
-        self.filename = '头条号历史文章列表'
+        self.filename = ''
         self.down = 1
         headers = {
             'authority': 'www.toutiao.com',
@@ -34,43 +34,52 @@ class NewToutiao():
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
             'x-csrftoken': 'undefined'
         }
-        # with open(f'{self.filename}.csv', 'a+', encoding='utf-8-sig') as f:
-            # f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'阅读数'+','+'评论数'+'\n')
+        with open(f'{self.filename}.csv', 'a+', encoding='utf-8-sig') as f:
+            f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'阅读数'+','+'评论数'+','+'点赞数'+'\n')
         while True:
             content = self.get_data()
             time.sleep(2)
-            if not content['data']:
+            if not content or not content['data']:
                 break
-            # for i in content['data']:
-            #     if not i.get('item_id'):
-            #         continue
-            #     if self.down and i['article_genre'] == 'article':
-            #         res = requests.get('https://www.toutiao.com/article/'+i['item_id'],verify=False, headers=headers)
-            #         comments_html = re.search(r'<div class="article-content">(.*)</article></div>', res.text).group(1)
-            #         try:
-            #             with open(trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
-            #                 f.write('<div class="article-content">'+comments_html+'</article></div>')
-            #         except Exception as err:
-            #             with open(str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-            #                 f.write('<div class="article-content">'+comments_html+'</article></div>')
-            #     image_url = ''
-            #     if i.get('image_list'):
-            #         image_url=i['image_list'][0]['url']
-            #     with open(f'{self.filename}.csv', 'a+', encoding='utf-8-sig') as f2:
-            #          f2.write(trimName(i['behot_time'])+','+trimName(i['title'])+','+ 'https://www.toutiao.com/article/'+i['item_id']+ ','+trimName(i['abstract'])+ ','+trimName(i['source'])+','+image_url+','+ i['go_detail_count']+ ','+i['comments_count']+'\n')
-            #纯微头条
             for i in content['data']:
-                if self.down and i['concern_talk_cell']['id']:
-                    res = requests.get('https://www.toutiao.com/w/'+str(i['concern_talk_cell']['id']),verify=False, headers=headers)
-                    comments_html = re.search(r'<div class="wtt-content">(.*)</article></div>', res.text).group(1)
+                if not i.get('item_id'):
+                    continue
+                if self.down and i['article_genre'] == 'article':
+                    res = requests.get('https://www.toutiao.com/article/'+i['item_id'],verify=False, headers=headers)
+                    print('https://www.toutiao.com/article/'+i['item_id'])
+                    fav = re.search(r'aria-label="点赞(.*?)"', res.text).group(1)
                     try:
-                        with open(trimName(str(i['concern_talk_cell']['id']))+'.html', 'w', encoding='utf-8') as f:
-                            f.write('<div class="wtt-content">'+comments_html+'</article></div>')
+                        comments_html = re.search(r'<div class="article-content">(.*)</article></div>', res.text).group(1)
+                        article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{comments_html}</article></div></body></html>'
+                        with open('html/'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
+                            f.write(article_content)
                     except Exception as err:
-                        with open(str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-                            f.write('<div class="wtt-content">'+comments_html+'</article></div>')
+                        print('出错了',err,i['item_id'],'https://www.toutiao.com/article/'+i['item_id'])
+                        with open('html/'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                            f.write(article_content)
+                image_url = ''
+                if i.get('image_list'):
+                    image_url=i['image_list'][0]['url']
                 with open(f'{self.filename}.csv', 'a+', encoding='utf-8-sig') as f2:
-                     f2.write('https://www.toutiao.com/w/'+str(i['concern_talk_cell']['id'])+'\n')
+                     f2.write(trimName(i['behot_time'])+','+trimName(i['title'])+','+ 'https://www.toutiao.com/article/'+i['item_id']+ ','+trimName(i['abstract'])+ ','+trimName(i['source'])+','+image_url+','+ i['go_detail_count']+ ','+i['comments_count']+ ','+str(fav)+'\n')
+            #下载微头条
+            # for i in content['data']:
+            #     if not i.get('stream_cell'):
+            #         continue
+            #     if self.down and i['stream_cell']['id']:
+            #         res = requests.get('https://www.toutiao.com/w/'+str(i['stream_cell']['id']),verify=False, headers=headers)
+            #         print('https://www.toutiao.com/w/'+str(i['stream_cell']['id']))
+            #         try:
+            #             comments_html = re.search(r'<div class="wtt-content">(.*)</article></div>', res.text).group(1)
+            #             article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="wtt-content">{comments_html}</article></div></body></html>'
+            #             with open(trimName(str(i['stream_cell']['id']))+'.html', 'w', encoding='utf-8') as f:
+            #                 f.write(article_content)
+            #         except Exception as err:
+            #             print('error:https://www.toutiao.com/w/'+str(i['stream_cell']['id']))
+            #             with open(str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+            #                 f.write(article_content)
+            #     with open(f'{self.filename}.csv', 'a+', encoding='utf-8-sig') as f2:
+            #          f2.write('https://www.toutiao.com/w/'+str(i['stream_cell']['id'])+'\n')
             # break
 
     # 获取Cookie参数的ttwebid  https://github.com/wangluozhe/NewToutiao/blob/main/sign.js
@@ -164,7 +173,7 @@ class NewToutiao():
 
     # 获取_signature参数
     def get_signature(self,url):
-        signature = os.popen('node get_sign.js {url}'.format(url='"'+url+'"')).read()
+        signature = os.popen('node get_toutiao_sign.js {url}'.format(url='"'+url+'"')).read()
         return "&_signature=" + signature.replace('\n','').replace(' ','')
 
     # 获取结果
@@ -193,12 +202,18 @@ class NewToutiao():
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
             'x-csrftoken': 'undefined'
         }
-        print(base_url)
-        response = self.session.get(base_url.replace('/toutiao',''),headers=headers,timeout=2)
+        print('请求地址',base_url)
+        response = self.session.get(base_url.replace('/toutiao',''),headers=headers,timeout=10)#;print(response.text)
         content = json.loads(response.text)
+        if not content['has_more']:
+            return ''
         self.max_behot_time = content['next']['max_behot_time']
         return content
 
 if __name__ == '__main__':
-    # MS4wLjABAAAAOzbB0eTDjpbJuwzyFBZkmraO6_7sC2mdT45IwuOp1bQ
-    NewToutiao('https://www.toutiao.com/c/user/token/MS4wLjABAAAACyCl-mWLCXVYIxOje567m1CXrBYzFUIrDltH15TUtmA/',0)
+    id = input("请输入头条id：")
+    if not os.path.exists('html'):
+        os.mkdir('html')
+    if not id:
+        id="MS4wLjABAAAAfDAPKkWGH5h-e8zzOAyTUoCSK_DszWR5nxEf9paqwG8"
+    NewToutiao(f'https://www.toutiao.com/c/user/token/{id}/',0)
