@@ -47,9 +47,10 @@ class NewToutiao():
                 if self.down and i['article_genre'] == 'article':
                     res = requests.get('https://www.toutiao.com/article/'+i['item_id'],verify=False, headers=headers)
                     print('https://www.toutiao.com/article/'+i['item_id'])
-                    fav = re.search(r'aria-label="点赞(.*?)"', res.text).group(1)
+                    fav = 0
                     try:
                         comments_html = re.search(r'<div class="article-content">(.*)</article></div>', res.text).group(1)
+                        fav = re.search(r'aria-label="点赞(.*?)"', res.text).group(1)
                         article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{comments_html}</article></div></body></html>'
                         with open('html/'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
                             f.write(article_content)
@@ -69,17 +70,20 @@ class NewToutiao():
             #     if self.down and i['stream_cell']['id']:
             #         res = requests.get('https://www.toutiao.com/w/'+str(i['stream_cell']['id']),verify=False, headers=headers)
             #         print('https://www.toutiao.com/w/'+str(i['stream_cell']['id']))
+            #         fav = 0
             #         try:
             #             comments_html = re.search(r'<div class="wtt-content">(.*)</article></div>', res.text).group(1)
+            #             fav = re.search(r'aria-label="点赞(.*?)"', res.text).group(1)
             #             article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="wtt-content">{comments_html}</article></div></body></html>'
-            #             with open(trimName(str(i['stream_cell']['id']))+'.html', 'w', encoding='utf-8') as f:
+            #             with open('html/'+trimName(str(i['stream_cell']['id']))+'.html', 'w', encoding='utf-8') as f:
             #                 f.write(article_content)
             #         except Exception as err:
             #             print('error:https://www.toutiao.com/w/'+str(i['stream_cell']['id']))
-            #             with open(str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+            #             with open('html/'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
             #                 f.write(article_content)
+            #     raw = json.loads(i['stream_cell']['raw_data'])
             #     with open(f'{self.filename}.csv', 'a+', encoding='utf-8-sig') as f2:
-            #          f2.write('https://www.toutiao.com/w/'+str(i['stream_cell']['id'])+'\n')
+            #         f2.write(trimName(i['stream_cell']['behot_time'])+','+trimName(raw['content'])+','+ 'https://www.toutiao.com/w/'+str(i['stream_cell']['id'])+ ','+''+ ','+trimName(raw['user']['remark_name'])+','+''+','+ str(raw['read_count'])+ ','+str(raw['comment_count'])+ ','+str(fav)+'\n')
             # break
 
     # 获取Cookie参数的ttwebid  https://github.com/wangluozhe/NewToutiao/blob/main/sign.js

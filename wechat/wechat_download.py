@@ -308,8 +308,10 @@ def view(url):
     }
     #appmsg_token和cookie变化
     appmsg_token='1203_hEppWYn5%2Fbh2PjOPmNVMtEgUX54XL2uohrEdWesuQtutVj-TqG7mbPWbyQytquM4Vy6RTbrbwEZbydvw'
+    cookies="""
+    """
     headers = {
-    "Cookie": 'rewardsn=;wxtokenkey=777;wxuin=1541436403;devicetype=Windows10x64;version=6308011a;lang=zh_CN;appmsg_token=1203_hEppWYn5%2Fbh2PjOPmNVMtEgUX54XL2uohrEdWesuQtutVj-TqG7mbPWbyQytquM4Vy6RTbrbwEZbydvw;pass_ticket=5QcvLv0VUH3R8L76ehrwxL/rIudtvX3UcCXTTgdwmvRMHe4aV1I2RAQMpSCbPRy5ewazUNaDk4Lqw8wTpAjI1A==;wap_sid2=CPPngd8FEooBeV9ITW5VLWJYZGhWdW5XOUZJYVpPcUwxdHB2bnBZdHZ6QUJtanVHOURianJHMTR4R1NyNEYyQkdrVm9LX1NXUm9NTjJZX0JUVG5lYmtuclg1bkxFNVpscS1ORDd6eDBoWUxJUHdFeUUycU9maGR2MW1LS3ViTElBdWVHbVJVS04zR3lKQVNBQUF+MP/W6J4GOA1AAQ==;',
+    "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)"
     }
     origin_url = "https://mp.weixin.qq.com/mp/getappmsgext?"
