@@ -638,6 +638,7 @@ class Weibo(object):
         try:
             url = 'https://weibo.cn/%s?page=%d' % (
                 self.user_config['user_uri'], page)
+            print("请求地址:",url)
             selector = self.handle_html(url)
             info = selector.xpath("//div[@class='c']")
             is_exist = info[0].xpath("div/span[@class='ctt']")
@@ -651,6 +652,9 @@ class Weibo(object):
                         publish_time = self.str_to_time(weibo['publish_time'])
                         since_date = self.str_to_time(
                             self.user_config['since_date'])
+                        if publish_time > self.str_to_time('2023-01-01') :
+                            print("时间过滤:",weibo['publish_time'])
+                            continue
                         if publish_time < since_date:
                             if self.is_pinned_weibo(info[i]):
                                 continue
@@ -1006,7 +1010,7 @@ class Weibo(object):
             page1 = 0
             random_pages = random.randint(1, 5)
             self.start_time = datetime.now().strftime('%Y-%m-%d %H:%M')
-            for page in tqdm(range(1, page_num + 1), desc='Progress'):
+            for page in tqdm(range(1, page_num + 1), desc='Progress'):#修改开始抓取的page
                 is_end = self.get_one_page(page)  # 获取第page页的全部微博
                 if is_end:
                     break
@@ -1092,10 +1096,10 @@ def main():
     try:
         uid = input('请输入微博uid：')
         is_filter = int(input('是否只抓取原创微博：'))
-        since_date = input('请输入开始时间，比如2020-01-01：')
+        # since_date = input('请输入开始时间，比如2020-01-01：')
         pic_download = int(input('是否下载图片：'))
         video_download = int(input('是否下载视频：'))
-        cookie = input('请输入微博cookie：')
+        # cookie = input('请输入微博cookie：')
         if uid == '':
             print('微博uid为空')
             os._exit(1)
