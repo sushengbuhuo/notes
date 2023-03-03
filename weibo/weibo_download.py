@@ -5,40 +5,89 @@ import codecs
 import copy
 import csv
 import json
-import logging
-import logging.config
+# import logging
+# import logging.config
 import math
 import os
 import random
 import re
-import sqlite3
+# import sqlite3
 import sys
 import warnings
 from collections import OrderedDict
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from time import sleep
-
 import requests
 from lxml import etree
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-import const
-from util import csvutil
-from util.dateutil import convert_to_days_ago
-from util.notify import push_deer
-
+MODE = "overwrite"
+CHECK_COOKIE = {
+    "CHECK": False,  # 是否检查cookie
+    "CHECKED": False,  # 这里不要动，判断已检查了cookie的标志位
+    "EXIT_AFTER_CHECK": False,  # 这里不要动，append模式中已完成增量微博抓取，仅等待cookie检查的标志位
+    "HIDDEN_WEIBO": "微博内容",  # 你可能发现平台会自动给你的微博自动加个空格，但这里你不用加空格
+    "GUESS_PIN": False,  # 这里不要动，因为微博取消了“置顶”字样的显示，因此默认猜测所有人第一条都是置顶
+}
+NOTIFY = {
+    "NOTIFY": False,  # 是否通知
+    "PUSH_KEY": "",  # 这里使用push_deer做通知，填入pushdeer的pushkey
+}
 warnings.filterwarnings("ignore")
 
 # 如果日志文件夹不存在，则创建
-if not os.path.isdir("log/"):
-    os.makedirs("log/")
-logging_path = os.path.split(os.path.realpath(__file__))[0] + os.sep + "logging.conf"
-logging.config.fileConfig(logging_path)
-logger = logging.getLogger("weibo")
+# if not os.path.isdir("log/"):
+#     os.makedirs("log/")
+# logging_path = os.path.split(os.path.realpath(__file__))[0] + os.sep + "logging.conf"
+# logging.config.fileConfig(logging_path)
+# logger = logging.getLogger("weibo")
+def insert_or_update_user(headers, result_data, file_path):
+    """插入或更新用户csv。不存在则插入，最新抓取微博id不填，存在则先不动，返回已抓取最新微博id和日期"""
+    first_write = True if not os.path.isfile(file_path) else False
+    if os.path.isfile(file_path):
+        # 文件已存在，直接查看有没有，有就直接return了
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.split(',')[0] == result_data[0][0]:
+                    return line.split(',')[len(line.split(',')) - 1].replace('\n', '')
 
+    # 没有或者新建
+    result_data[0].append('')
+    with open(file_path, 'a', encoding='utf-8-sig', newline='') as f:
+        writer = csv.writer(f)
+        if first_write:
+            writer.writerows([headers])
+        writer.writerows(result_data)
+    print('{} 信息写入csv文件完毕，保存路径: {}'.format(result_data[0][1], file_path))
+    return ''
 
+def update_last_weibo_id(userid, new_last_weibo_msg, file_path):
+    """更新用户csv中的最新微博id"""
+    lines = []
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            if line.split(',')[0] == str(userid):
+                line = line.replace(line.split(
+                    ',')[len(line.split(',')) - 1], new_last_weibo_msg + '\n')
+            lines.append(line)
+        f.close()
+    with open(file_path, 'w', encoding='utf-8') as f:
+        for line in lines:
+            f.write(line)
+def push_deer(append_str):
+    params = {
+        'pushkey': NOTIFY['PUSH_KEY'],
+        'text': append_str,
+    }
+    # 这里为了避免证书验证，使用http而非https
+    requests.get(url="http://api2.pushdeer.com/message/push", params=params)
+def convert_to_days_ago(date_str, how_many_days):
+    """将日期字符串转换为多少天前的日期字符串"""
+    date_str = datetime.strptime(date_str, '%Y-%m-%d')
+    date_str = date_str + timedelta(days=-how_many_days)
+    return date_str.strftime('%Y-%m-%d')
 class Weibo(object):
     def __init__(self, config):
         """Weibo类初始化"""
@@ -129,19 +178,19 @@ class Weibo(object):
         ]
         for argument in argument_list:
             if config[argument] != 0 and config[argument] != 1:
-                logger.warning("%s值应为0或1,请重新输入", config[argument])
+                print("{}值应为0或1,请重新输入".format(config[argument]))
                 sys.exit()
 
         # 验证since_date
         since_date = config["since_date"]
         if (not self.is_date(str(since_date))) and (not isinstance(since_date, int)):
-            logger.warning("since_date值应为yyyy-mm-dd形式或整数,请重新输入")
+            print("since_date值应为yyyy-mm-dd形式或整数,请重新输入")
             sys.exit()
 
         # 验证query_list
         query_list = config.get("query_list") or []
         if (not isinstance(query_list, list)) and (not isinstance(query_list, str)):
-            logger.warning("query_list值应为list类型或字符串,请重新输入")
+            print("query_list值应为list类型或字符串,请重新输入")
             sys.exit()
 
         # 验证write_mode
@@ -150,19 +199,19 @@ class Weibo(object):
             sys.exit("write_mode值应为list类型")
         for mode in config["write_mode"]:
             if mode not in write_mode:
-                logger.warning(
-                    "%s为无效模式，请从csv、json、mongo和mysql中挑选一个或多个作为write_mode", mode
+                print(
+                    "{}为无效模式，请从csv、json、mongo和mysql中挑选一个或多个作为write_mode".format(mode)
                 )
                 sys.exit()
         # 验证运行模式
-        if "sqlite" not in config["write_mode"] and const.MODE == "append":
-            logger.warning("append模式下请将sqlite加入write_mode中")
+        if "sqlite" not in config["write_mode"] and MODE == "append":
+            print("append模式下请将sqlite加入write_mode中")
             sys.exit()
 
         # 验证user_id_list
         user_id_list = config["user_id_list"]
         if (not isinstance(user_id_list, list)) and (not user_id_list.endswith(".txt")):
-            logger.warning("user_id_list值应为list类型或txt文件路径")
+            print("user_id_list值应为list类型或txt文件路径")
             sys.exit()
         if not isinstance(user_id_list, list):
             if not os.path.isabs(user_id_list):
@@ -170,23 +219,23 @@ class Weibo(object):
                     os.path.split(os.path.realpath(__file__))[0] + os.sep + user_id_list
                 )
             if not os.path.isfile(user_id_list):
-                logger.warning("不存在%s文件", user_id_list)
+                print("不存在{}文件".format(user_id_list))
                 sys.exit()
 
         comment_max_count = config["comment_max_download_count"]
         if not isinstance(comment_max_count, int):
-            logger.warning("最大下载评论数 (comment_max_download_count) 应为整数类型")
+            print("最大下载评论数 (comment_max_download_count) 应为整数类型")
             sys.exit()
         elif comment_max_count < 0:
-            logger.warning("最大下载评论数 (comment_max_download_count) 应该为正整数")
+            print("最大下载评论数 (comment_max_download_count) 应该为正整数")
             sys.exit()
 
         repost_max_count = config["repost_max_download_count"]
         if not isinstance(repost_max_count, int):
-            logger.warning("最大下载转发数 (repost_max_download_count) 应为整数类型")
+            print("最大下载转发数 (repost_max_download_count) 应为整数类型")
             sys.exit()
         elif repost_max_count < 0:
-            logger.warning("最大下载转发数 (repost_max_download_count) 应该为正整数")
+            print("最大下载转发数 (repost_max_download_count) 应该为正整数")
             sys.exit()
 
     def is_date(self, since_date):
@@ -221,7 +270,7 @@ class Weibo(object):
 
     def user_to_csv(self):
         """将爬取到的用户信息写入csv文件"""
-        file_dir = os.path.split(os.path.realpath(__file__))[0] + os.sep + "weibo"
+        file_dir = os.getcwd() + os.sep + "weibo"
         if not os.path.isdir(file_dir):
             os.makedirs(file_dir)
         file_path = file_dir + os.sep + "users.csv"
@@ -256,10 +305,13 @@ class Weibo(object):
                 for v in self.user.values()
             ]
         ]
+        # print('微博result:',result_data)
         # 已经插入信息的用户无需重复插入，返回的id是空字符串或微博id 发布日期%Y-%m-%d
-        last_weibo_msg = csvutil.insert_or_update_user(
-            logger, result_headers, result_data, file_path
+        last_weibo_msg = insert_or_update_user(
+            result_headers, result_data, file_path
         )
+        # print('微博信息:',last_weibo_msg)
+        # print('微博用户:',self.user)
         self.last_weibo_id = last_weibo_msg.split(" ")[0] if last_weibo_msg else ""
         self.last_weibo_date = (
             last_weibo_msg.split(" ")[1]
@@ -271,7 +323,7 @@ class Weibo(object):
         """将爬取的用户信息写入MongoDB数据库"""
         user_list = [self.user]
         self.info_to_mongodb("user", user_list)
-        logger.info("%s信息写入MongoDB数据库完毕", self.user["screen_name"])
+        print("{}信息写入MongoDB数据库完毕".format(self.user["screen_name"]))
 
     def user_to_mysql(self):
         """将爬取的用户信息写入MySQL数据库"""
@@ -314,7 +366,7 @@ class Weibo(object):
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""
         self.mysql_create_table(mysql_config, create_table)
         self.mysql_insert(mysql_config, "user", [self.user])
-        logger.info("%s信息写入MySQL数据库完毕", self.user["screen_name"])
+        print("%s信息写入MySQL数据库完毕", self.user["screen_name"])
 
     def user_to_database(self):
         """将用户信息写入文件/数据库"""
@@ -333,7 +385,7 @@ class Weibo(object):
         sleep(random.randint(60, 180))
         js, status_code = self.get_json(params)
         if status_code != 200:
-            logger.info("被ban了，需要等待一段时间")
+            print("被ban了，需要等待一段时间")
             sys.exit()
         if js["ok"]:
             info = js["data"]["userInfo"]
@@ -389,7 +441,7 @@ class Weibo(object):
             self.user_to_database()
             return 0
         else:
-            logger.info("user_id_list中 {} id出错".format(self.user_config["user_id"]))
+            print("user_id_list中 {} id出错".format(self.user_config["user_id"]))
             return -1
 
     def get_long_weibo(self, id):
@@ -506,7 +558,7 @@ class Weibo(object):
             with open(error_file, "ab") as f:
                 url = str(weibo_id) + ":" + file_path + ":" + url + "\n"
                 f.write(url.encode(sys.stdout.encoding))
-            logger.exception(e)
+            print(e)
 
     def sqlite_exist_file(self, url):
         if not os.path.exists(self.get_sqlte_path()):
@@ -597,7 +649,7 @@ class Weibo(object):
                 describe = "原创微博" + describe
             else:
                 describe = "转发微博" + describe
-            logger.info("即将进行%s下载", describe)
+            print("即将进行{}下载".format(describe))
             file_dir = self.get_filepath(file_type)
             file_dir = file_dir + os.sep + describe
             if not os.path.isdir(file_dir):
@@ -610,10 +662,10 @@ class Weibo(object):
                         continue
                 if w.get(key):
                     self.handle_download(file_type, file_dir, w.get(key), w)
-            logger.info("%s下载完毕,保存路径:", describe)
-            logger.info(file_dir)
+            print("{}下载完毕,保存路径:".format(describe))
+            print(file_dir)
         except Exception as e:
-            logger.exception(e)
+            print(e)
 
     def get_location(self, selector):
         """获取微博发布位置"""
@@ -755,55 +807,55 @@ class Weibo(object):
 
     def print_user_info(self):
         """打印用户信息"""
-        logger.info("+" * 100)
-        logger.info("用户信息")
-        logger.info("用户id：%s", self.user["id"])
-        logger.info("用户昵称：%s", self.user["screen_name"])
+        print("+" * 100)
+        print("用户信息")
+        print("用户id：%s", self.user["id"])
+        print("用户昵称：%s", self.user["screen_name"])
         gender = "女" if self.user["gender"] == "f" else "男"
-        logger.info("性别：%s", gender)
-        logger.info("生日：%s", self.user["birthday"])
-        logger.info("所在地：%s", self.user["location"])
-        logger.info("教育经历：%s", self.user["education"])
-        logger.info("公司：%s", self.user["company"])
-        logger.info("阳光信用：%s", self.user["sunshine"])
-        logger.info("注册时间：%s", self.user["registration_time"])
-        logger.info("微博数：%d", self.user["statuses_count"])
-        logger.info("粉丝数：%d", self.user["followers_count"])
-        logger.info("关注数：%d", self.user["follow_count"])
-        logger.info("url：https://m.weibo.cn/profile/%s", self.user["id"])
+        print("性别：%s", gender)
+        print("生日：%s", self.user["birthday"])
+        print("所在地：%s", self.user["location"])
+        print("教育经历：%s", self.user["education"])
+        print("公司：%s", self.user["company"])
+        print("阳光信用：%s", self.user["sunshine"])
+        print("注册时间：%s", self.user["registration_time"])
+        print("微博数：%d", self.user["statuses_count"])
+        print("粉丝数：%d", self.user["followers_count"])
+        print("关注数：%d", self.user["follow_count"])
+        print("url：https://m.weibo.cn/profile/%s", self.user["id"])
         if self.user.get("verified_reason"):
-            logger.info(self.user["verified_reason"])
-        logger.info(self.user["description"])
-        logger.info("+" * 100)
+            print(self.user["verified_reason"])
+        print(self.user["description"])
+        print("+" * 100)
 
     def print_one_weibo(self, weibo):
         """打印一条微博"""
         try:
-            logger.info("微博id：%d", weibo["id"])
-            logger.info("微博正文：%s", weibo["text"])
-            logger.info("原始图片url：%s", weibo["pics"])
-            logger.info("微博位置：%s", weibo["location"])
-            logger.info("发布时间：%s", weibo["created_at"])
-            logger.info("发布工具：%s", weibo["source"])
-            logger.info("点赞数：%d", weibo["attitudes_count"])
-            logger.info("评论数：%d", weibo["comments_count"])
-            logger.info("转发数：%d", weibo["reposts_count"])
-            logger.info("话题：%s", weibo["topics"])
-            logger.info("@用户：%s", weibo["at_users"])
-            logger.info("url：https://m.weibo.cn/detail/%d", weibo["id"])
+            print("微博id：{}".format(weibo["id"]))
+            print("微博正文：{}".format(weibo["text"]))
+            print("原始图片url：{}".format(weibo["pics"]))
+            print("微博位置：{}".format(weibo["location"]))
+            print("发布时间：{}".format(weibo["created_at"]))
+            print("发布工具：{}".format(weibo["source"]))
+            print("点赞数：{}".format(weibo["attitudes_count"]))
+            print("评论数：{}".format(weibo["comments_count"]))
+            print("转发数：{}".format(weibo["reposts_count"]))
+            print("话题：{}".format(weibo["topics"]))
+            print("@用户：{}".format(weibo["at_users"]))
+            print("url：https://m.weibo.cn/detail/{}".format(weibo["id"]))
         except OSError:
             pass
 
     def print_weibo(self, weibo):
         """打印微博，若为转发微博，会同时打印原创和转发部分"""
         if weibo.get("retweet"):
-            logger.info("*" * 100)
-            logger.info("转发部分：")
+            print("*" * 100)
+            print("转发部分：")
             self.print_one_weibo(weibo["retweet"])
-            logger.info("*" * 100)
-            logger.info("原创部分：")
+            print("*" * 100)
+            print("原创部分：")
         self.print_one_weibo(weibo)
-        logger.info("-" * 120)
+        print("-" * 120)
 
     def get_one_weibo(self, info):
         """获取一条微博的全部信息"""
@@ -847,7 +899,7 @@ class Weibo(object):
             )#更改
             return weibo
         except Exception as e:
-            logger.exception(e)
+            print(e)
 
     def get_weibo_comments(self, weibo, max_count, on_downloaded):
         """
@@ -858,7 +910,7 @@ class Weibo(object):
         if weibo["comments_count"] == 0:
             return
 
-        logger.info(
+        print(
             "正在下载评论 微博id:{id}".format(id=weibo["id"])
         )
         self._get_weibo_comments_cookie(weibo, 0, max_count, None, on_downloaded)
@@ -872,7 +924,7 @@ class Weibo(object):
         if weibo["reposts_count"] == 0:
             return
 
-        logger.info(
+        print(
             "正在下载转发 微博id:{id}".format(id=weibo["id"])
         )
         self._get_weibo_reposts_cookie(weibo, 0, max_count, 1, on_downloaded)
@@ -964,7 +1016,7 @@ class Weibo(object):
         try:
             json = req.json()
         except Exception as e:
-            logger.warning("未能抓取完整评论 微博id: {id}".format(id=id))
+            print("未能抓取完整评论 微博id: {id}".format(id=id))
             return
 
         data = json.get("data")
@@ -1022,7 +1074,7 @@ class Weibo(object):
         try:
             json = req.json()
         except Exception as e:
-            logger.warning(
+            print(
                 "未能抓取完整转发 微博id: {id}".format(id=id)
             )
             return
@@ -1070,7 +1122,7 @@ class Weibo(object):
         try:
             js = self.get_weibo_json(page)
             import json
-            with open('js.json','w') as f:
+            with open('weibos.json','w') as f:
                 #写入方式1，等价于下面这行
                 json.dump(js,f) #把列表numbers内容写入到"list.json"文件中
             if js["ok"]:
@@ -1086,15 +1138,15 @@ class Weibo(object):
                         wb = self.get_one_weibo(w)
                         if wb:
                             if (
-                                const.CHECK_COOKIE["CHECK"]
-                                and (not const.CHECK_COOKIE["CHECKED"])
+                                CHECK_COOKIE["CHECK"]
+                                and (not CHECK_COOKIE["CHECKED"])
                                 and wb["text"].startswith(
-                                    const.CHECK_COOKIE["HIDDEN_WEIBO"]
+                                    CHECK_COOKIE["HIDDEN_WEIBO"]
                                 )
                             ):
-                                const.CHECK_COOKIE["CHECKED"] = True
-                                logger.info("cookie检查通过")
-                                if const.CHECK_COOKIE["EXIT_AFTER_CHECK"]:
+                                CHECK_COOKIE["CHECKED"] = True
+                                print("cookie检查通过")
+                                if CHECK_COOKIE["EXIT_AFTER_CHECK"]:
                                     return True
                             if wb["id"] in self.weibo_id_list:
                                 continue
@@ -1102,40 +1154,40 @@ class Weibo(object):
                             since_date = datetime.strptime(
                                 self.user_config["since_date"], "%Y-%m-%d"
                             )
-                            if const.MODE == "append":
+                            if MODE == "append":
                                 # append模式下不会对置顶微博做任何处理
 
                                 # 由于微博本身的调整，下面判断是否为置顶的代码已失效，默认所有用户第一条均为置顶
                                 # if self.is_pinned_weibo(w):
                                 #     continue
-                                if const.CHECK_COOKIE["GUESS_PIN"]:
-                                    const.CHECK_COOKIE["GUESS_PIN"] = False
+                                if CHECK_COOKIE["GUESS_PIN"]:
+                                    CHECK_COOKIE["GUESS_PIN"] = False
                                     continue
 
                                 if self.first_crawler:
                                     # 置顶微博的具体时间不好判定，将非置顶微博当成最新微博，写入上次抓取id的csv
                                     self.latest_weibo_id = str(wb["id"])
-                                    csvutil.update_last_weibo_id(
+                                    update_last_weibo_id(
                                         wb["user_id"],
                                         str(wb["id"]) + " " + wb["created_at"],
                                         self.user_csv_file_path,
                                     )
                                     self.first_crawler = False
                                 if str(wb["id"]) == self.last_weibo_id:
-                                    if const.CHECK_COOKIE["CHECK"] and (
-                                        not const.CHECK_COOKIE["CHECKED"]
+                                    if CHECK_COOKIE["CHECK"] and (
+                                        not CHECK_COOKIE["CHECKED"]
                                     ):
                                         # 已经爬取过最新的了，只是没检查到cookie，一旦检查通过，直接放行
-                                        const.CHECK_COOKIE["EXIT_AFTER_CHECK"] = True
+                                        CHECK_COOKIE["EXIT_AFTER_CHECK"] = True
                                         continue
                                     if self.last_weibo_id == self.latest_weibo_id:
-                                        logger.info(
+                                        print(
                                             "{} 用户没有发新微博".format(
                                                 self.user["screen_name"]
                                             )
                                         )
                                     else:
-                                        logger.info(
+                                        print(
                                             "增量获取微博完毕，将最新微博id从 {} 变更为 {}".format(
                                                 self.last_weibo_id, self.latest_weibo_id
                                             )
@@ -1151,12 +1203,12 @@ class Weibo(object):
                                 if self.is_pinned_weibo(w):
                                     continue
                                 # 如果要检查还没有检查cookie，不能直接跳出
-                                elif const.CHECK_COOKIE["CHECK"] and (
-                                    not const.CHECK_COOKIE["CHECKED"]
+                                elif CHECK_COOKIE["CHECK"] and (
+                                    not CHECK_COOKIE["CHECKED"]
                                 ):
                                     continue
                                 else:
-                                    logger.info(
+                                    print(
                                         "{}已获取{}({})的第{}页{}微博{}".format(
                                             "-" * 30,
                                             self.user["screen_name"],
@@ -1174,29 +1226,29 @@ class Weibo(object):
                                 self.weibo_id_list.append(wb["id"])
                                 self.got_count += 1
                                 # 这里是系统日志输出，尽量别太杂
-                                logger.info(
+                                print(
                                     "已获取用户 {} 的微博，内容为 {}".format(
                                         self.user["screen_name"], wb["text"]
                                     )
                                 )
                                 # self.print_weibo(wb)
                             else:
-                                logger.info("正在过滤转发微博")
+                                print("正在过滤转发微博")
                     
-                if const.CHECK_COOKIE["CHECK"] and not const.CHECK_COOKIE["CHECKED"]:
-                    logger.warning("经检查，cookie无效，系统退出")
-                    if const.NOTIFY["NOTIFY"]:
+                if CHECK_COOKIE["CHECK"] and not CHECK_COOKIE["CHECKED"]:
+                    print("经检查，cookie无效，系统退出")
+                    if NOTIFY["NOTIFY"]:
                         push_deer("经检查，cookie无效，系统退出")
                     sys.exit()
             else:
                 return True
-            logger.info(
+            print(
                 "{}已获取{}({})的第{}页微博{}".format(
                     "-" * 30, self.user["screen_name"], self.user["id"], page, "-" * 30
                 )
             )
         except Exception as e:
-            logger.exception(e)
+            print(e)
 
     def get_page_count(self):
         """获取微博页数"""
@@ -1205,17 +1257,11 @@ class Weibo(object):
             page_count = int(math.ceil(weibo_count / 10.0))
             return page_count
         except KeyError:
-            logger.exception(
+            print(
                 "程序出错，错误原因可能为以下两者：\n"
                 "1.user_id不正确；\n"
                 "2.此用户微博可能需要设置cookie才能爬取。\n"
-                "解决方案：\n"
-                "请参考\n"
-                "https://github.com/dataabc/weibo-crawler#如何获取user_id\n"
-                "获取正确的user_id；\n"
-                "或者参考\n"
-                "https://github.com/dataabc/weibo-crawler#3程序设置\n"
-                "中的“设置cookie”部分设置cookie信息"
+                
             )
 
     def get_write_info(self, wrote_count):
@@ -1252,7 +1298,7 @@ class Weibo(object):
             if self.result_dir_name:
                 dir_name = self.user_config["user_id"]
             file_dir = (
-                os.path.split(os.path.realpath(__file__))[0]
+                os.getcwd()
                 + os.sep
                 + "weibo"
                 + os.sep
@@ -1267,7 +1313,7 @@ class Weibo(object):
             file_path = file_dir + os.sep + self.user_config["user_id"] + "." + type
             return file_path
         except Exception as e:
-            logger.exception(e)
+            print(e)
 
     def get_result_headers(self):
         """获取要写入结果文件的表头"""
@@ -1299,7 +1345,6 @@ class Weibo(object):
     def write_csv(self, wrote_count):
         """将爬到的信息写入csv文件"""
         write_info = self.get_write_info(wrote_count)
-        # print('写入csv:',write_info)
         result_headers = self.get_result_headers()
         result_data = [w.values() for w in write_info]
         file_path = self.get_filepath("csv")
@@ -1326,10 +1371,10 @@ class Weibo(object):
                     writer.writerows([headers])
                 writer.writerows(result_data)
         if headers[0] == "id":
-            logger.info("%d条微博写入csv文件完毕,保存路径:", self.got_count)
+            print("{}条微博写入csv文件完毕,保存路径:".format(self.got_count))
         else:
-            logger.info("%s 信息写入csv文件完毕，保存路径:", self.user["screen_name"])
-        logger.info(file_path)
+            print("{} 信息写入csv文件完毕，保存路径:".format(self.user["screen_name"]))
+        print(file_path)
 
     def update_json_data(self, data, weibo_info):
         """更新要写入json结果文件中的数据，已经存在于json中的信息更新为最新值，不存在的信息添加到data中"""
@@ -1367,15 +1412,15 @@ class Weibo(object):
         data = self.update_json_data(data, weibo_info)
         with codecs.open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False)
-        logger.info("%d条微博写入json文件完毕,保存路径:", self.got_count)
-        logger.info(path)
+        print("{}条微博写入json文件完毕,保存路径:".format(self.got_count))
+        print(path)
 
     def info_to_mongodb(self, collection, info_list):
         """将爬取的信息写入MongoDB数据库"""
         try:
             import pymongo
         except ImportError:
-            logger.warning("系统中可能没有安装pymongo库，请先运行 pip install pymongo ，再运行程序")
+            print("系统中可能没有安装pymongo库，请先运行 pip install pymongo ，再运行程序")
             sys.exit()
         try:
             from pymongo import MongoClient
@@ -1393,13 +1438,13 @@ class Weibo(object):
                 else:
                     collection.update_one({"id": info["id"]}, {"$set": info})
         except pymongo.errors.ServerSelectionTimeoutError:
-            logger.warning("系统中可能没有安装或启动MongoDB数据库，请先根据系统环境安装或启动MongoDB，再运行程序")
+            print("系统中可能没有安装或启动MongoDB数据库，请先根据系统环境安装或启动MongoDB，再运行程序")
             sys.exit()
 
     def weibo_to_mongodb(self, wrote_count):
         """将爬取的微博信息写入MongoDB数据库"""
         self.info_to_mongodb("weibo", self.weibo[wrote_count:])
-        logger.info("%d条微博写入MongoDB数据库完毕", self.got_count)
+        print("{}条微博写入MongoDB数据库完毕".format(self.got_count))
 
     def mysql_create(self, connection, sql):
         """创建MySQL数据库或表"""
@@ -1414,7 +1459,7 @@ class Weibo(object):
         try:
             import pymysql
         except ImportError:
-            logger.warning("系统中可能没有安装pymysql库，请先运行 pip install pymysql ，再运行程序")
+            print("系统中可能没有安装pymysql库，请先运行 pip install pymysql ，再运行程序")
             sys.exit()
         try:
             if self.mysql_config:
@@ -1422,7 +1467,7 @@ class Weibo(object):
             connection = pymysql.connect(**mysql_config)
             self.mysql_create(connection, sql)
         except pymysql.OperationalError:
-            logger.warning("系统中可能没有安装或正确配置MySQL数据库，请先根据系统环境安装或配置MySQL，再运行程序")
+            print("系统中可能没有安装或正确配置MySQL数据库，请先根据系统环境安装或配置MySQL，再运行程序")
             sys.exit()
 
     def mysql_create_table(self, mysql_config, sql):
@@ -1460,7 +1505,7 @@ class Weibo(object):
                 connection.commit()
             except Exception as e:
                 connection.rollback()
-                logger.exception(e)
+                print(e)
             finally:
                 connection.close()
 
@@ -1520,7 +1565,7 @@ class Weibo(object):
         # 在'weibo'表中插入或更新微博数据
         self.mysql_insert(mysql_config, "weibo", retweet_list)
         self.mysql_insert(mysql_config, "weibo", weibo_list)
-        logger.info("%d条微博写入MySQL数据库完毕", self.got_count)
+        print("{}条微博写入MySQL数据库完毕".format(self.got_count))
 
     def weibo_to_sqlite(self, wrote_count):
         con = self.get_sqlite_connection()
@@ -1547,7 +1592,7 @@ class Weibo(object):
 
         count = 0
         for weibo in weibo_list:
-            self.sqlite_insert_weibo(con, weibo)
+            # self.sqlite_insert_weibo(con, weibo)
             if (download_comment) and (weibo["comments_count"] > 0):
                 self.get_weibo_comments(
                     weibo, comment_max_count, self.sqlite_insert_comments
@@ -1565,8 +1610,8 @@ class Weibo(object):
                 if count % 20:
                     sleep(random.randint(3, 6))
 
-        for weibo in retweet_list:
-            self.sqlite_insert_weibo(con, weibo)
+        # for weibo in retweet_list:
+        #     self.sqlite_insert_weibo(con, weibo)
 
         con.close()
 
@@ -1647,9 +1692,9 @@ class Weibo(object):
         if value:
             dict[source_name] = value
 
-    def sqlite_insert_weibo(self, con: sqlite3.Connection, weibo: dict):
-        sqlite_weibo = self.parse_sqlite_weibo(weibo)
-        self.sqlite_insert(con, sqlite_weibo, "weibo")
+    # def sqlite_insert_weibo(self, con: sqlite3.Connection, weibo: dict):
+    #     sqlite_weibo = self.parse_sqlite_weibo(weibo)
+    #     self.sqlite_insert(con, sqlite_weibo, "weibo")
 
     def parse_sqlite_weibo(self, weibo):
         if not weibo:
@@ -1679,9 +1724,9 @@ class Weibo(object):
         self.sqlite_insert_user(con, self.user)
         con.close()
 
-    def sqlite_insert_user(self, con: sqlite3.Connection, user: dict):
-        sqlite_user = self.parse_sqlite_user(user)
-        self.sqlite_insert(con, sqlite_user, "user")
+    # def sqlite_insert_user(self, con: sqlite3.Connection, user: dict):
+    #     sqlite_user = self.parse_sqlite_user(user)
+    #     self.sqlite_insert(con, sqlite_user, "user")
 
     def parse_sqlite_user(self, user):
         if not user:
@@ -1702,37 +1747,37 @@ class Weibo(object):
         sqlite_user["bio"] = user["description"]
         return sqlite_user
 
-    def sqlite_insert(self, con: sqlite3.Connection, data: dict, table: str):
-        if not data:
-            return
-        cur = con.cursor()
-        keys = ",".join(data.keys())
-        values = ",".join(["?"] * len(data))
-        sql = """INSERT OR REPLACE INTO {table}({keys}) VALUES({values})
-                """.format(
-            table=table, keys=keys, values=values
-        )
-        cur.execute(sql, list(data.values()))
-        con.commit()
+    # def sqlite_insert(self, con: sqlite3.Connection, data: dict, table: str):
+    #     if not data:
+    #         return
+    #     cur = con.cursor()
+    #     keys = ",".join(data.keys())
+    #     values = ",".join(["?"] * len(data))
+    #     sql = """INSERT OR REPLACE INTO {table}({keys}) VALUES({values})
+    #             """.format(
+    #         table=table, keys=keys, values=values
+    #     )
+    #     cur.execute(sql, list(data.values()))
+    #     con.commit()
 
-    def get_sqlite_connection(self):
-        path = self.get_sqlte_path()
-        create = False
-        if not os.path.exists(path):
-            create = True
+    # def get_sqlite_connection(self):
+    #     path = self.get_sqlte_path()
+    #     create = False
+    #     if not os.path.exists(path):
+    #         create = True
 
-        con = sqlite3.connect(path)
+    #     con = sqlite3.connect(path)
 
-        if create == True:
-            self.create_sqlite_table(connection=con)
+    #     if create == True:
+    #         self.create_sqlite_table(connection=con)
 
-        return con
+    #     return con
 
-    def create_sqlite_table(self, connection: sqlite3.Connection):
-        sql = self.get_sqlite_create_sql()
-        cur = connection.cursor()
-        cur.executescript(sql)
-        connection.commit()
+    # def create_sqlite_table(self, connection: sqlite3.Connection):
+    #     sql = self.get_sqlite_create_sql()
+    #     cur = connection.cursor()
+    #     cur.executescript(sql)
+    #     connection.commit()
 
     def get_sqlte_path(self):
         return "./weibo/weibodata.db"
@@ -1824,7 +1869,7 @@ class Weibo(object):
                 lines = f.read().splitlines()
                 lines = [line.decode("utf-8-sig") for line in lines]
             except UnicodeDecodeError:
-                logger.error("%s文件应为utf-8编码，请先将文件编码转为utf-8再运行程序", user_config_file_path)
+                print("{}文件应为utf-8编码，请先将文件编码转为utf-8再运行程序".format(user_config_file_path))
                 sys.exit()
             for i, line in enumerate(lines):
                 info = line.split(" ")
@@ -1872,13 +1917,13 @@ class Weibo(object):
             # 用户id不可用
             if self.get_user_info() != 0:
                 return
-            logger.info("准备搜集 {} 的微博".format(self.user["screen_name"]))
-            if const.MODE == "append" and (
+            print("准备搜集 {} 的微博".format(self.user["screen_name"]))
+            if MODE == "append" and (
                 "first_crawler" not in self.__dict__ or self.first_crawler is False
             ):
                 # 本次运行的某用户首次抓取，用于标记最新的微博id
                 self.first_crawler = True
-                const.CHECK_COOKIE["GUESS_PIN"] = True
+                CHECK_COOKIE["GUESS_PIN"] = True
             since_date = datetime.strptime(self.user_config["since_date"], "%Y-%m-%d")
             today = datetime.strptime(str(date.today()), "%Y-%m-%d")
             if since_date <= today:
@@ -1889,7 +1934,7 @@ class Weibo(object):
                 self.start_date = datetime.now().strftime("%Y-%m-%d")
                 pages = range(self.start_page, page_count + 1)
                 for page in tqdm(pages, desc="Progress"):
-                    is_end = self.get_one_page(page)
+                    is_end = self.get_one_page(page);print("是否over",is_end)
                     if is_end:
                         break
 
@@ -1904,11 +1949,11 @@ class Weibo(object):
                         sleep(random.randint(6, 10))
                         page1 = page
                         random_pages = random.randint(1, 5)
-
+                print('写入文件开始')
                 self.write_data(wrote_count)  # 将剩余不足20页的微博写入文件
-            logger.info("微博爬取完成，共爬取%d条微博", self.got_count)
+            print("微博爬取完成，共爬取{}条微博".format(self.got_count))
         except Exception as e:
-            logger.exception(e)
+            print(e)
 
     def get_user_config_list(self, file_path):
         """获取文件中的微博id信息"""
@@ -1917,7 +1962,7 @@ class Weibo(object):
                 lines = f.read().splitlines()
                 lines = [line.decode("utf-8-sig") for line in lines]
             except UnicodeDecodeError:
-                logger.error("%s文件应为utf-8编码，请先将文件编码转为utf-8再运行程序", file_path)
+                print("{}文件应为utf-8编码，请先将文件编码转为utf-8再运行程序".format( file_path))
                 sys.exit()
             user_config_list = []
             for line in lines:
@@ -1961,19 +2006,18 @@ class Weibo(object):
                 else:
                     self.initialize_info(user_config)
                     self.get_pages()
-                logger.info("信息抓取完毕")
-                logger.info("*" * 100)
+                print("信息抓取完毕")
+                print("*" * 100)
                 if self.user_config_file_path and self.user:
                     self.update_user_config_file(self.user_config_file_path)
         except Exception as e:
-            logger.exception(e)
-
+            print(e)
 
 def get_config():
     """获取config.json文件信息"""
     config_path = os.path.split(os.path.realpath(__file__))[0] + os.sep + "config.json"
     if not os.path.isfile(config_path):
-        logger.warning(
+        print(
             "当前路径：%s 不存在配置文件config.json",
             (os.path.split(os.path.realpath(__file__))[0] + os.sep),
         )
@@ -1983,7 +2027,7 @@ def get_config():
             config = json.loads(f.read())
             return config
     except ValueError:
-        logger.error(
+        print(
             "config.json 格式不正确，请参考 " "https://github.com/dataabc/weibo-crawler#3程序设置"
         )
         sys.exit()
@@ -2032,12 +2076,12 @@ def main():
         }
         wb = Weibo(config)
         wb.start()  # 爬取微博信息
-        if const.NOTIFY["NOTIFY"]:
+        if NOTIFY["NOTIFY"]:
             push_deer("更新了一次微博")
     except Exception as e:
-        if const.NOTIFY["NOTIFY"]:
-            push_deer("weibo-crawler运行出错，错误为{}".format(e))
-        logger.exception(e)
+        if NOTIFY["NOTIFY"]:
+            push_deer("运行出错，错误为{}".format(e))
+        print(e)
 
 
 if __name__ == "__main__":
