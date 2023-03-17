@@ -13,7 +13,7 @@ headers = {
 }
 # https://github.com/YPstar-yes/Crawl-WeChat-articles/blob/master/weixin.py
 token = ""#动态 people/bai-ri-meng-yu-shi-76 
-fakeid = ""#公众号id 
+fakeid = "=="#公众号id 
 msg_type = '9'
 count=5
 nums =1
@@ -24,7 +24,7 @@ is_down_audio = 0
 is_down_img = 0
 is_down_cover=0
 is_down_comment = 0
-is_down_copyright = 1
+is_down_copyright = 0
 pass_ticket = "+cZH94eEgwqkQp//LakDZ5VV6g=="
 url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
 appmsg_token = "-hIbZ"
@@ -53,7 +53,7 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
         print("出错了",articles)
     if len(articles['app_msg_list']) == 0:
         print("done")
-        return true
+        return True
     print('文章位置',offset)
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
@@ -62,19 +62,20 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
             # ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
     for item in articles['app_msg_list']:
         try:
-            # if item['create_time'] > 1672502400:
-                # continue
-            # if item['create_time'] < 1672329600:
+            # if item['create_time'] > 1470153600:
+            #     continue
+            # if item['create_time'] < 1640966400:
             #     return True
-            if is_down_copyright == 1 and item['copyright_type'] == 0:
-               continue
             print('文章数量',nums)
-            if nums > 30000:
+            if nums > 10000:
                return True
             date = time.strftime('%Y-%m-%d', time.localtime(item['create_time']))
             title = item['title']
             link = html.unescape(item['link'])
             nums = nums+1
+            if is_down_copyright == 1 and item['copyright_type'] == 0:
+               print('过滤非原创链接',link,date)
+               continue
             print('文章链接',link,date)
             copyright="是"
             is_pay = '否'
@@ -341,7 +342,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             # dataframe = pandas.DataFrame(data_comments,columns=['评论时间','评论昵称','评论内容','评论点赞数','回复内容','评论发布国家','评论发布省份'])
             # dataframe.to_csv(date+'_'+trimName(title_article)+'.csv',encoding='utf_8_sig',index=False)
             comments_html = comments_html + '</ul></div></div>'
-            # with open('公众好文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
+            # with open('公众文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
             #     writer = csv.writer(csvfile)
             #     writer.writerows(comments_excel)
             return str(len(elected_comment)),comments_html

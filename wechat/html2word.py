@@ -41,17 +41,18 @@ def convert(url):
     doc_name = trimName(date+'-'+title.text)
     images_folder_name = doc_name
     subtitles = brower.find_elements_by_tag_name('strong')
-    contents = brower.find_element_by_class_name('rich_media_content').find_elements_by_tag_name('span')
+    contents = brower.find_elements_by_tag_name('p')
     images = brower.find_elements_by_class_name("wxw-img")
     if not os.path.exists(f'{images_folder_name}'):
         os.mkdir(f'./{images_folder_name}')
     # for subtitle in subtitles:
     #     doc.append(['title',subtitle.text,subtitle.location['y']])
     for content in contents:
-        chiildContents = content.find_elements_by_tag_name('span')
+        chiildContents = content.find_elements_by_tag_name('p')
         chiildContents2 = content.find_elements_by_tag_name('em')
         if not chiildContents and not chiildContents2:
-           doc.append(['content',content.text,content.location['y']])
+            doc.append(['content',content.text,content.location['y']])
+        
     for id,image in enumerate(images):
         img_url = image.get_attribute('data-src')
         img_name = f'./{images_folder_name}/{id}.png'
@@ -67,8 +68,8 @@ filename = input("请输入文件名：")
 with open(f'{filename}', encoding='utf-8') as f:
      contents = f.read()
 urls = contents.split("\n")
-f = open(f'{filename}', encoding='utf-8')
-csv_reader = csv.reader(f)
+# f = open(f'{filename}', encoding='utf-8')
+# csv_reader = csv.reader(f)
 print(len(urls))
 # urls=['https://mp.weixin.qq.com/s/BTrQnsZ6eKWXf5n1mWhv7A']
 if not os.path.exists(f'word'):
@@ -79,8 +80,8 @@ for i in urls:
 		convert(i)
 	except Exception as e:
 		print("转换失败",e,i)
-for line in csv_reader:
-    try:
-        convert(line[2])
-    except Exception as e:
-        print("转换失败",e,line[2])
+# for line in csv_reader:
+#     try:
+#         convert(line[2])
+#     except Exception as e:
+#         print("转换失败",e,line[2])
