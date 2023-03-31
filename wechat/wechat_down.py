@@ -1,6 +1,6 @@
 import requests,re,os,time,sys,html,sys
 from random import randint
-import traceback,urllib3
+import traceback,urllib3,demjson
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat"
@@ -49,33 +49,50 @@ def audio(res,headers,date,title):
         with open('audio/'+date+'_'+trimName(title)+'_'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
 def video(res, headers,date,title,article_url):
-    # vid = re.search(r'wxv_.{19}',res.text)
-    vids = re.findall(r'vid=(wxv_\d{19})',res.text)
-    videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",res.text)
+    # vids = re.findall(r'wxv_\d{19}',res.text)
     if not os.path.exists('video'):
         os.mkdir('video')
-    # time.sleep(2)
+    vinfo = re.findall(r'window\.__mpVideoTransInfo\s+\=\s+([\s\S]*?)\];',res.text,flags=re.S)
+    if not vinfo:
+        vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',res.text,flags=re.S)
+    videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",res.text)
+    num = 0
+    for v in vinfo:
+        v_url = re.search(r"url:\s+'(.*?)',",v)
+        # print(v,v_url)
+        if v_url:
+            video_url = html.unescape(v_url.group(1).replace(r'\x26','&'))
+            # vids = list(set(vids)) #去重
+            num+=1
+            print('正在下载视频：'+trimName(title)+'.mp4')
+            video_data = requests.get(video_url,headers=headers)
+            with open('视频链接合集.csv','a+') as f4:
+                f4.write(date+','+trimName(title)+','+video_url+','+article_url+'\n')
+            with open('video/'+date+'_'+trimName(title)+'_'+str(num)+'.mp4','wb') as f:
+                f.write(video_data.content)
+        
+    time.sleep(1)
     for i in videos:
         print(f'腾讯视频地址：http://v.qq.com/x/page/{i}.html')
         with open('视频链接合集.csv','a+') as f4:
             f4.write(date+','+trimName(title)+','+f'http://v.qq.com/x/page/{i}.html'+','+article_url+'\n')
-    for vid in vids:
-        # vid = vid.group(0)
-        print('视频id',vid)
-        url = f'https://mp.weixin.qq.com/mp/videoplayer?action=get_mp_video_play_url&preview=0&vid={vid}'
-        data = requests.get(url,headers=headers,timeout=1).json()
-        video_url = data['url_info'][0]['url']
-        video_data = requests.get(video_url,headers=headers)
-        with open('视频链接合集.csv','a+') as f4:
-            f4.write(date+','+trimName(data['title'])+','+video_url+','+article_url+'\n')
-        print('正在下载视频：'+trimName(data['title'])+'.mp4')
-        with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
-            f.write(video_data.content)
+    # for vid in vids:
+    #     # vid = vid.group(0)
+    #     print('视频id',vid)
+    #     url = f'https://mp.weixin.qq.com/mp/videoplayer?action=get_mp_video_play_url&preview=0&vid={vid}'
+    #     data = requests.get(url,headers=headers,timeout=1).json()
+    #     video_url = data['url_info'][0]['url']
+    #     video_data = requests.get(video_url,headers=headers)
+    #     with open('视频链接合集.csv','a+') as f4:
+    #         f4.write(date+','+trimName(data['title'])+','+video_url+','+article_url+'\n')
+    #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
+    #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
+    #         f.write(video_data.content)
 url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
 if not url:
-   url = input('苏生不惑 提示你，请输入公众号文章链接：')# https://mp.weixin.qq.com/s/uzRSOhiH3XbS3Vwr7jGLWg 
+   url = input('公众号苏生不惑 提示你，请输入公众号文章链接：')# https://mp.weixin.qq.com/s/uzRSOhiH3XbS3Vwr7jGLWg  https://mp.weixin.qq.com/s/goqAKIypCsI4vVLjdhmXSg
 response = requests.get(url, headers=headers)
 urls = re.findall('<a.*?href="(https?://mp.weixin.qq.com/s\?.*?)"',response.text)
 urls.insert(0,url)
@@ -100,11 +117,11 @@ for mp_url in urls:
         title = title.group(1)
         ct = ct.group(1)
         date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-        print(date,title)
+        print(date,title,html.unescape(mp_url))
         cover_data = requests.get(cover,headers=headers)
         if not os.path.exists('cover'):
             os.mkdir('cover')
-        with open('cover/'+date+'_'+trimName(title)+'_封面.jpg','wb') as f:
+        with open('cover/'+date+'_'+trimName(title)+'.jpg','wb') as f:
             f.write(cover_data.content)
         audio(res,headers,date,title)
         video(res,headers,date,title,mp_url)
@@ -115,5 +132,5 @@ for mp_url in urls:
         with open('html/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
-        with open(str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+        with open('html/'+date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
             f.write(content);print(err,mp_url)

@@ -9,15 +9,15 @@ msg_url = "https://mp.weixin.qq.com/cgi-bin/appmsg"
 Cookie = ""
 headers = {
     "Cookie": Cookie,
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 FirePHP/0.7.4",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.44",
 }
 # https://github.com/YPstar-yes/Crawl-WeChat-articles/blob/master/weixin.py
-token = ""#动态 people/bai-ri-meng-yu-shi-76 
-fakeid = "=="#公众号id 
+token = ""
+fakeid = "=="#公众号id
 msg_type = '9'
 count=5
 nums =1
-is_down = 0
+is_down = 1
 is_down_view = 0
 is_down_video = 0
 is_down_audio = 0
@@ -25,9 +25,9 @@ is_down_img = 0
 is_down_cover=0
 is_down_comment = 0
 is_down_copyright = 0
-pass_ticket = "+cZH94eEgwqkQp//LakDZ5VV6g=="
+pass_ticket = "EKEY0ZN+/=="
 url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
-appmsg_token = "-hIbZ"
+appmsg_token = "--Kt9arN4HvAQTh"
 key=""
 uin = ""
 biz=fakeid
@@ -45,12 +45,12 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
         "type": msg_type,
     }
     global nums
-    fname = '公众号历史文章列表'
+    fname = '公众号历史文章列表'#
     encoding = 'utf-8-sig'
     articles = requests.get(msg_url, headers=headers, params=params, verify=False).json()
     time.sleep(random.randint(4, 5))
     if not articles.get('app_msg_list'):
-        print("出错了",articles)
+        print("出错了",articles,params)
     if len(articles['app_msg_list']) == 0:
         print("done")
         return True
@@ -62,19 +62,19 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
             # ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
     for item in articles['app_msg_list']:
         try:
-            # if item['create_time'] > 1470153600:
+            # if item['create_time'] > 1659369600:
             #     continue
-            # if item['create_time'] < 1640966400:
+            # if item['create_time'] < 1659196800:
             #     return True
             print('文章数量',nums)
-            if nums > 10000:
-               return True
+            # if nums > 500:
+            #    return True
             date = time.strftime('%Y-%m-%d', time.localtime(item['create_time']))
             title = item['title']
             link = html.unescape(item['link'])
             nums = nums+1
             if is_down_copyright == 1 and item['copyright_type'] == 0:
-               print('过滤非原创链接',link,date)
+               print('过滤链接',link,date)
                continue
             print('文章链接',link,date)
             copyright="是"
@@ -83,7 +83,7 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
             read_num,like_num,old_like_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
             if is_down_view == 1:
                 read_num,like_num,old_like_num,reward_num = view(link,appmsg_token,uin,key,pass_ticket)
-                if read_num == "0":
+                if read_num == "error":
                     print('获取阅读数失败',link)
                     return True
             if is_down == 1:
@@ -156,11 +156,11 @@ def view(link,appmsg_token,uin,key,pass_ticket):
 wxtokenkey  777
 wxuin   
 devicetype  Windows10x64
-version 6309001c
+version 
 lang    zh_CN
-pass_ticket +cZH94eEgwqkQp//LakDZ5VV6g==
+pass_ticket +//LakDZ5VV6g==
 appmsg_token    -hIbZ
-wap_sid2    CIaQ++MIrkpaAGOA1AAQ==
+wap_sid2    CIaQ++==
     """
     headers = {
         "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
@@ -186,6 +186,8 @@ wap_sid2    CIaQ++MIrkpaAGOA1AAQ==
 
     content = requests.post(url, headers=headers, data=data, params=params).json()
     # print(params,content,content["appmsgstat"]["read_num"], content["appmsgstat"]["like_num"])
+    if not 'appmsgstat' in content:
+        return 'error','0','0','0'
     try:
         readNum = content["appmsgstat"]["read_num"]
     except:
@@ -342,7 +344,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             # dataframe = pandas.DataFrame(data_comments,columns=['评论时间','评论昵称','评论内容','评论点赞数','回复内容','评论发布国家','评论发布省份'])
             # dataframe.to_csv(date+'_'+trimName(title_article)+'.csv',encoding='utf_8_sig',index=False)
             comments_html = comments_html + '</ul></div></div>'
-            # with open('公众文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
+            # with open('公众好文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
             #     writer = csv.writer(csvfile)
             #     writer.writerows(comments_excel)
             return str(len(elected_comment)),comments_html

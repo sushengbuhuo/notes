@@ -11,36 +11,36 @@ def trimName(name):
 contents = ""
 nums = 0
 encoding = 'utf-8-sig'
-fname="2023公众号历史文章"
+fname="公众号历史文章"
 urls=[]
-# with open(f'公众号浙江宣传历史文章.md', encoding='utf-8') as f:
-#      contents = f.read()
-# urls = re.findall('\]\((.*?)\)',contents)
+with open(f'公众号历史文章列表.md', encoding='utf-8') as f:
+     contents = f.read()
+urls = re.findall('\]\((.*?)\)',contents)
 
-f = open('公众号历史文章列表.csv', encoding='UTF8')
-csv_reader = csv.reader(f)
+# f = open('公众号历史文章列表.csv', encoding='UTF8')
+# csv_reader = csv.reader(f)
 print(len(urls))
 with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
     f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
-# with open('公众号文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
-#     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
+with open('公众号上海发布历史文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
+    ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
 def down(url):
     response = requests.get(url, headers=headers)
     global nums
     encoding = 'utf-8-sig'
-    is_down_view = 1
+    is_down_view = 0
     is_down = 1
     is_down_video = 0
     is_down_audio = 0
     is_down_img = 0
     is_down_cover=0
     is_down_comment = 1
-    pass_ticket = "+cZH94eEgwqkQp/DODI0ZV0GLk1HxQFopc6TGLaxBmCC9PA5jXu4MXxdBU62GaJIKe8EEn1KkqGQBLx0H/+qRw=="
+    pass_ticket = "/2dp2MImK04oT01lBLKEjlbCDFn35OqMekPGYLmzxSzVWYo52axsiqQ9HxweAg=="
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
-    appmsg_token = "1208_KWh1z94nuaoifK3AUEJfyTEGrGBPOXmxBtQ7Y_VdL6B572WI1BRtMgBrUKgCD4OPBw7B8J-6S3k18Udr"
+    appmsg_token = "--ape7AuCsIFgo1lzlGGJNhjO6JwQ9Dd8N"
     key=""
-    uin = ""
-    biz="Mzg5Mjc3NzQzMA=="
+    uin = "=="
+    biz="=="
     content = response.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com').replace('因网络连接问题，剩余内容暂无法加载。', '')+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
     try:
         title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
@@ -68,7 +68,7 @@ def down(url):
         read_num,like_num,old_like_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
         if is_down_view == 1:
             read_num,like_num,old_like_num,reward_num = view(url,appmsg_token,uin,key,pass_ticket)
-            if read_num == "0":
+            if read_num == "error":
             	print('获取阅读数失败',url)
             	return "error"
         if is_down == 1:
@@ -76,11 +76,30 @@ def down(url):
                country_name=re.search("countryName: '(.*?)'",content).group(1)
                province_name=re.search("provinceName: '(.*?)'",content).group(1)
             except Exception as e:
-               print('获取地区失败',e,url)
+               pass
+               # print('获取地区失败',e,url)
             if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                 is_pay = '是'
             if '>原创</span>' in content:
         	    copyright="是"
+            #下载视频
+            if is_down_video:
+                try:
+                    videos = video(content,headers,date,url,trimName(title))
+                except Exception as e:
+                    print('下载视频失败',e,url)
+            #下载音频
+            if is_down_audio:
+                try:
+                    audios = audio(content,headers,date,trimName(title))
+                except Exception as e:
+                    print('下载音频失败',e,url)
+            #下载图片
+            if is_down_img:
+                try:
+                    imgs(response,headers,date,trimName(title))
+                except Exception as e:
+                    print('下载图片失败',e,url)
             if is_down_comment == 1:
                 try:
                     comments_num,comments_html = comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url)
@@ -112,11 +131,11 @@ def view(link,appmsg_token,uin,key,pass_ticket):
 wxtokenkey	777
 wxuin	
 devicetype	Windows10x64
-version	6309001c
+version	63090217
 lang	zh_CN
-pass_ticket	+cZH94eEgwqkQp//+qRw==
-appmsg_token	-6S3k18Udr
-wap_sid2	CIaQ++MMn/pKAGOA1AAQ==
+pass_ticket	//dIgJeh9pDCneDtzXzN57/saiN5w==
+appmsg_token	-
+wap_sid2	+==
     """
     headers = {
         "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
@@ -140,7 +159,9 @@ wap_sid2	CIaQ++MMn/pKAGOA1AAQ==
         "wxtoken": "777",
     }
     content = requests.post(url, headers=headers, data=data, params=params).json()
-    # print(params,content,content["appmsgstat"]["read_num"], content["appmsgstat"]["like_num"])
+    # print(params,content)
+    if not 'appmsgstat' in content:
+    	return 'error','0','0','0'
     try:
         readNum = content["appmsgstat"]["read_num"]
     except:
@@ -161,11 +182,11 @@ wap_sid2	CIaQ++MMn/pKAGOA1AAQ==
     print("点赞数:"+str(likeNum))
     print("在看数:"+str(old_like_num))
     return str(readNum), str(likeNum),str(old_like_num),str(reward_num)
-def video(res, headers,date,article_url,title):
+def video(content, headers,date,article_url,title):
     # vid = re.search(r'wxv_.{19}',res.text).group(0)
     time.sleep(1)
     # print('视频id',vid)
-    vids = re.findall(r'vid=(wxv_\d{19})',res.text)
+    vids = re.findall(r'vid=(wxv_\d{19})',content)
     videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",res.text)
     num = 0
     if not os.path.exists('video'):
@@ -194,9 +215,11 @@ def video(res, headers,date,article_url,title):
             # f.write(video_data.content)
     return str(num)
 
-def audio(res,headers,date,title):
+def audio(content,headers,date,title):
     # aid = re.search(r'"voice_id":"(.*?)"',res.text).group(1)
-    aids = re.findall(r'"voice_id":"(.*?)"',res.text)
+    aids = re.findall(r'"voice_id":"(.*?)"',content)
+    if not aids:
+        aids = re.findall(r'voiceid : "(.*?)"',content)
     time.sleep(1)
     num = 0
     if not os.path.exists('audio'):
@@ -209,20 +232,23 @@ def audio(res,headers,date,title):
         with open('audio/'+date+'___'+trimName(title)+'___'+str(num)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
     return str(num)
-def imgs(content,headers,date,title):
-    imgs=re.findall('data-src="(.*?)"',content)
+def imgs(response,headers,date,title):
+    imgs=re.findall('data-src="(.*?)"',response.text)
     time.sleep(1)
     num = 0
     if not os.path.exists('imgs'):
         os.mkdir('imgs')
     for i in imgs:
+        if not re.match(r'^https?://.*',i):
+            continue
         num+=1
         img_data = requests.get(i,headers=headers)
         print('正在下载图片：'+i)
-        with open('imgs/'+date+'___'+title+'___'+str(num)+'.jpg','wb') as f6:
+        with open('imgs/'+date+'_'+title+'_'+str(num)+'.jpg','wb') as f6:
             f6.write(img_data.content)
     return str(num)
 def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
+    time.sleep(random.randint(1, 2))
     str_comment = re.search(r'var comment_id = "(.*)" \|\| "(.*)" \* 1;', content) or re.search(r"d.comment_id = xml \? getXmlValue\('comment_id.DATA'\) : '(.*)';", content)
     str_msg = re.search(r"var appmsgid = \"\" \|\| '' \|\| '(.*)'", content) or re.search(r"window.appmsgid = '' \|\| '' \|\| '(.*)';", content)  or re.search(r"var appmsgid = \"(.*)\" \|\| '' \|\| '';",content)
     str_token = re.search(r'window.appmsg_token = "(.*)";', content)
@@ -297,14 +323,20 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             # dataframe = pandas.DataFrame(data_comments,columns=['评论时间','评论昵称','评论内容','评论点赞数','回复内容','评论发布国家','评论发布省份'])
             # dataframe.to_csv(date+'_'+trimName(title_article)+'.csv',encoding='utf_8_sig',index=False)
             comments_html = comments_html + '</ul></div></div>'
-            # with open('公众号文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
+            # with open('公众号历史文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
             #     writer = csv.writer(csvfile)
             #     writer.writerows(comments_excel)
             return str(len(elected_comment)),comments_html
         return '0',''
     return '0',''
-for line in csv_reader:
-	print(line[0],line[1])
+# for line in csv_reader:
+#     if line[2] == "文章链接":
+#         continue
+#     res = down(line[2])
+#     if not res:
+#        continue
+#     if res == "error":
+#        break
 for item in urls:
     res = down(item)
     if not res:
