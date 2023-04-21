@@ -1,13 +1,14 @@
 import time
-import re
-import os
+import re,os
 import requests,json
 from bs4 import BeautifulSoup
 from pdf2docx import Converter
+import pdfkit
 #convert
 def to_pdf():
-    import pdfkit
-    print('导出 PDF...')
+    print('转换PDF...')
+    if not os.path.exists('pdf'):
+        os.mkdir('pdf')
     htmls = []
     for root, dirs, files in os.walk('.'):
     	for name in files:
@@ -21,8 +22,10 @@ def to_pdf():
     # print(htmls)
     # pdfkit.from_file(sorted(htmls), 'out.pdf')
 def to_word():
-    print('导出 word...')
+    print('转换word...')
     htmls = []
+    if not os.path.exists('word'):
+        os.mkdir('word')
     for root, dirs, files in os.walk('.'):
         for name in files:
             if name.endswith(".pdf"):
@@ -37,4 +40,4 @@ def to_word():
     # print(htmls)
     # pdfkit.from_file(sorted(htmls), 'out.pdf')
 to_pdf()
-to_word()
+# to_word()
