@@ -1,7 +1,7 @@
 import asyncio,os
 from pyppeteer import launch
 import tkinter
-
+from urllib import parse
 if not os.path.exists('pdf'):
     os.mkdir('pdf')
 async def main():
@@ -10,6 +10,7 @@ async def main():
         for name in files:
             if name.endswith(".html"):
                 print(name)
+                name=parse.quote(name)
                 try:
                     browser = await launch()
                     page = await browser.newPage()
@@ -49,7 +50,7 @@ async def main():
                 }, 100);
                 });
                    }''')
-                    await page.pdf({"path": 'pdf/'+name.replace('.html', '')+'.pdf', "format": 'A4'})
+                    await page.pdf({"path": 'pdf/'+parse.unquote(name).replace('.html', '')+'.pdf', "format": 'A4'})
                     await browser.close()
                 except Exception as e:
                     print(e)

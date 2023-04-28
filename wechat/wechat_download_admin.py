@@ -98,7 +98,7 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                     with open(date+'-'+trimName(item['title'])+'.html', 'w', encoding='utf-8') as f:
                         f.write(content+comments_html)
                 except Exception as err:
-                    with open(date+'-'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+                    with open(date+'-'+str(random.randint(1,10))+'.html', 'w', encoding='utf-8') as f:
                         f.write(content+comments_html)
                 try:
                    country_name=re.search("countryName: '(.*?)'",content).group(1)
