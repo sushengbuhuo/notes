@@ -120,6 +120,8 @@ def down(url):
             # except Exception as err:
             #     with open(date+'-'+str(random.randint(1,10))+'.html', 'w', encoding='utf-8') as f:
             #         f.write(content+comments_html)
+        with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
+            f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+''+ '\n\n'+ '\n\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
             f.write(date+','+trimName(title) + ','+url+ ','+""+ ','+author+','+cover+','+copyright+ ','+"1"+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
         return True

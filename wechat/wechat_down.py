@@ -92,10 +92,17 @@ url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
 if not url:
-   url = input('公众号苏生不惑 提示你，请输入公众号文章链接：')# https://mp.weixin.qq.com/s/uzRSOhiH3XbS3Vwr7jGLWg  https://mp.weixin.qq.com/s/goqAKIypCsI4vVLjdhmXSg
-response = requests.get(url, headers=headers)
-urls = re.findall('<a.*?href="(https?://mp.weixin.qq.com/s\?.*?)"',response.text)
-urls.insert(0,url)
+   url = input('公众号苏生不惑 提示你，请输入公众号文章链接或者文件名：')# https://mp.weixin.qq.com/s/uzRSOhiH3XbS3Vwr7jGLWg  https://mp.weixin.qq.com/s/goqAKIypCsI4vVLjdhmXSg
+if os.path.exists(url):
+    contents = ''
+    with open(url, encoding='utf-8') as f:
+        contents = f.read()
+    urls=contents.split('\n')
+else:
+    response = requests.get(url, headers=headers)
+    urls = re.findall('<a.*?href="(https?://mp.weixin.qq.com/s\?.*?)"',response.text)
+    urls.insert(0,url)
+
 print('文章总数：',len(urls))
 urls_history = get_history()
 for mp_url in urls:

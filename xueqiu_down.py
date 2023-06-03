@@ -16,22 +16,24 @@ def articles(user_id,page,tp,headers):
     if len(res["statuses"]) > 0:
         for v in res["statuses"]:
             date = time.strftime('%Y-%m-%d', time.localtime(v['created_at'] / 1000))
-            # if num > 20:
+            # if num > 200:
             #     print('下载完成')
             #     return False
             # if v['mark'] == 0 and v['created_at'] < 1672502400000:
             #     return False
             res = requests.get('https://xueqiu.com'+v['target'],verify=False, headers=headers)
+            if not v['title']:
+                v['title'] = str(v['id'])
             try:
                 comments_html = re.search(r'<article class="article__bd">(.*)</article>', res.text).group(1)
                 
                 article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{comments_html}</article></div></body></html>'
                 # article_content=res.text
-                with open('xueqiu/'+date+trimName(v['title'])+'.html', 'w', encoding='utf-8') as f:
+                with open('xueqiu/'+date+'_'+trimName(v['title'])+'.html', 'w', encoding='utf-8') as f:
                     f.write(article_content)
             except Exception as err:
                 print('出错了',err,'https://xueqiu.com'+v['target'])
-                with open('xueqiu/'+str(random.randint(1,10000))+'.html', 'w', encoding='utf-8') as f:
+                with open('xueqiu/'+date+'_'+str(random.randint(1,10000))+'.html', 'w', encoding='utf-8') as f:
                     f.write(res.text)
             print(f'开始下载第{num}条数据',date,trimName(v['title']),'https://xueqiu.com'+v['target'])
             num +=1
@@ -47,7 +49,7 @@ tp=input('公众号苏生不惑提示你，是否只下载长文：')
 if not cookie:
     sys.exit('cookie为空')
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63040026)",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 FirePHP/0.7.4",
     }
 
 headers['Cookie'] = cookie
