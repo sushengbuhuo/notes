@@ -88,6 +88,7 @@ def video(res, headers,date,title,article_url):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
+print('此工具更新于2023年6月23日')
 url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
@@ -104,8 +105,8 @@ else:
     urls.insert(0,url)
 
 print('文章总数：',len(urls))
-urls_history = get_history()
 for mp_url in urls:
+    urls_history = get_history()
     if html.unescape(mp_url) in urls_history:
         print('已经下载过文章:'+html.unescape(mp_url))
         continue
@@ -125,19 +126,19 @@ for mp_url in urls:
         ct = ct.group(1)
         date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
         print(date,title,html.unescape(mp_url))
-        cover_data = requests.get(cover,headers=headers)
-        if not os.path.exists('cover'):
-            os.mkdir('cover')
-        with open('cover/'+date+'_'+trimName(title)+'.jpg','wb') as f:
-            f.write(cover_data.content)
-        audio(res,headers,date,title)
-        video(res,headers,date,title,mp_url)
-        images(res,headers,date,title)
+        # cover_data = requests.get(cover,headers=headers)
+        # if not os.path.exists('cover'):
+        #     os.mkdir('cover')
+        # with open('cover/'+date+'_'+trimName(title)+'.jpg','wb') as f:
+        #     f.write(cover_data.content)
+        # audio(res,headers,date,title)
+        # video(res,headers,date,title,mp_url)
+        # images(res,headers,date,title)
         if not os.path.exists('html'):
             os.mkdir('html')
         save_history(html.unescape(mp_url))
         with open('html/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
-        with open('html/'+date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+        with open('html/'+str(randint(10,10000))+'.html', 'w', encoding='utf-8') as f:
             f.write(content);print(err,mp_url)

@@ -1,6 +1,6 @@
 import asyncio,os
 from pyppeteer import launch
-import tkinter
+import tkinter,time
 from urllib import parse
 if not os.path.exists('pdf'):
     os.mkdir('pdf')
@@ -9,7 +9,7 @@ async def main():
         files.sort(reverse = True)
         for name in files:
             if name.endswith(".html"):
-                print(name)
+                print(name,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
                 name=parse.quote(name)
                 try:
                     browser = await launch()

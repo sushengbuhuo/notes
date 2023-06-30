@@ -1,4 +1,3 @@
-
 import codecs
 import copy
 import csv
@@ -24,9 +23,11 @@ class Weibo(object):
         self.filter = config[
             'filter']  # 取值范围为0、1,程序默认值为0,代表要爬取用户的全部微博,1代表只爬取用户的原创微博
         since_date = str(config['since_date'])
+        end_date = str(config['end_date'])
         if since_date.isdigit():
             since_date = str(date.today() - timedelta(int(since_date)))
         self.since_date = since_date  # 起始时间，即爬取发布日期从该值到现在的微博，形式为yyyy-mm-dd
+        self.end_date = end_date 
         self.write_mode = config[
             'write_mode']  # 结果信息保存类型，为list形式，可包含txt、csv、json、mongo和mysql五种类型
         self.pic_download = config[
@@ -46,7 +47,8 @@ class Weibo(object):
             self.user_config_file_path = ''
             user_config_list = [{
                 'user_uri': user_id,
-                'since_date': self.since_date
+                'since_date': self.since_date,
+                'end_date': self.end_date
             } for user_id in user_id_list]
         self.user_config_list = user_config_list  # 要爬取的微博用户的user_config列表
         self.user_config = {}  # 用户配置,包含用户id和since_date
@@ -140,7 +142,7 @@ class Weibo(object):
             nickname = nickname[:-3]
             if nickname == u'登录 - 新' or nickname == u'新浪':
                 self.write_log()
-                sys.exit(u'cookie错误或已过期,请按照README中方法重新获取')
+                sys.exit(u'cookie错误或已过期')
             return nickname
         except Exception as e:
             print('Error: ', e)
@@ -623,7 +625,7 @@ class Weibo(object):
         print(u'点赞数：%d' % weibo['up_num'])
         print(u'转发数：%d' % weibo['retweet_num'])
         print(u'评论数：%d' % weibo['comment_num'])
-        print(u'url：https://weibo.cn/comment/%s' % weibo['id'])
+        print(u'链接：%s' % weibo['id'])
 
     def is_pinned_weibo(self, info):
         """判断微博是否为置顶微博"""
@@ -638,7 +640,7 @@ class Weibo(object):
         try:
             url = 'https://weibo.cn/%s?page=%d' % (
                 self.user_config['user_uri'], page)
-            print("请求地址:",url)
+            # print("请求地址:",url)
             selector = self.handle_html(url)
             info = selector.xpath("//div[@class='c']")
             is_exist = info[0].xpath("div/span[@class='ctt']")
@@ -652,11 +654,12 @@ class Weibo(object):
                         publish_time = self.str_to_time(weibo['publish_time'])
                         since_date = self.str_to_time(
                             self.user_config['since_date'])
-                        if publish_time > self.str_to_time('2023-01-01') :
+                        if publish_time > self.str_to_time(self.user_config['end_date']) :
                             print("时间过滤:",weibo['publish_time'])
                             continue
                         if publish_time < since_date:
                             if self.is_pinned_weibo(info[i]):
+                                # print('置顶微博',publish_time,info[i]) 2条置顶微博出问题5617567207
                                 continue
                             else:
                                 print(u'{}已获取{}({})的第{}页微博{}'.format(
@@ -1074,14 +1077,14 @@ class Weibo(object):
         try:
             for user_config in self.user_config_list:
                 self.initialize_info(user_config)
-                print('*' * 100)
+                # print('*' * 100)
                 self.get_weibo_info()
-                print(u'信息抓取完毕')
-                print('*' * 100)
+                print(u'抓取结束')
+                # print('*' * 100)
                 if self.user_config_file_path:
                     self.update_user_config_file(self.user_config_file_path)
                 csv_fp = f"weibo/{self.user['nickname']}/{self.user['id']}.csv"
-                print(f"词云生成：{self.user['nickname']}")
+                # print(f"词云生成：{self.user['nickname']}")
                 # general_eda(csv_fp)
         except Exception as e:
             print('Error: ', e)
@@ -1094,12 +1097,15 @@ def general_eda(csv_fp):
 
 def main():
     try:
+        print('此工具更新于2023年6月23日')
         uid = input('请输入微博uid：')
         is_filter = int(input('是否只抓取原创微博：'))
-        # since_date = input('请输入开始时间，比如2020-01-01：')
+        since_date = input('请输入开始时间，比如2020-01-01：')
+        end_date = input('请输入结束时间，比如2023-01-01：')
         pic_download = int(input('是否下载图片：'))
         video_download = int(input('是否下载视频：'))
-        # cookie = input('请输入微博cookie：')
+        cookie = input('请输入微博cookie：')
+        # cookie=''
         if uid == '':
             print('微博uid为空')
             os._exit(1)
@@ -1118,6 +1124,7 @@ def main():
             "user_id_list": [uid],
             "filter": is_filter,
             "since_date": since_date,
+            "end_date": end_date,
             "write_mode": ["csv"],
             "pic_download": pic_download,
             "video_download": video_download,

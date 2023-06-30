@@ -2,9 +2,15 @@ import re,requests,os,html,random
 import traceback,urllib3,time,sys
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 num = 1
+def str_to_time(text):
+    if ':' in text:
+        result = time.strptime(text, '%Y-%m-%d %H:%M:%S')
+    else:
+        result = time.strptime(text, '%Y-%m-%d')
+    return time.mktime(result)
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
-def articles(user_id,page,tp,headers):
+def articles(user_id,page,tp,headers,since,over):
     url = f'https://xueqiu.com/v4/statuses/user_timeline.json?user_id={user_id}&page={page}'
     if int(tp) > 0:
         url = f'https://xueqiu.com/v4/statuses/user_timeline.json?user_id={user_id}&page={page}&type=2'
@@ -19,8 +25,10 @@ def articles(user_id,page,tp,headers):
             # if num > 200:
             #     print('下载完成')
             #     return False
-            # if v['mark'] == 0 and v['created_at'] < 1672502400000:
-            #     return False
+            if (v['created_at'] / 1000) > str_to_time(over):
+                continue
+            if v['mark'] == 0 and (v['created_at'] / 1000) < str_to_time(since):
+                return False
             res = requests.get('https://xueqiu.com'+v['target'],verify=False, headers=headers)
             if not v['title']:
                 v['title'] = str(v['id'])
@@ -42,10 +50,12 @@ def articles(user_id,page,tp,headers):
     return True 
 url = input('公众号苏生不惑提示你，请输入雪球主页链接：')
 if not url:
-	# url = 'https://xueqiu.com/u/4104161666'
+	url = 'https://xueqiu.com/u/4104161666'
 	sys.exit('链接为空')
 cookie = input('公众号苏生不惑提示你，请输入雪球cookie：')
 tp=input('公众号苏生不惑提示你，是否只下载长文：')
+since=input('公众号苏生不惑提示你，输入开始时间：')
+over=input('公众号苏生不惑提示你，输入结束时间：')
 if not cookie:
     sys.exit('cookie为空')
 headers = {
@@ -62,7 +72,7 @@ with open(f'雪球文章数据.csv', 'a+', encoding='utf-8-sig') as f:
     f.write('文章日期'+','+'文章标题' + ','+'文章链接'+','+'文章简介'+ ','+'点赞数'+ ','+'转发数'+ ','+'评论数'+'\n')
 while True:
     print("页数：",page)
-    res = articles(user_id,page,tp,headers)
+    res = articles(user_id,page,tp,headers,since,over)
     time.sleep(2)
     if not res:
         break
