@@ -1,7 +1,7 @@
 import asyncio,os
 from pyppeteer import launch
 import tkinter,time
-from urllib import parse
+# from playwright.sync_api import sync_playwright
 if not os.path.exists('pdf'):
     os.mkdir('pdf')
 async def main():
@@ -10,7 +10,6 @@ async def main():
         for name in files:
             if name.endswith(".html"):
                 print(name,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
-                name=parse.quote(name)
                 try:
                     browser = await launch()
                     page = await browser.newPage()
@@ -23,10 +22,10 @@ async def main():
                     #height = tk.winfo_screenheight()
                     #tk.quit()
                     #print(f'设置窗口为：width：{width} height：{height}')
+
                     # 设置网页 视图大小
                     #await page.setViewport(viewport={'width': width, 'height': height})
                     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3542.0 Safari/537.36')
-                    # await page.setExtraHTTPHeaders({"referer":"https://weibo.com/"})
                     await page.goto(url)
                     # page_text = await page.content()  # 页面内容
                     await page.evaluate('''async () => {
@@ -50,13 +49,27 @@ async def main():
                 }, 100);
                 });
                    }''')
-                    await page.pdf({"path": 'pdf/'+parse.unquote(name).replace('.html', '')+'.pdf', "format": 'A4'})
+                    await page.pdf({"path": 'pdf/'+name.replace('.html', '')+'.pdf', "format": 'A4'})
                     await browser.close()
                 except Exception as e:
                     print(e)
         # break
         # htmls += [name for name in files if name.endswith(".html")]
     # print(htmls)
-
+async def main2():
+    for root, dirs, files in os.walk('.'):
+        files.sort(reverse = True)
+        for name in files:
+            if name.endswith(".html"):
+                print(name,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
+                try:
+                    pdf_file = 'pdf/'+name.replace('.html', '')+'.pdf'
+                    os.system(f'playwright pdf {name} {pdf_file}')
+                    # os.system(f'wkhtmltopdf {name} {pdf_file}')
+                except Exception as e:
+                    print(e)
+        # break
+        # htmls += [name for name in files if name.endswith(".html")]
+    # print(htmls)
 if __name__ == '__main__':
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.get_event_loop().run_until_complete(main2())
