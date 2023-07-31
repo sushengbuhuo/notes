@@ -21,6 +21,8 @@ def save_history(url):
         f.write(url.strip() + '\n')
 def images(res,headers,date,title):
     imgs=re.findall('data-src="(.*?)"',res.text)
+    imgs2= re.findall("cdn_url: '(.*?)',",res.text)
+    imgs.extend(imgs2)
     time.sleep(1)
     num = 0
     if not os.path.exists('images'):
@@ -88,7 +90,7 @@ def video(res, headers,date,title,article_url):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('此工具更新于2023年6月23日')
+print('此工具更新于2023年7月23日')
 url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
@@ -103,7 +105,7 @@ else:
     response = requests.get(url, headers=headers)
     urls = re.findall('<a.*?href="(https?://mp.weixin.qq.com/s\?.*?)"',response.text)
     urls.insert(0,url)
-
+urls = [x for x in urls if x != '']
 print('文章总数：',len(urls))
 for mp_url in urls:
     urls_history = get_history()
@@ -126,14 +128,14 @@ for mp_url in urls:
         ct = ct.group(1)
         date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
         print(date,title,html.unescape(mp_url))
-        # cover_data = requests.get(cover,headers=headers)
-        # if not os.path.exists('cover'):
-        #     os.mkdir('cover')
-        # with open('cover/'+date+'_'+trimName(title)+'.jpg','wb') as f:
-        #     f.write(cover_data.content)
-        # audio(res,headers,date,title)
-        # video(res,headers,date,title,mp_url)
-        # images(res,headers,date,title)
+        cover_data = requests.get(cover,headers=headers)
+        if not os.path.exists('cover'):
+            os.mkdir('cover')
+        with open('cover/'+date+'_'+trimName(title)+'.jpg','wb') as f:
+            f.write(cover_data.content)
+        audio(res,headers,date,title)
+        video(res,headers,date,title,mp_url)
+        images(res,headers,date,title)
         if not os.path.exists('html'):
             os.mkdir('html')
         save_history(html.unescape(mp_url))

@@ -11,7 +11,7 @@ async def main():
             if name.endswith(".html"):
                 print(name,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
                 try:
-                    browser = await launch()
+                    browser = await launch()# {'args': ['--disable-infobars'],'userDataDir': './userdata'} 登录后保存cookie
                     page = await browser.newPage()
                     # url = "https://mp.weixin.qq.com/s/6VBXs19icV0O5hT7cHYwgw"
                     url = os.getcwd()+f"/{name}"
@@ -22,12 +22,16 @@ async def main():
                     #height = tk.winfo_screenheight()
                     #tk.quit()
                     #print(f'设置窗口为：width：{width} height：{height}')
-
+                    # await asyncio.sleep(4.12)
                     # 设置网页 视图大小
                     #await page.setViewport(viewport={'width': width, 'height': height})
-                    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3542.0 Safari/537.36')
+                    #参数 https://ld246.com/article/1566221786951  https://blog.csdn.net/weixin_45961774/article/details/112848584
+                    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36')
+                    # await page.evaluateOnNewDocument('function(){Object.defineProperty(navigator, "webdriver", {get: () => undefined})}')
+                    # await page.setExtraHTTPHeaders(headers={"referer":"https://weibo.com"})
                     await page.goto(url)
                     # page_text = await page.content()  # 页面内容
+                    # cookies = await page.cookies()  # 页面内容
                     await page.evaluate('''async () => {
                     await new
                 Promise((resolve, reject) => {
@@ -46,7 +50,7 @@ async def main():
                 clearInterval(timer);
                 resolve();
                 }
-                }, 100);
+                }, 200);
                 });
                    }''')
                     await page.pdf({"path": 'pdf/'+name.replace('.html', '')+'.pdf', "format": 'A4'})
@@ -72,4 +76,4 @@ async def main2():
         # htmls += [name for name in files if name.endswith(".html")]
     # print(htmls)
 if __name__ == '__main__':
-    asyncio.get_event_loop().run_until_complete(main2())
+    asyncio.get_event_loop().run_until_complete(main())

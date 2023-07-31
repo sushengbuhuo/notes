@@ -34,7 +34,7 @@ def articles(user_id,page,tp,headers,since,over):
                 v['title'] = str(v['id'])
             try:
                 comments_html = re.search(r'<article class="article__bd">(.*)</article>', res.text).group(1)
-                
+                comments_html = '<h4 class="">发布时间：'+date+'</h4>'+comments_html
                 article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{comments_html}</article></div></body></html>'
                 # article_content=res.text
                 with open('xueqiu/'+date+'_'+trimName(v['title'])+'.html', 'w', encoding='utf-8') as f:
