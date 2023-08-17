@@ -24,7 +24,7 @@ with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
     f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
 # with open('公众号历史文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
 #     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
-def down(url):
+def down(url,position,copyright):
     response = requests.get(url, headers=headers)
     global nums
     encoding = 'utf-8-sig'
@@ -61,7 +61,7 @@ def down(url):
         print('文章数量',nums)
         print('文章链接',url,date)
         nums = nums+1
-        copyright="否"
+        # copyright="否"
         is_pay = '否'
         province_name = country_name = comments_html=''
         read_num,like_num,old_like_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
@@ -79,8 +79,8 @@ def down(url):
                # print('获取地区失败',e,url)
             if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                 is_pay = '是'
-            if '>原创</span>' in content:
-        	    copyright="是"
+            # if '>原创</span>' in content:
+        	   #  copyright="是"
             #下载视频
             if is_down_video:
                 try:
@@ -120,10 +120,10 @@ def down(url):
             # except Exception as err:
             #     with open(date+'-'+str(random.randint(1,10))+'.html', 'w', encoding='utf-8') as f:
             #         f.write(content+comments_html)
-        with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
-            f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+''+ '\n\n'+ '\n\n')
+        # with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
+        #     f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+''+ '\n\n'+ '\n\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write(date+','+trimName(title) + ','+url+ ','+""+ ','+author+','+cover+','+copyright+ ','+"1"+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+            f.write(date+','+trimName(title) + ','+url+ ','+""+ ','+author+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
         return True
     except Exception as e:
     	print(e,url)
@@ -333,13 +333,13 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
 for line in csv_reader:
     if line[2] == "文章链接":
         continue
-    res = down(line[2])
+    res = down(line[2],line[8],line[7])
     if not res:
        continue
     if res == "error":
        break
 for item in urls:
-    res = down(item)
+    res = down(item,0,'否')
     if not res:
        continue
     if res == "error":
