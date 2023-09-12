@@ -20,7 +20,7 @@ class NewToutiao():
         self.get_ttwebid()
         self.get_MONITOR_WEB_ID()
         self.cookie = self.get_cookie()
-        self.filename = ''
+        self.filename = '交易人生'
         self.down = 1
         headers = {
             'authority': 'www.toutiao.com',
@@ -29,7 +29,7 @@ class NewToutiao():
             'accept': 'application/json, text/plain, */*',
             # 'accept-encoding': 'gzip, deflate, br',
             'accept-language': 'zh-CN,zh;q=0.9',
-            'cookie': '',
+            'cookie': 'csrftoken=8339b620af18f71f60ed1325ef0f7bcf',
             'referer': self.url,
             'sec-fetch-dest': 'empty',
             'sec-fetch-mode': 'cors',
@@ -41,10 +41,12 @@ class NewToutiao():
             f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'阅读数'+','+'评论数'+','+'点赞数'+'\n')
         while True:
             content = self.get_data()
-            time.sleep(2)
+            time.sleep(3)
             if not content or not content['data']:
                 break
             for i in content['data']:
+                if i.get('cell_type') == 202:
+                    continue
                 if not i.get('item_id'):
                     continue
                 fav = 0
@@ -55,15 +57,18 @@ class NewToutiao():
                     try:
                         comments_html = html.unescape(re.search(r'<div class="article-content">(.*)</article></div>', res.text).group(1))
                         fav = re.search(r'aria-label="点赞(.*?)"', res.text).group(1)
-                        time_str = re.search(r'<span class="time">(.*?)</span>', res.text).group(1)
+                        time_search = re.search(r'<span class="time">(.*?)</span>', res.text)
+                        if not time_search:
+                            time_search = re.search(r'<div class="article-meta"><span class="original-tag">.*</span><span>(.*?)</span>', res.text)
+                        time_str = time_search.group(1);print(time_str)
                         date=time_str[:10]
                         article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{comments_html}</article></div></body></html>'
                         with open('html/'+date+'-'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
                             f.write(article_content)
                     except Exception as err:
                         print('出错了',err,i['item_id'],'https://www.toutiao.com/article/'+i['item_id'])
-                        with open('html/'+str(randint(1,1000))+'.html', 'w', encoding='utf-8') as f:
-                            f.write(article_content)
+                        # with open('html/'+str(randint(1,100))+'.html', 'w', encoding='utf-8') as f:
+                        #     f.write(article_content)
                 image_url = ''
                 if i.get('image_list'):
                     image_url=i['image_list'][0]['url']
@@ -71,6 +76,8 @@ class NewToutiao():
                      f2.write(trimName(i['behot_time'])+','+trimName(i['title'])+','+ 'https://www.toutiao.com/article/'+i['item_id']+ ','+trimName(i['abstract'])+ ','+trimName(i['source'])+','+image_url+','+ i['go_detail_count']+ ','+i['comments_count']+ ','+str(fav)+'\n')
             #下载微头条
             for i in content['data']:
+                if i.get('cell_type') == 202:
+                    continue
                 if not i.get('stream_cell'):
                     continue
                 fav = 0
@@ -89,12 +96,17 @@ class NewToutiao():
                             f.write(article_content)
                     except Exception as err:
                         print('error:https://www.toutiao.com/w/'+str(i['stream_cell']['id']))
-                        with open('html/'+str(randint(1,1000))+'.html', 'w', encoding='utf-8') as f:
-                            f.write(article_content)
+                        # with open('html/'+str(randint(1,100))+'.html', 'w', encoding='utf-8') as f:
+                        #     f.write(article_content)
                 raw = json.loads(i['stream_cell']['raw_data'])
+                if not 'content' in raw:
+                    continue
+                if not isinstance(raw['content'], str):
+                    continue
                 with open(f'{self.filename}.csv', 'a+', encoding='utf-8-sig') as f2:
                     f2.write(trimName(i['stream_cell']['behot_time'])+','+trimName(raw['content'])+','+ 'https://www.toutiao.com/w/'+str(i['stream_cell']['id'])+ ','+''+ ','+trimName(raw['user']['remark_name'])+','+''+','+ str(raw['read_count'])+ ','+str(raw['comment_count'])+ ','+str(fav)+'\n')
-            # break
+            if not content['has_more']:
+                break
 
     # 获取Cookie参数的ttwebid  https://github.com/wangluozhe/NewToutiao/blob/main/sign.js
     def get_ttwebid(self):
@@ -217,10 +229,8 @@ class NewToutiao():
             'x-csrftoken': 'undefined'
         }
         print('请求地址',base_url)
-        response = self.session.get(base_url.replace('/toutiao',''),headers=headers,timeout=10)#;print(response.text)
+        response = self.session.get(base_url.replace('/toutiao',''),headers=headers,timeout=15)#;print(response.text)
         content = json.loads(response.text)
-        if not content['has_more']:
-            return ''
         self.max_behot_time = content['next']['max_behot_time']
         return content
 
@@ -229,5 +239,5 @@ if __name__ == '__main__':
     if not os.path.exists('html'):
         os.mkdir('html')
     if not id:
-        id="MS4wLjABAAAAl7dNnHX0hRKud7d5D4yht6urdwLKvAuu3HMqRtrU2aVWbTZ2aSpwQkIkT4dKTUcG"
+        id="MS4wLjABAAAAcmkcVKuqKApSy1GlQmhI3my9ZyJEYxPXC_yn52pgbWk"
     NewToutiao(f'https://www.toutiao.com/c/user/token/{id}/',0)

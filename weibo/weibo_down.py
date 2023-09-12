@@ -609,6 +609,14 @@ class Weibo(object):
                 weibo['up_num'] = footer['up_num']  # 微博点赞数
                 weibo['retweet_num'] = footer['retweet_num']  # 转发数
                 weibo['comment_num'] = footer['comment_num']  # 评论数
+                # matches = re.findall(r'#([^#]+)#', weibo['content'])
+                # matches2 = re.findall(r'【([^】]+)】', weibo['content'])
+                # weibo['topic'] = ''
+                # weibo['title'] = ''
+                # if matches:
+                #     weibo['topic'] = ", ".join(matches)
+                # if matches2:
+                #     weibo['title'] = ", ".join(matches2)
             else:
                 weibo = None
             return weibo
@@ -711,20 +719,22 @@ class Weibo(object):
         """将爬取的信息写入csv文件"""
         try:
             result_headers = [
-                '微博id',
-                # '微博链接',
+                # '微博id',
+                '微博链接',
                 '微博正文',
-                '原始图片url',
-                '微博视频url',
+                '原始图片链接',
+                '微博视频链接',
                 '发布位置',
                 '发布时间',
                 '发布工具',
                 '点赞数',
                 '转发数',
                 '评论数',
+                # '话题',
+                # '标题',
             ]
             if not self.filter:
-                result_headers.insert(3, '被转发微博原始图片url')
+                result_headers.insert(3, '被转发微博原始图片链接')
                 result_headers.insert(4, '是否为原创微博')
             result_data = [w.values() for w in self.weibo[wrote_num:]]
             if sys.version < '3':  # python2.x
@@ -1097,7 +1107,7 @@ def general_eda(csv_fp):
 
 def main():
     try:
-        print('此工具更新于2023年6月23日')
+        print('此工具更新于2023年9月13日')
         uid = input('请输入微博uid：')
         is_filter = int(input('是否只抓取原创微博：'))
         since_date = input('请输入开始时间，比如2020-01-01：')

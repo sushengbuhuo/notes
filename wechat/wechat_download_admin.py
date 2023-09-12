@@ -57,7 +57,7 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
     print('文章位置',offset)
     if offset == 0:
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
+            f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'原文链接'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
         # with open('文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
             # ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
     for item in articles['app_msg_list']:
@@ -137,7 +137,7 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                 except Exception as e:
                     print('下载封面失败',e,link)
             with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                f.write(date+','+trimName(item['title']) + ','+link+ ','+trimName(item['digest'])+ ','+author+','+item['cover']+','+copyright+ ','+str(item['itemidx'])+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+                f.write(date+','+trimName(item['title']) + ','+link+ ','+trimName(item['digest'])+ ','+author+','+item['cover']+','+''+','+copyright+ ','+str(item['itemidx'])+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
             with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                 f2.write('[{}]'.format(date+'_'+item['title']) + '({})'.format(link)+ '\n\n'+'文章简介:'+item['digest']+ '\n\n'+ '\n\n')
             with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:

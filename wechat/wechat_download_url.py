@@ -11,20 +11,24 @@ def trimName(name):
 contents = ""
 nums = 0
 encoding = 'utf-8-sig'
-fname="公众历史文章列表数据"
+sname='公众号历史文章'
+fname=f'{sname}数据'
 urls=[]
-# with open(f'公众号历史文章列表.md', encoding='utf-8') as f:
+# with open(f'{sname}.md', encoding='utf-8') as f:
 #      contents = f.read()
 # urls = re.findall('\]\((.*?)\)',contents)
-
-f = open('公众号历史文章列表.csv', encoding='UTF8')
-csv_reader = csv.reader(f)
+# contents = ''
+with open(f'{sname}.txt', encoding='utf-8') as f:
+    contents = f.read()
+urls=contents.split('\n')
+# f = open(f'{sname}.csv', encoding='UTF8')
+# csv_reader = csv.reader(f)
 print(len(urls))
 with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
     f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
-# with open('公众号历史文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
+# with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
 #     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
-def down(url,position,copyright):
+def down(url,position,copyright,digest):
     response = requests.get(url, headers=headers)
     global nums
     encoding = 'utf-8-sig'
@@ -33,15 +37,15 @@ def down(url,position,copyright):
     is_down_video = 0
     is_down_audio = 0
     is_down_img = 0
-    is_down_cover=0
+    is_down_cover=1
     is_down_comment = 0
-    pass_ticket = "PM5RWkS+J/7zirXui/ESICgTzLdcyeP/\++thl/oYyleU5Z/bm9rwfHU3ohg+\=="
+    pass_ticket = "N8J6mOeySIZobH+/"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
-    appmsg_token = ""
-    key=""
-    uin = "=="
+    appmsg_token = "1230_zsbFOVSKM%"
+    key="e244725f0d40d28d14654afe195937bf04511106d1c1d88a1d76e83ae85d8ae680e9d3db7369269749f446cda490bd3ad7620e028e63e6c290a4e94edceb962711d347a5f58d898d14d326036fb64256676df752dcf1a0dc4b62878f8361d5eb823c542932b564b1a1aa57758b6b33b0ed7bd526411778d6d0dd93e42665324f"
+    uin = ""
     biz="=="
-    content = response.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com').replace('因网络连接问题，剩余内容暂无法加载。', '')+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
+    content = response.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com').replace('因网络连接问题，剩余内容暂无法加载。', '')#+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
     try:
         title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
@@ -106,7 +110,7 @@ def down(url,position,copyright):
             #下载图片
             if is_down_img:
                 try:
-                    imgs(response,headers,date,trimName(title))
+                    image(response,headers,date,trimName(title))
                 except Exception as e:
                     print('下载图片失败',e,url)
             if is_down_comment == 1:
@@ -120,10 +124,12 @@ def down(url,position,copyright):
             # except Exception as err:
             #     with open(date+'-'+str(random.randint(1,10))+'.html', 'w', encoding='utf-8') as f:
             #         f.write(content+comments_html)
-        # with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
-        #     f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+''+ '\n\n'+ '\n\n')
+        with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
+            f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+digest+ '\n\n'+ '\n\n')
+        with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
+            f3.write(url+ '\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write(date+','+trimName(title) + ','+url+ ','+""+ ','+author+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+            f.write(date+','+trimName(title) + ','+url+ ','+digest+ ','+author+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
         return True
     except Exception as e:
     	print(e,url)
@@ -135,7 +141,8 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     _biz = link.split("&")[0].split("_biz=")[1]
     url = "http://mp.weixin.qq.com/mp/getappmsgext"#获取详情页
     
-    cookies = """
+    cookies = """appmsg_token   1230_zsbFOVSKM%
+
     """
     headers = {
         "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
@@ -232,8 +239,10 @@ def audio(content,headers,date,title):
         # with open('audio/'+date+'___'+trimName(title)+'___'+str(num)+'.mp3','wb') as f5:
         #     f5.write(audio_data.content)
     return str(num)
-def imgs(response,headers,date,title):
+def image(response,headers,date,title):
     imgs=re.findall('data-src="(.*?)"',response.text)
+    imgs2= re.findall("cdn_url: '(.*?)',",response.text)
+    imgs.extend(imgs2)
     time.sleep(1)
     num = 0
     if not os.path.exists('images'):
@@ -276,11 +285,13 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
         # comment_url = url_comment+'?action=getcomment&scene=0&__biz={0}&appmsgid={1}&idx=1&comment_id={2}&offset=0&limit=100&pass_ticket={3}&wxtoken=777&devicetype=android-26&clientversion=26060739&appmsg_token={4}&x5=1&f=json&uin={5}&key={6}'.format(biz, app_msg_id, comment_id,pass_ticket, app_msg_token,uin ,key)
         comment_url = url_comment+f'?action=getcomment&scene=0&appmsgid={app_msg_id}&idx=1&comment_id={comment_id}&offset=0&limit=100&send_time=&sessionid=1644213099&enterid=1644285387&uin={uin}&key={key}&pass_ticket={pass_ticket}&wxtoken=777&devicetype=Windows%26nbsp%3B10%26nbsp%3Bx64&clientversion=6305002e&__biz={biz}&appmsg_token={appmsg_token}&x5=0&f=json'
         resp = requests.get(comment_url, headers=headers,verify=False).json()
-        ret, status = resp['base_resp']['ret'], resp['base_resp']['errmsg']
+        # ret, status = resp['base_resp']['ret'], resp['base_resp']['errmsg'];
+        ret = resp['base_resp']['ret']
+        # print(resp)
         if ret != 0 and ret != -2:
             print("评论接口",comment_url)
-            return "error",status
-        if ret == 0 or status == 'ok':
+            return "error","status"
+        if ret == 0:
             elected_comment = resp['elected_comment']
             print('评论数:',len(elected_comment))
             # with open(date+'_'+trimName(title_article)+'.csv', 'a+', encoding='utf-8') as f:
@@ -324,22 +335,22 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             # dataframe = pandas.DataFrame(data_comments,columns=['评论时间','评论昵称','评论内容','评论点赞数','回复内容','评论发布国家','评论发布省份'])
             # dataframe.to_csv(date+'_'+trimName(title_article)+'.csv',encoding='utf_8_sig',index=False)
             comments_html = comments_html + '</ul></div></div>'
-            # with open('公众号文章留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
-            #     writer = csv.writer(csvfile)
-            #     writer.writerows(comments_excel)
+            with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerows(comments_excel)
             return str(len(elected_comment)),comments_html
         return '0',''
     return '0',''
-for line in csv_reader:
-    if line[2] == "文章链接":
-        continue
-    res = down(line[2],line[8],line[7])
-    if not res:
-       continue
-    if res == "error":
-       break
+# for line in csv_reader:
+#     if line[2] == "文章链接":
+#         continue
+#     res = down(line[2],line[8],line[7],line[3])
+#     if not res:
+#        continue
+#     if res == "error":
+#        break
 for item in urls:
-    res = down(item,0,'否')
+    res = down(item,'1','否','')
     if not res:
        continue
     if res == "error":
