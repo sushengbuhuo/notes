@@ -58,6 +58,8 @@ def video(res, headers,date,title,article_url):
     if not vinfo:
         vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',res.text,flags=re.S)
     videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",res.text)
+    if not videos:
+        videos = re.findall(r"source_link\: \'http://v\.qq\.com/x/page/(.*?)\.html\' \|\| \'\'\,",res.text)
     num = 0
     for v in vinfo:
         v_url = re.search(r"url:\s+'(.*?)',",v)
@@ -90,7 +92,7 @@ def video(res, headers,date,title,article_url):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('此工具更新于2023年7月23日')
+print('此工具更新于2023年9月28日')
 url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
@@ -107,6 +109,7 @@ else:
     urls.insert(0,url)
 urls = [x for x in urls if x != '']
 print('文章总数：',len(urls))
+num=0
 for mp_url in urls:
     urls_history = get_history()
     if html.unescape(mp_url) in urls_history:
@@ -114,6 +117,10 @@ for mp_url in urls:
         continue
     res = requests.get(html.unescape(mp_url),proxies={'http': None,'https': None},verify=False, headers=headers)
     content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
+    num+=1
+    time.sleep(randint(1, 2))
+    # with open('html/'+str(num)+'.html', 'w', encoding='utf-8') as f:
+    #     f.write(content)
     try:
         title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
@@ -142,5 +149,7 @@ for mp_url in urls:
         with open('html/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
-        with open('html/'+str(randint(10,10000))+'.html', 'w', encoding='utf-8') as f:
-            f.write(content);print(err,mp_url)
+        with open('html/'+str(randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
+            f.write(content);print(err,mp_url)#;raise Exception("出错了"+mp_url)
+        with open(f'下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
+            f5.write(html.unescape(mp_url)+'\n')

@@ -7,9 +7,11 @@ if not os.path.exists('pdf'):
 async def main():
     for root, dirs, files in os.walk('.'):
         files.sort(reverse = True)
+        num = 0
         for name in files:
             if name.endswith(".html"):
-                print(name,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
+                num +=1
+                print(name,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),'文章数量：',num)
                 try:
                     browser = await launch()# {'args': ['--disable-infobars'],'userDataDir': './userdata'} 登录后保存cookie
                     page = await browser.newPage()

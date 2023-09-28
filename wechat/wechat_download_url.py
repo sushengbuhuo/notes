@@ -2,6 +2,7 @@ import requests
 import time
 import json,html
 import random,re,os,csv
+from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
 headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat"
@@ -118,12 +119,21 @@ def down(url,position,copyright,digest):
                 if comments_num == "error":
                     print('获取评论数失败',url)
                     return "error"
-            # try:
-            #     with open(date+'-'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
-            #         f.write(content+comments_html)
-            # except Exception as err:
-            #     with open(date+'-'+str(random.randint(1,10))+'.html', 'w', encoding='utf-8') as f:
-            #         f.write(content+comments_html)
+            try:
+                with open(date+'-'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+                    f.write(content+comments_html)
+            except Exception as err:
+                with open(date+'-'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
+                    f.write(content+comments_html)
+            try:
+                 with open(date+'-'+trimName(title)+'.txt', 'a+', encoding='utf-8') as f:
+                    soup = BeautifulSoup(content, 'html.parser')
+                    contentSoup = soup.find("div", {"id": "js_content"})
+                    result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
+                    # result_text = re.sub(r'\n+', '\n', soup.get_text())
+                    f.write('\n'.join(result_text))
+            except Exception as err:
+                print('下载txt出错了',err,url)
         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
             f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+digest+ '\n\n'+ '\n\n')
         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
@@ -132,7 +142,9 @@ def down(url,position,copyright,digest):
             f.write(date+','+trimName(title) + ','+url+ ','+digest+ ','+author+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
         return True
     except Exception as e:
-    	print(e,url)
+        print(e,url)#;raise Exception("抓取失败了："+url)
+        with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
+            f5.write(url+'\n')
 def view(link,appmsg_token,uin,key,pass_ticket):
     # 获得mid,_biz,idx,sn
     mid = link.split("&")[1].split("=")[1]
@@ -194,6 +206,8 @@ def video(content, headers,date,article_url,title):
     time.sleep(1)
     # print('视频id',vid)
     videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",content)
+    if not videos:
+        videos = re.findall(r"source_link\: \'http://v\.qq\.com/x/page/(.*?)\.html\' \|\| \'\'\,",content)
     num = 0
     if not os.path.exists('video'):
         os.mkdir('video')
@@ -345,12 +359,14 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
 #     if line[2] == "文章链接":
 #         continue
 #     res = down(line[2],line[8],line[7],line[3])
+#     time.sleep(random.randint(1, 2))
 #     if not res:
 #        continue
 #     if res == "error":
 #        break
 for item in urls:
     res = down(item,'1','否','')
+    time.sleep(random.randint(1, 2))
     if not res:
        continue
     if res == "error":
