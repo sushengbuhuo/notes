@@ -44,6 +44,8 @@ def video(res, headers,date,title,article_url):
     num = 0
     for v in vinfo:
         v_url = re.search(r"url:\s+'(.*?)',",v)
+        if not v_url:
+            v_url = re.search(r"url:\s+\('(.*?)'\)",v)
         # print(v,v_url)
         if v_url:
             video_url = html.unescape(v_url.group(1).replace(r'\x26','&'))
@@ -73,6 +75,7 @@ def video(res, headers,date,title,article_url):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
+print('此工具更新于2023年10月12日')
 topic_url = ''
 if len(sys.argv) > 1:
    topic_url = sys.argv[1]
@@ -149,11 +152,11 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 		title = title.group(1)
 		ct = ct.group(1)
 		date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-		cover_data = requests.get(cover,headers=headers)
-		with open('cover/'+date+'_'+trimName(k)+'.jpg','wb') as f:
-			f.write(cover_data.content)
+		# cover_data = requests.get(cover,headers=headers)
+		# with open('cover/'+date+'_'+trimName(k)+'.jpg','wb') as f:
+		# 	f.write(cover_data.content)
 		audio(res,headers,date,title)
-		video(res,headers,date,title,j)
+		# video(res,headers,date,title,j)
 		with open('html/'+mp_name+'_'+date+'_'+trimName(k)+'.html', 'w', encoding='utf-8') as f:
 			f.write(content)
 		save_history(html.unescape(j))
@@ -196,11 +199,11 @@ def download(msgid,mp_name,itemidx):
 			title = title.group(1)
 			ct = ct.group(1)
 			date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-			cover_data = requests.get(cover,headers=headers)
-			with open('cover/'+date+'_'+trimName(i['title'])+'.jpg','wb') as f:
-				f.write(cover_data.content)
+			# cover_data = requests.get(cover,headers=headers)
+			# with open('cover/'+date+'_'+trimName(i['title'])+'.jpg','wb') as f:
+			# 	f.write(cover_data.content)
 			audio(res,headers,date,title)
-			video(res,headers,date,title,i['url'])
+			# video(res,headers,date,title,i['url'])
 			with open('html/'+mp_name+'_'+date+'_'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 			save_history(html.unescape(i['url']))

@@ -3,22 +3,27 @@ import time
 import json,html
 import random,re,os,csv
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse, parse_qs
 requests.packages.urllib3.disable_warnings()
 headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat"
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat",
+        'referer': 'https://mp.weixin.qq.com',
     }
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
+def remove_html_tags(text):
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', text)
 contents = ""
 nums = 0
 encoding = 'utf-8-sig'
-sname='公众号历史文章'
+sname='公众号'
 fname=f'{sname}数据'
 urls=[]
 # with open(f'{sname}.md', encoding='utf-8') as f:
 #      contents = f.read()
 # urls = re.findall('\]\((.*?)\)',contents)
-# contents = ''
+contents = ''
 with open(f'{sname}.txt', encoding='utf-8') as f:
     contents = f.read()
 urls=contents.split('\n')
@@ -27,27 +32,32 @@ urls=contents.split('\n')
 print(len(urls))
 with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
     f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
-# with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
-#     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
+with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
+    ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
 def down(url,position,copyright,digest):
     response = requests.get(url, headers=headers)
     global nums
     encoding = 'utf-8-sig'
-    is_down_view = 0
+    is_down_view = 1
     is_down = 1
     is_down_video = 0
     is_down_audio = 0
     is_down_img = 0
-    is_down_cover=1
+    is_down_cover=0
     is_down_comment = 0
-    pass_ticket = "N8J6mOeySIZobH+/"
+    pass_ticket = ""
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
-    appmsg_token = "1230_zsbFOVSKM%"
-    key="e244725f0d40d28d14654afe195937bf04511106d1c1d88a1d76e83ae85d8ae680e9d3db7369269749f446cda490bd3ad7620e028e63e6c290a4e94edceb962711d347a5f58d898d14d326036fb64256676df752dcf1a0dc4b62878f8361d5eb823c542932b564b1a1aa57758b6b33b0ed7bd526411778d6d0dd93e42665324f"
-    uin = ""
+    appmsg_token = "-JKIOE"
+    key=""
+    uin = "=="
     biz="=="
     content = response.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com').replace('因网络连接问题，剩余内容暂无法加载。', '')#+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
     try:
+        # soup = BeautifulSoup(content, 'html.parser')
+        # div_to_delete = soup.find('div', {'id': 'js_pc_qr_code'})
+        # if div_to_delete:
+        #     div_to_delete.extract()
+        # content = soup.prettify()
         title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
         author = re.search(r'<meta name="author" content="(.*)"\s?/>', content)
@@ -60,7 +70,7 @@ def down(url,position,copyright,digest):
         title = title.group(1)
         ct = ct.group(1)
         author = author.group(1)
-        date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))# %H:%M:%S
+        date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))# %H:%M:%S
         # if int(ct) > 1660321824:
         #     return False
         print('文章数量',nums)
@@ -119,25 +129,25 @@ def down(url,position,copyright,digest):
                 if comments_num == "error":
                     print('获取评论数失败',url)
                     return "error"
-            try:
-                with open(date+'-'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
-                    f.write(content+comments_html)
-            except Exception as err:
-                with open(date+'-'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
-                    f.write(content+comments_html)
-            try:
-                 with open(date+'-'+trimName(title)+'.txt', 'a+', encoding='utf-8') as f:
-                    soup = BeautifulSoup(content, 'html.parser')
-                    contentSoup = soup.find("div", {"id": "js_content"})
-                    result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
-                    # result_text = re.sub(r'\n+', '\n', soup.get_text())
-                    f.write('\n'.join(result_text))
-            except Exception as err:
-                print('下载txt出错了',err,url)
+            # try:
+            #      with open(date+'-'+trimName(title)+'.txt', 'a+', encoding='utf-8') as f:
+            #         soup = BeautifulSoup(content, 'html.parser')
+            #         contentSoup = soup.find("div", {"id": "js_content"})
+            #         result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
+            #         # result_text = re.sub(r'\n+', '\n', soup.get_text())
+            #         f.write('\n'.join(result_text))
+            # except Exception as err:
+            #     print('下载txt出错了',err,url)
+            # try:
+            #     with open(date+'-'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+            #         f.write(content+comments_html)
+            # except Exception as err:
+            #     with open(date+'-'+str(random.randint(100,1000))+'.html', 'w', encoding='utf-8') as f:
+            #         f.write(content+comments_html)
         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
             f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+digest+ '\n\n'+ '\n\n')
-        with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
-            f3.write(url+ '\n')
+        with open(f'{fname}.txt', 'a+', encoding='utf-8') as f2:
+            f2.write(url+ '\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
             f.write(date+','+trimName(title) + ','+url+ ','+digest+ ','+author+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
         return True
@@ -146,14 +156,34 @@ def down(url,position,copyright,digest):
         with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
             f5.write(url+'\n')
 def view(link,appmsg_token,uin,key,pass_ticket):
-    # 获得mid,_biz,idx,sn
-    mid = link.split("&")[1].split("=")[1]
-    idx = link.split("&")[2].split("=")[1]
-    sn = link.split("&")[3].split("=")[1]
-    _biz = link.split("&")[0].split("_biz=")[1]
+    # 获得mid,_biz,idx,sn 有些文章没有chksm参数http://mp.weixin.qq.com/s?__biz=MzA3NTcyNzY3OA==&mid=400102856&idx=1&sn=c0dab637c639b52d1d308d609bb270e1#rd
+    # mid = link.split("&")[1].split("=")[1]
+    # idx = link.split("&")[2].split("=")[1]
+    # sn = link.split("&")[3].split("=")[1]
+    # _biz = link.split("&")[0].split("_biz=")[1]
+    parsed_url = urlparse(link)
+    query_params = parse_qs(parsed_url.query)
+    if not '__biz' in query_params:
+        return 'error','0','0','0'
+    __biz=query_params['__biz'][0]
+    # 早期文章http://mp.weixin.qq.com/mp/appmsg/show?__biz=MjM5Nzg5OTk5NA==&appmsgid=10014557&itemidx=4&sign=4c61d5477f07877436cd04b18ec2c884#wechat_redirect
+    if 'mid' in query_params:
+        mid=query_params['mid'][0]
+    if 'appmsgid' in query_params:
+        mid=query_params['appmsgid'][0]
+    if 'sn' in query_params:
+        sn=query_params['sn'][0]
+    if 'sign' in query_params:
+        sn=query_params['sign'][0]
+    if 'idx' in query_params:
+        idx=query_params['idx'][0]
+    if 'itemidx' in query_params:
+        idx=query_params['itemidx'][0]
+    if not mid or not sn or not __biz or not idx:
+        return 'error','0','0','0'
     url = "http://mp.weixin.qq.com/mp/getappmsgext"#获取详情页
     
-    cookies = """appmsg_token   1230_zsbFOVSKM%
+    cookies = """rewardsn   
 
     """
     headers = {
@@ -164,10 +194,13 @@ def view(link,appmsg_token,uin,key,pass_ticket):
         "is_only_read": "1",
         "is_temp_url": "0",
         "appmsg_type": "9",
-        'reward_uin_count': '0'
+        'reward_uin_count': '0',
+        # 'vid':'wxv_3145693246921261058',
+        # 'item_show_type':'5',
+        # 'finder_export_id':'export/UzFfAgtgekIEAQAAAAAAYSg1SChmpgAAAAstQy6ubaLX4KHWvLEZgBPEiINUJm9aZK2GzNPgMIttAAqM1EV1ILMbcYvWHeA2',
     }
     params = {
-        "__biz": _biz,
+        "__biz": __biz,
         "mid": mid,
         "sn": sn,
         "idx": idx,
@@ -176,9 +209,12 @@ def view(link,appmsg_token,uin,key,pass_ticket):
         "appmsg_token": appmsg_token,
         "uin": uin,
         "wxtoken": "777",
+        "f":"json",
+        # "devicetype":"Windows10x64",
+        # "clientversion":"63090719",
     }
     content = requests.post(url, headers=headers, data=data, params=params).json()
-    # print(params,content)
+    # print(params,content,data)
     if not 'appmsgstat' in content:
     	return 'error','0','0','0'
     try:
@@ -196,6 +232,11 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     reward_num = 0
     if 'reward_total_count' in content:
         reward_num = content['reward_total_count']
+    # 视频号文章 https://mp.weixin.qq.com/s/8yTuzaYWkiwJcHgLkBlaMA 
+    # if 'finder_fav_num' in content["appmsgstat"]:
+    #     likeNum = content["appmsgstat"]['finder_fav_num']
+    # if 'finder_like_num' in content["appmsgstat"]:
+    #     old_like_num = content["appmsgstat"]['finder_like_num']
     time.sleep(random.randint(2, 2))
     print("阅读数:"+str(readNum))
     print("点赞数:"+str(likeNum))
@@ -223,17 +264,19 @@ def video(content, headers,date,article_url,title):
         vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',content,flags=re.S)
     for v in vinfo:
         v_url = re.search(r"url:\s+'(.*?)',",v)
+        if not v_url:
+            v_url = re.search(r"url:\s+\('(.*?)'\)",v)
         # print(v,v_url)
         if v_url:
             video_url = html.unescape(v_url.group(1).replace(r'\x26','&'))
             # vids = list(set(vids)) #去重
             num+=1
             print('正在下载视频：'+trimName(title)+'.mp4')
-            # video_data = requests.get(video_url,headers=headers)
+            video_data = requests.get(video_url,headers=headers)
             with open('视频链接合集.csv','a+') as f4:
                 f4.write(date+','+trimName(title)+','+video_url+','+article_url+'\n')
-            # with open('video/'+date+'_'+trimName(title)+'_'+str(num)+'.mp4','wb') as f:
-            #     f.write(video_data.content)
+            with open('video/'+date+'_'+trimName(title)+'_'+str(num)+'.mp4','wb') as f:
+                f.write(video_data.content)
     return str(num)
 
 def audio(content,headers,date,title):
@@ -250,8 +293,8 @@ def audio(content,headers,date,title):
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        # with open('audio/'+date+'___'+trimName(title)+'___'+str(num)+'.mp3','wb') as f5:
-        #     f5.write(audio_data.content)
+        with open('audio/'+date+'___'+trimName(title)+'___'+str(num)+'.mp3','wb') as f5:
+            f5.write(audio_data.content)
     return str(num)
 def image(response,headers,date,title):
     imgs=re.findall('data-src="(.*?)"',response.text)

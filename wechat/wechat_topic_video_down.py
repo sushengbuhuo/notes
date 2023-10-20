@@ -2,7 +2,8 @@ import requests,re,os,time,sys,html,urllib3
 from random import randint
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat"
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat",
+        'referer': 'https://mp.weixin.qq.com',
     }
 def get_history():
     history = []
@@ -42,10 +43,13 @@ def video(res, headers,date,title,article_url):
     if not vinfo:
         vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',res.text,flags=re.S)
     videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",res.text)
+    if not videos:
+        videos = re.findall(r"source_link\: \'http://v\.qq\.com/x/page/(.*?)\.html\' \|\| \'\'\,",res.text)
     num = 0
     for v in vinfo:
         v_url = re.search(r"url:\s+'(.*?)',",v)
-        # print(v,v_url)
+        if not v_url:
+            v_url = re.search(r"url:\s+\('(.*?)'\)",v)
         if v_url:
             video_url = html.unescape(v_url.group(1).replace(r'\x26','&'))
             # vids = list(set(vids)) #去重
@@ -74,17 +78,18 @@ def video(res, headers,date,title,article_url):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
+print('此工具更新于2023年10月13日')
 topic_url = ''
 if len(sys.argv) > 1:
    topic_url = sys.argv[1]
 if not topic_url:
-   topic_url = input('公众号苏生不惑提示你，请输入话题地址：')
+   topic_url = input('公众号苏生不惑提示你，请输入公众号话题地址：')
 # topic_url='https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&album_id=1333036982024585217&__biz=MzU1OTgyMzQzNw==#wechat_redirect'
 
 biz=re.search(r'__biz=(.*?)[&#]',topic_url).group(1)
 album_id=re.search(r'album_id=(.*?)[&#]',topic_url).group(1)
 response = requests.get(topic_url, headers=headers)
-mp_name=re.search(r'<div id="js_tag_name" class="old-video-album__label-title">(.*?)</div>',response.text)
+mp_name=re.search(r'<div id="js_tag_name" class="old-video-album__label-title"><span class="tag-icon"></span>(.*?)</div>',response.text)
 if mp_name:
    mp_name = mp_name.group(1)
 else:
@@ -147,7 +152,7 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 			f.write(content)
 			save_history(html.unescape(j))
 	except Exception as err:
-		with open('html/'+mp_name+'_'+date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+		with open('html/'+mp_name+'_'+date+'_'+str(randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
 			f.write(content);print(err,j)
 	with open(fname, 'a+', encoding=encoding) as f2:
 		f2.write(''+','+k + ','+html.unescape(j)+ ','+''+'\n')
@@ -194,7 +199,7 @@ def download(msgid,mp_name,itemidx):
 				f.write(content)
 				save_history(html.unescape(i['url']))
 		except Exception as err:
-			with open('html/'+mp_name+'_'+date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+			with open('html/'+mp_name+'_'+date+'_'+str(randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
 				f.write(content);print(err,i['url'])
 		with open(fname, 'a+', encoding=encoding) as f2:
 			f2.write(date+','+i['title'] + ','+html.unescape(i['url'])+ ','+i['cover_img_1_1']+'\n')

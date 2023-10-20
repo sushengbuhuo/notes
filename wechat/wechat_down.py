@@ -3,7 +3,8 @@ from random import randint
 import traceback,urllib3,demjson
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat"
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat",
+        'referer': 'https://mp.weixin.qq.com',
     }
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，')
@@ -63,7 +64,8 @@ def video(res, headers,date,title,article_url):
     num = 0
     for v in vinfo:
         v_url = re.search(r"url:\s+'(.*?)',",v)
-        # print(v,v_url)
+        if not v_url:
+            v_url = re.search(r"url:\s+\('(.*?)'\)",v)
         if v_url:
             video_url = html.unescape(v_url.group(1).replace(r'\x26','&'))
             # vids = list(set(vids)) #去重
@@ -92,7 +94,7 @@ def video(res, headers,date,title,article_url):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('此工具更新于2023年9月28日')
+print('此工具更新于2023年10月12日')
 url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
