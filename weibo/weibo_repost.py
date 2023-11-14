@@ -17,7 +17,7 @@ def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
 def ip_detail(mid):
     df = pd.read_csv(f"{mid}.csv",encoding='utf-8',on_bad_lines='skip')
-    df2=df.转发地区.value_counts().sort_values(ascending=False).head(10)
+    df2=df.转发来源.value_counts().sort_values(ascending=False).head(10)
     ip = df2.index.tolist()
     counts = df2.values.tolist()
     bar = (
@@ -37,12 +37,12 @@ def ip_detail(mid):
 def wordcloud_img(mid):
     font = r'C:\Windows\Fonts\simhei.ttf'
     STOPWORDS = {"回复", '的','可以','吗','了','有'}#https://github.com/baipengyan/Chinese-StopWords https://github.com/elephantnose/characters
-    df = pd.read_csv(f"{mid}.csv",encoding='utf-8',on_bad_lines='skip', usecols=[5])#取第5列
+    df = pd.read_csv(f"{mid}.csv",encoding='utf-8',on_bad_lines='skip', usecols=[3])#取第3列
     df_copy = df.copy()
-    df_copy['comment'] = df_copy['转发内容'].apply(lambda x: str(x).split())  # 去掉空格
-    df_list = df_copy.values.tolist()
+    df_copy['转发内容'] = df_copy['转发内容'].apply(lambda x: str(x).split())  # 去掉空格
+    df_list = df_copy.values.tolist()#;print(df_copy)
     comment = jieba.cut(str(df_list), cut_all=False)
-    words = ' '.join(comment)
+    words = ' '.join(comment);print(words)
     # cloud_mask = np.array(Image.open("wangfei.jpg"))
     wc = WordCloud(width=2000, height=1800, background_color='white', font_path=font,
                    stopwords=STOPWORDS, contour_width=3, contour_color='steelblue')
@@ -73,10 +73,10 @@ def repost(mid,page,headers):
 
 	return True
 page = 1
-mid=input('请输入微博mid')
+mid=input('请输入微博mid：')
 if not mid:
 	sys.exit('mid为空')
-cookie=input('请输入微博cookie')
+cookie=input('请输入微博cookie：')
 if not cookie:
 	sys.exit('cookie为空')
 headers = {
@@ -88,11 +88,14 @@ headers = {
 with open(f'{mid}.csv', 'a+', encoding='utf-8-sig') as f:
     f.write('微博昵称'+','+'微博uid' + ','+'转发时间'+','+'转发内容'+','+'转发地区'+','+'转发来源'+','+'转发数'+','+'评论数'+','+'点赞数'+ '\n')
 while True:
+    if page > 10:
+        break
     print("页数：",page)
     res = repost(mid,page,headers)
     time.sleep(1)
     if not res:
         break
     page+=1
+
 # ip_detail(mid)
 # wordcloud_img(mid)
