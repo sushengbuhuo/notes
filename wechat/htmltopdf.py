@@ -1,20 +1,27 @@
 import asyncio,os
 from pyppeteer import launch
 import tkinter,time
+import shutil
 # from playwright.sync_api import sync_playwright
 if not os.path.exists('pdf'):
     os.mkdir('pdf')
 async def main():
-    for root, dirs, files in os.walk('.'):
-        files.sort(reverse = True)
+    current_directory = os.getcwd()
+    files = os.listdir(current_directory)
+    html_files = [file for file in files if file.endswith('.html')]
+    if True:
+    # for root, dirs, files in os.walk('.'):
+        html_files.sort(reverse = True)
         num = 0
-        for name in files:
+        browser = await launch()
+        # browser = await launch()# {'args': ['--disable-infobars'],'userDataDir': './userdata'} 登录后保存cookie
+        for name in html_files:
             if name.endswith(".html"):
                 num +=1
                 print(name,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),'文章数量：',num)
                 try:
-                    browser = await launch()# {'args': ['--disable-infobars'],'userDataDir': './userdata'} 登录后保存cookie
                     page = await browser.newPage()
+                    # page.setDefaultNavigationTimeout(60000)  # 设置为60秒
                     # url = "https://mp.weixin.qq.com/s/6VBXs19icV0O5hT7cHYwgw"
                     url = os.getcwd()+f"/{name}"
                     # url = "https://mp.weixin.qq.com/s/S24LAiMtAfdGS9XM0ZMU2A"
@@ -28,12 +35,12 @@ async def main():
                     # 设置网页 视图大小
                     #await page.setViewport(viewport={'width': width, 'height': height})
                     #参数 https://ld246.com/article/1566221786951  https://blog.csdn.net/weixin_45961774/article/details/112848584
-                    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36')
-                    # await page.evaluateOnNewDocument('function(){Object.defineProperty(navigator, "webdriver", {get: () => undefined})}')
-                    # await page.setExtraHTTPHeaders(headers={"referer":"https://weibo.com"})
+                    #await page.evaluateOnNewDocument('function(){Object.defineProperty(navigator, "webdriver", {get: () => undefined})}')
+                    #await page.setExtraHTTPHeaders(headers={"referer":"https://weibo.com"})
+                    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3542.0 Safari/537.36')
                     await page.goto(url)
                     # page_text = await page.content()  # 页面内容
-                    # cookies = await page.cookies()  # 页面内容
+                    # cookies = await page.cookies()
                     await page.evaluate('''async () => {
                     await new
                 Promise((resolve, reject) => {
@@ -55,12 +62,19 @@ async def main():
                 }, 200);
                 });
                    }''')
+                    # 等待页面加载完成
+                    # await page.waitForNavigation()
                     await page.pdf({"path": 'pdf/'+name.replace('.html', '')+'.pdf', "format": 'A4'})
-                    await browser.close()
+                    await page.close()
                 except Exception as e:
-                    print(e)
+                    if not os.path.exists('failed'):
+                        os.mkdir('failed')
+                    shutil.copy(name, 'failed')
+                    # Navigation Timeout Exceeded: 30000 ms exceeded
+                    print('下载失败',e,name)
         # break
         # htmls += [name for name in files if name.endswith(".html")]
+        await browser.close()
     # print(htmls)
 async def main2():
     for root, dirs, files in os.walk('.'):
