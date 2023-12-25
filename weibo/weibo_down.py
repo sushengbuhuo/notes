@@ -194,7 +194,7 @@ class Weibo(object):
         print(u'用户id: %s' % self.user['id'])
         print(u'微博数: %d' % self.user['weibo_num'])
         print(u'关注数: %d' % self.user['following'])
-        print(u'粉丝数: %d' % self.user['followers'])
+        print(u'粉丝数: %s' % self.user['followers'])
         print(u'url：https://weibo.cn/%s' % self.user['id'])
 
     def get_user_id(self, selector):
@@ -218,7 +218,7 @@ class Weibo(object):
             user_info = selector.xpath("//div[@class='tip2']/*/text()")
             weibo_num = int(user_info[0][3:-1])
             following = int(user_info[1][3:-1])
-            followers = int(user_info[2][3:-1])
+            followers = user_info[2][3:-1]
             self.user['weibo_num'] = weibo_num
             self.user['following'] = following
             self.user['followers'] = followers
@@ -653,7 +653,7 @@ class Weibo(object):
             info = selector.xpath("//div[@class='c']")
             is_exist = info[0].xpath("div/span[@class='ctt']")
             if is_exist:
-                for i in range(0, len(info) - 2):
+                for i in range(0, len(info) - 1):
                     weibo = self.get_one_weibo(info[i])
                     weibo['id'] = f"https://www.weibo.com/{self.user_config['user_uri']}/{weibo['id']}"
                     if weibo:
@@ -1023,7 +1023,7 @@ class Weibo(object):
             page1 = 0
             random_pages = random.randint(1, 5)
             self.start_time = datetime.now().strftime('%Y-%m-%d %H:%M')
-            for page in tqdm(range(1, page_num + 1), desc='Progress'):#修改开始抓取的page
+            for page in tqdm(range(1, page_num + 1), desc='下载进度'):#修改开始抓取的page
                 is_end = self.get_one_page(page)  # 获取第page页的全部微博
                 if is_end:
                     break
@@ -1107,7 +1107,7 @@ def general_eda(csv_fp):
 
 def main():
     try:
-        print('此工具更新于2023年9月13日')
+        print('本工具更新于2023年12月22日')
         uid = input('请输入微博uid：')
         is_filter = int(input('是否只抓取原创微博：'))
         since_date = input('请输入开始时间，比如2020-01-01：')
