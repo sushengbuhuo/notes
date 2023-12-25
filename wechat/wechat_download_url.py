@@ -149,7 +149,7 @@ def down(url,position,copyright,digest):
         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f2:
             f2.write(url+ '\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write(date+','+trimName(title) + ','+url+ ','+digest+ ','+author+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+            f.write(date+','+trimName(title) + ','+url+ ','+digest+ ','+trimName(author)+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
         return True
     except Exception as e:
         print(e,url)#;raise Exception("抓取失败了："+url)

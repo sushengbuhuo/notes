@@ -8,6 +8,7 @@ from pyppeteer import launch
 import tkinter,time
 import pandas as pd
 from tqdm import tqdm
+from datetime import datetime
 headers = {
         'origin': 'https://zhuanlan.zhihu.com',
         'referer': 'https://zhuanlan.zhihu.com/',
@@ -23,10 +24,12 @@ def down(url):
     try:
         html = requests.get(url, headers=headers).text
         soup = BeautifulSoup(html, 'lxml')
-        content = soup.find(class_='Post-RichText').prettify()
-        title = soup.find(class_='Post-Title').get_text()
+        content = soup.find(class_='RichContent-inner').prettify()
+        title = soup.find(class_='QuestionHeader-title').get_text()
         answer_time= soup.find(class_='ContentItem-time').get_text()
         match = re.search(r'\d{4}-\d{2}-\d{2}', answer_time)
+        # datetime_obj = datetime.strptime(answer_time, "%Y-%m-%d %H:%M")
+        # date_str = datetime_obj.strftime("%Y-%m-%d")
         answer_date = match.group()
         print('开始下载文章：',url,title,answer_date)
         # title = re.sub('[\/:*?"<>|]','-',title)
@@ -44,15 +47,15 @@ def down(url):
         # with open('zzz.html', 'w', encoding='utf-8') as f:
         # 	f.write(contents)
     except Exception as e:
-        with open(f'下载失败知乎文章列表.txt', 'a+', encoding='utf-8') as f:
+        with open(f'下载失败知乎回答列表.txt', 'a+', encoding='utf-8') as f:
             f.write(url+'\n')
         print('下载文章失败', url,e)
 
 if not os.path.exists('html'):
     os.mkdir('html')
 
-filename = input('请输入知乎文章excel文件名：')
-# filename='zhuhu_article2.xlsx'
+filename = input('请输入知乎回答excel文件名：')
+# filename='zhihu_answer.xlsx'
 if not os.path.exists(filename):
     sys.exit('文件不存在')
 df=pd.read_excel(filename)
@@ -76,5 +79,6 @@ print('行标题',df.index)
 #     print('数据',df.loc[indexs].values[0:-1])
 # down('https://zhuanlan.zhihu.com/p/')
 # asyncio.get_event_loop().run_until_complete(down('https://zhuanlan.zhihu.com/p/'))
-for i in tqdm(df['知乎链接'].tolist(), desc='下载进度'):
+for i in tqdm(df['知乎问题链接'].tolist(), desc='下载进度'):
     down('https:'+i)
+    # break
