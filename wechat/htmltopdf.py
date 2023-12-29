@@ -2,7 +2,7 @@ import asyncio,os
 from pyppeteer import launch
 import tkinter,time
 import shutil
-# from playwright.sync_api import sync_playwright
+# from playwright.sync_api import sync_playwright 文件名带#会失败
 if not os.path.exists('pdf'):
     os.mkdir('pdf')
 async def main():

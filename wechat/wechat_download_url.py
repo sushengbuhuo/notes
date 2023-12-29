@@ -10,7 +10,7 @@ headers = {
         'referer': 'https://mp.weixin.qq.com',
     }
 def trimName(name):
-    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
+    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','').replace('#','--')
 def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
@@ -23,12 +23,12 @@ urls=[]
 # with open(f'{sname}.md', encoding='utf-8') as f:
 #      contents = f.read()
 # urls = re.findall('\]\((.*?)\)',contents)
-contents = ''
-with open(f'{sname}.txt', encoding='utf-8') as f:
-    contents = f.read()
-urls=contents.split('\n')
-# f = open(f'{sname}.csv', encoding='UTF8')
-# csv_reader = csv.reader(f)
+# contents = ''
+# with open(f'{sname}.txt', encoding='utf-8') as f:
+#     contents = f.read()
+# urls=contents.split('\n')
+f = open(f'{sname}.csv', encoding='UTF8')
+csv_reader = csv.reader(f)
 print(len(urls))
 with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
     f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
@@ -94,6 +94,7 @@ def down(url,position,copyright,digest):
                # print('获取地区失败',e,url)
             if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                 is_pay = '是'
+            #转载原创文章误判 读取txt才用
             # if '>原创</span>' in content:
         	   #  copyright="是"
             #下载视频
@@ -153,8 +154,10 @@ def down(url,position,copyright,digest):
         return True
     except Exception as e:
         print(e,url)#;raise Exception("抓取失败了："+url)
-        with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
-            f5.write(url+'\n')
+        with open(f'{sname}下载失败文章列表.csv', 'a+', encoding=encoding) as f6:
+            f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+','+copyright+ ',,'+position+ ','+''+ ','+''+','+''+',0,0,0,0,0,0,0'+'\n')
+        # with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
+            # f5.write(url+'\n')
 def view(link,appmsg_token,uin,key,pass_ticket):
     # 获得mid,_biz,idx,sn 有些文章没有chksm参数http://mp.weixin.qq.com/s?__biz=MzA3NTcyNzY3OA==&mid=400102856&idx=1&sn=c0dab637c639b52d1d308d609bb270e1#rd
     # mid = link.split("&")[1].split("=")[1]
@@ -398,15 +401,15 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             return str(len(elected_comment)),comments_html
         return '0',''
     return '0',''
-# for line in csv_reader:
-#     if line[2] == "文章链接":
-#         continue
-#     res = down(line[2],line[8],line[7],line[3])
-#     time.sleep(random.randint(1, 2))
-#     if not res:
-#        continue
-#     if res == "error":
-#        break
+for line in csv_reader:
+    if line[2] == "文章链接":
+        continue
+    res = down(line[2],line[8],line[7],line[3])
+    time.sleep(random.randint(1, 2))
+    if not res:
+       continue
+    if res == "error":
+       break
 for item in urls:
     res = down(item,'1','否','')
     time.sleep(random.randint(1, 2))

@@ -609,12 +609,12 @@ class Weibo(object):
                 weibo['up_num'] = footer['up_num']  # 微博点赞数
                 weibo['retweet_num'] = footer['retweet_num']  # 转发数
                 weibo['comment_num'] = footer['comment_num']  # 评论数
-                # matches = re.findall(r'#([^#]+)#', weibo['content'])
+                matches = re.findall(r'#([^#]+)#', weibo['content'])
                 # matches2 = re.findall(r'【([^】]+)】', weibo['content'])
-                # weibo['topic'] = ''
+                weibo['topic'] = ''
                 # weibo['title'] = ''
-                # if matches:
-                #     weibo['topic'] = ", ".join(matches)
+                if matches:
+                    weibo['topic'] = "### ".join(matches)
                 # if matches2:
                 #     weibo['title'] = ", ".join(matches2)
             else:
@@ -648,7 +648,7 @@ class Weibo(object):
         try:
             url = 'https://weibo.cn/%s?page=%d' % (
                 self.user_config['user_uri'], page)
-            # print("请求地址:",url)
+            print("请求地址:",url)
             selector = self.handle_html(url)
             info = selector.xpath("//div[@class='c']")
             is_exist = info[0].xpath("div/span[@class='ctt']")
@@ -730,7 +730,7 @@ class Weibo(object):
                 '点赞数',
                 '转发数',
                 '评论数',
-                # '话题',
+                '话题',
                 # '标题',
             ]
             if not self.filter:
@@ -1107,7 +1107,7 @@ def general_eda(csv_fp):
 
 def main():
     try:
-        print('本工具更新于2023年12月22日')
+        print('本工具更新于2023年12月28日')
         uid = input('请输入微博uid：')
         is_filter = int(input('是否只抓取原创微博：'))
         since_date = input('请输入开始时间，比如2020-01-01：')
