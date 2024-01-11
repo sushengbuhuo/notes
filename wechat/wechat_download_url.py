@@ -155,7 +155,7 @@ def down(url,position,copyright,digest):
     except Exception as e:
         print(e,url)#;raise Exception("抓取失败了："+url)
         with open(f'{sname}下载失败文章列表.csv', 'a+', encoding=encoding) as f6:
-            f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+','+copyright+ ',,'+position+ ','+''+ ','+''+','+''+',0,0,0,0,0,0,0'+'\n')
+            f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+',,'+copyright+ ','+position+ ','+''+ ','+''+','+''+',0,0,0,0,0,0,0'+'\n')
         # with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
             # f5.write(url+'\n')
 def view(link,appmsg_token,uin,key,pass_ticket):
