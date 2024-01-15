@@ -76,18 +76,18 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
             msg_fail_reason = ''
             fail = 0
             delete_status = '否'
+            print('文章信息',publish_info.items())
             if publish_info['type'] == 9:
                 article_type = '群发'
-                # 正常 自己删除 违规
+                # 正常2 自己删除7 被举报违规8 未发送成功违规6
                 if publish_info['sent_result']['msg_status'] ==2:
                     fans = publish_info['sent_status']['total']
-                elif publish_info['sent_result']['msg_status'] ==7:
+                elif publish_info['sent_result']['msg_status'] ==7 or publish_info['sent_result']['msg_status'] ==8:
                     fans = publish_info['sent_status']['total']
-                    msg_fail_reason = publish_info['sent_result']['msg_fail_reason']
+                    # msg_fail_reason = publish_info['sent_result']['msg_fail_reason']
                 elif publish_info['sent_result']['msg_status'] == 6:
-                    msg_fail_reason = publish_info['sent_result']['msg_fail_reason']
+                    # msg_fail_reason = publish_info['sent_result']['msg_fail_reason']
                     fail = 1
-            print('文章信息',publish_info.items())
             for item in publish_info['appmsgex']:
                 try:
                     # if item['update_time'] > 1645113602:
@@ -170,9 +170,9 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                         except Exception as e:
                             print('下载封面失败',e,link)
                     with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                        f.write(date+','+trimName(item['title']) + ','+link+ ','+trimName(item['digest'])+ ','+author+','+item['cover']+','+''+','+copyright+ ','+str(item['itemidx'])+ ','+is_pay+ ','+country_name+','+province_name+','+article_type+','+delete_status+','+str(fans)+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+                        f.write(date+','+trimName(item['title']) + ','+link+ ','+trimName(html.unescape(item['digest']))+ ','+author+','+item['cover']+','+''+','+copyright+ ','+str(item['itemidx'])+ ','+is_pay+ ','+country_name+','+province_name+','+article_type+','+delete_status+','+str(fans)+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
                     with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
-                        f2.write('[{}]'.format(date+'_'+item['title']) + '({})'.format(link)+ '\n\n'+'文章简介:'+item['digest']+ '\n\n'+'文章作者:'+author+ '\n\n')
+                        f2.write('[{}]'.format(date+'_'+item['title']) + '({})'.format(link)+ '\n\n'+'文章简介:'+html.unescape(item['digest'])+ '\n\n'+'文章作者:'+author+ '\n\n')
                     with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
                         f3.write(link+'\n')
                 except Exception as e:
