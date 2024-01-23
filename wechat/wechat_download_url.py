@@ -353,7 +353,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             return "error","status"
         if ret == 0:
             elected_comment = resp['elected_comment']
-            print('评论数:',len(elected_comment))
+            print('评论数:',len(elected_comment),resp['elected_comment_total_cnt'])
             # with open(date+'_'+trimName(title_article)+'.csv', 'a+', encoding='utf-8') as f:
             #     f.write('评论时间'+','+'评论昵称' + ','+'评论内容'+ ','+'评论点赞数'+ '\n')
             for comment in elected_comment:
@@ -398,7 +398,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerows(comments_excel)
-            return str(len(elected_comment)),comments_html
+            return str(resp['elected_comment_total_cnt']),comments_html
         return '0',''
     return '0',''
 for line in csv_reader:

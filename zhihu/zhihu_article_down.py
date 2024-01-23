@@ -55,7 +55,7 @@ filename = input('请输入知乎文章excel文件名：')
 # filename='zhuhu_article2.xlsx'
 if not os.path.exists(filename):
     sys.exit('文件不存在')
-df=pd.read_excel(filename)
+
 # https://www.cnblogs.com/flyup/p/15264897.html 
 # 所有数据df.values 二维数组 df.values[i , j]，第i行第j列的值 df.values[[i1 , i2 , i3]]，第i1、i2、i3行数据 df.values[: , j]，第j列数据df.iloc[:, j].values
 # df.loc[A, B]和iloc[A, B]。其中A表示对行的索引，B表示对列的索引，B可缺省
@@ -70,11 +70,21 @@ df=pd.read_excel(filename)
 # df['city'] = df.location.str.split(', ', expand=True)[0]
 # 对order_id使用groupby()，再对每个group的item_price进行求和。 df.groupby('order_id').item_price.sum().head() df.groupby('order_id').item_price.agg(['sum', 'count']).head()
 # stocks.style.format(format_dict)
-print('列标题',df.columns)
-print('行标题',df.index)
 # for indexs in df.index:
 #     print('数据',df.loc[indexs].values[0:-1])
 # down('https://zhuanlan.zhihu.com/p/')
 # asyncio.get_event_loop().run_until_complete(down('https://zhuanlan.zhihu.com/p/'))
-for i in tqdm(df['知乎链接'].tolist(), desc='下载进度'):
-    down('https:'+i)
+file_name, file_extension = os.path.splitext(filename)
+if file_extension == '.xlsx':
+    df=pd.read_excel(filename)
+    print('列标题',df.columns)
+    print('行标题',df.index)
+    for i in tqdm(df['知乎链接'].tolist(), desc='下载进度'):
+        down('https:'+i)
+        # break
+elif file_extension == '.txt':
+    with open(f'{filename}', encoding='utf-8') as f:
+        contents = f.read()
+    urls=contents.split('\n')
+    for item in tqdm(urls, desc='下载进度'):
+        down(item)
