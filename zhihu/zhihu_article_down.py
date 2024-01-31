@@ -15,7 +15,7 @@ headers = {
         'cookie':''
     }
 def replace_invalid_chars(filename):
-    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n']
     for char in invalid_chars:
         filename = filename.replace(char, '-')
     return filename

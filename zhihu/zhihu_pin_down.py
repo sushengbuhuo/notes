@@ -8,7 +8,6 @@ from pyppeteer import launch
 import tkinter,time
 import pandas as pd
 from tqdm import tqdm
-from datetime import datetime
 headers = {
         'origin': 'https://zhuanlan.zhihu.com',
         'referer': 'https://zhuanlan.zhihu.com/',
@@ -24,22 +23,32 @@ def down(url):
     try:
         html = requests.get(url, headers=headers).text
         soup = BeautifulSoup(html, 'lxml')
-        content = soup.find(class_='RichContent-inner').prettify()
-        title = soup.find(class_='QuestionHeader-title').get_text()
+        content=''
+        content2=''
+        title=re.search(r'/(\d+)$', url).group(1)
+        remainContentRichText = soup.find(class_='PinItem-remainContentRichText')
+        if remainContentRichText:
+            imgs=re.findall(r'src="([^"]+)"', remainContentRichText.prettify())
+            if imgs:
+                for i in imgs:
+                    content+=f'<img  src="{i}"><br>'
+        RichContent = soup.find(class_='RichContent-inner')
+        if RichContent:
+            content2=RichContent.get_text()
+            if content2 != '':
+                title = content2[:30]
         answer_time= soup.find(class_='ContentItem-time').get_text()
         match = re.search(r'\d{4}-\d{2}-\d{2}', answer_time)
-        # datetime_obj = datetime.strptime(answer_time, "%Y-%m-%d %H:%M")
-        # date_str = datetime_obj.strftime("%Y-%m-%d")
         answer_date = match.group()
-        print('开始下载回答：',url,title,answer_date)
+        print('开始下载想法：',url,title,answer_date)
         # title = re.sub('[\/:*?"<>|]','-',title)
         # content = content.replace('data-actual', '')
         # content = content.replace('h1>', 'h2>')
         # content = re.sub(r'<noscript>.*?</noscript>', '', content)
         # content = re.sub(r'src="data:image.*?"', '', content)
-        content = content.replace('data-actualsrc', 'src')
-        content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1><h3>%s</h3>%s</body></html>' % (
-            title, url,content)
+        content = content.replace('data-actualsrc', 'src')+content2
+        content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h3>%s</h3>%s</body></html>' % (
+            url, content)
         with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content)
         # res = requests.get(url, headers=headers)
@@ -47,31 +56,17 @@ def down(url):
         # with open('zzz.html', 'w', encoding='utf-8') as f:
         # 	f.write(contents)
     except Exception as e:
-        with open(f'下载失败知乎回答列表.txt', 'a+', encoding='utf-8') as f:
+        with open(f'下载失败知乎想法列表.txt', 'a+', encoding='utf-8') as f:
             f.write(url+'\n')
-        print('下载回答失败', url,e)
+        print('下载文章失败', url,e);raise Exception(e)
 
 if not os.path.exists('html'):
     os.mkdir('html')
 
-filename = input('请输入知乎回答excel文件名：')
-# filename='zhihu_answer.xlsx'
+filename = input('请输入知乎想法excel文件名：')
+# filename='zhuhu_article2.xlsx'
 if not os.path.exists(filename):
     sys.exit('文件不存在')
-file_name, file_extension = os.path.splitext(filename)
-if file_extension == '.xlsx':
-    df=pd.read_excel(filename)
-    print('列标题',df.columns)
-    print('行标题',df.index)
-    for i in tqdm(df['知乎问题链接'].tolist(), desc='下载进度'):
-        down('https:'+i)
-        # break
-elif file_extension == '.txt':
-    with open(f'{filename}', encoding='utf-8') as f:
-        contents = f.read()
-    urls=contents.split('\n')
-    for item in tqdm(urls, desc='下载进度'):
-        down(item)
 
 # https://www.cnblogs.com/flyup/p/15264897.html 
 # 所有数据df.values 二维数组 df.values[i , j]，第i行第j列的值 df.values[[i1 , i2 , i3]]，第i1、i2、i3行数据 df.values[: , j]，第j列数据df.iloc[:, j].values
@@ -87,9 +82,21 @@ elif file_extension == '.txt':
 # df['city'] = df.location.str.split(', ', expand=True)[0]
 # 对order_id使用groupby()，再对每个group的item_price进行求和。 df.groupby('order_id').item_price.sum().head() df.groupby('order_id').item_price.agg(['sum', 'count']).head()
 # stocks.style.format(format_dict)
-
 # for indexs in df.index:
 #     print('数据',df.loc[indexs].values[0:-1])
 # down('https://zhuanlan.zhihu.com/p/')
 # asyncio.get_event_loop().run_until_complete(down('https://zhuanlan.zhihu.com/p/'))
-
+file_name, file_extension = os.path.splitext(filename)
+if file_extension == '.xlsx':
+    df=pd.read_excel(filename)
+    print('列标题',df.columns)
+    print('行标题',df.index)
+    for i in tqdm(df['想法链接'].tolist(), desc='下载进度'):
+        down('https:'+i)
+        # break
+elif file_extension == '.txt':
+    with open(f'{filename}', encoding='utf-8') as f:
+        contents = f.read()
+    urls=contents.split('\n')
+    for item in tqdm(urls, desc='下载进度'):
+        down(item)
