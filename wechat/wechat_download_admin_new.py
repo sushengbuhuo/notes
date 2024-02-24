@@ -70,6 +70,8 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
             # ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
     for publish_list in articles['publish_list']:
         try:
+            if not publish_list['publish_info']:
+                continue
             publish_info = json.loads(publish_list['publish_info'])
             article_type = '发布'
             fans = 0

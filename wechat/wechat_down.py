@@ -49,7 +49,7 @@ def cover(res,headers,date,title):
 def audio(res,headers,date,title):
     aids = re.findall(r'"voice_id":"(.*?)"',res.text)
     if not aids:
-        aids = re.findall(r'voiceid : "(.*?)"',res.text)
+        aids = re.findall(r'voiceid\s*:\s*"(.*?)"',res.text)
     time.sleep(2)
     tmp = 0
     if not os.path.exists('audio'):
@@ -109,7 +109,7 @@ def video(res, headers,date,title,article_url,duration):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('本工具更新于2023年12月12日，获取最新版本请关注公众号苏生不惑')
+print('本工具更新于2024年2月18日，获取最新版本请关注公众号苏生不惑')
 url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
@@ -129,7 +129,7 @@ else:
     urls = re.findall('<a.*?href="(https?://mp.weixin.qq.com/s\?.*?)"',response.text)
     urls.insert(0,url)
 urls = [x for x in urls if x != '']
-print('文章总数：',len(urls))
+print('文章数量：',len(urls))
 num=0
 if not os.path.exists('html'):
     os.mkdir('html')

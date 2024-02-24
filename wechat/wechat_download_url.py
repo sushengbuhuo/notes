@@ -286,7 +286,7 @@ def audio(content,headers,date,title):
     # aid = re.search(r'"voice_id":"(.*?)"',res.text).group(1)
     aids = re.findall(r'"voice_id":"(.*?)"',content)
     if not aids:
-        aids = re.findall(r'voiceid : "(.*?)"',content)
+        aids = re.findall(r'voiceid\s*:\s*"(.*?)"',content)
     time.sleep(1)
     num = 0
     if not os.path.exists('audio'):
