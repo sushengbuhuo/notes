@@ -10,7 +10,7 @@ import traceback
 from collections import OrderedDict
 from datetime import date, datetime, timedelta
 from time import sleep
-
+#https://github.com/dataabc/weiboSpider https://github.com/dataabc/weibo-crawler
 import requests
 from lxml import etree
 from requests.adapters import HTTPAdapter
