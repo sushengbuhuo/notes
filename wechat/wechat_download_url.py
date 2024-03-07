@@ -240,7 +240,7 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     #     likeNum = content["appmsgstat"]['finder_fav_num']
     # if 'finder_like_num' in content["appmsgstat"]:
     #     old_like_num = content["appmsgstat"]['finder_like_num']
-    time.sleep(random.randint(2, 2))
+    time.sleep(random.randint(1, 2))
     print("阅读数:"+str(readNum))
     print("点赞数:"+str(likeNum))
     print("在看数:"+str(old_like_num))

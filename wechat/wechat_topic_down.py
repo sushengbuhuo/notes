@@ -19,7 +19,7 @@ def save_history(url):
 def audio(res,headers,date,title):
     aids = re.findall(r'"voice_id":"(.*?)"',res.text)
     if not aids:
-        aids = re.findall(r'voiceid : "(.*?)"',res.text)
+        aids = re.findall(r'voiceid\s*:\s*"(.*?)"',res.text)
     time.sleep(2)
     tmp = 0
     if not os.path.exists('audio'):
@@ -28,6 +28,8 @@ def audio(res,headers,date,title):
         tmp +=1
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
         audio_data = requests.get(url,headers=headers)
+        if not audio_data.content:
+            continue
         print('正在下载音频：'+title+'.mp3')
         with open('audio/'+date+'_'+trimName(title)+'_'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
@@ -41,6 +43,8 @@ def video(res, headers,date,title,article_url):
     if not vinfo:
         vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',res.text,flags=re.S)
     videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",res.text)
+    if not videos:
+        videos = re.findall(r"source_link\: \'http://v\.qq\.com/x/page/(.*?)\.html\' \|\| \'\'\,",res.text)
     num = 0
     for v in vinfo:
         v_url = re.search(r"url:\s+'(.*?)',",v)
@@ -75,12 +79,12 @@ def video(res, headers,date,title,article_url):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('此工具更新于2023年10月12日')
 topic_url = ''
+print('本工具更新于2024年3月5日，获取最新版本请关注公众号苏生不惑')
 if len(sys.argv) > 1:
    topic_url = sys.argv[1]
 if not topic_url:
-   topic_url = input('公众号苏生不惑提示你，请输入话题地址：')
+   topic_url = input('公众号苏生不惑提示你，请输入公众号话题地址：')
 # 纯音频 topic_url='https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MjM5NjAxOTU4MA==&action=getalbum&album_id=1777378132866465795&scene=173#wechat_redirect'
 # 纯文章 topic_url = 'https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MjM5NjAxOTU4MA==&action=getalbum&album_id=1681628721901830149&scene=173&from_msgid=3009294038&from_itemidx=1&count=3&nolastread=1'
 # 纯视频 topic_url = 'https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&album_id=1333036982024585217&__biz=MzU1OTgyMzQzNw==#wechat_redirect'
@@ -152,16 +156,16 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 		title = title.group(1)
 		ct = ct.group(1)
 		date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-		# cover_data = requests.get(cover,headers=headers)
-		# with open('cover/'+date+'_'+trimName(k)+'.jpg','wb') as f:
-		# 	f.write(cover_data.content)
+		cover_data = requests.get(cover,headers=headers)
+		with open('cover/'+date+'_'+trimName(k)+'.jpg','wb') as f:
+			f.write(cover_data.content)
 		audio(res,headers,date,title)
-		# video(res,headers,date,title,j)
+		video(res,headers,date,title,j)
 		with open('html/'+mp_name+'_'+date+'_'+trimName(k)+'.html', 'w', encoding='utf-8') as f:
 			f.write(content)
 		save_history(html.unescape(j))
 	except Exception as err:
-		with open('html/'+mp_name+'_'+date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+		with open('html/'+mp_name+'_'+date+'_'+str(randint(10,100000))+'.html', 'w', encoding='utf-8') as f:
 			f.write(content);print(err,j)
 	with open(fname, 'a+', encoding=encoding) as f2:
 		f2.write(''+','+k + ','+html.unescape(j)+ ','+''+'\n')
@@ -199,16 +203,16 @@ def download(msgid,mp_name,itemidx):
 			title = title.group(1)
 			ct = ct.group(1)
 			date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-			# cover_data = requests.get(cover,headers=headers)
-			# with open('cover/'+date+'_'+trimName(i['title'])+'.jpg','wb') as f:
-			# 	f.write(cover_data.content)
+			cover_data = requests.get(cover,headers=headers)
+			with open('cover/'+date+'_'+trimName(i['title'])+'.jpg','wb') as f:
+				f.write(cover_data.content)
 			audio(res,headers,date,title)
-			# video(res,headers,date,title,i['url'])
+			video(res,headers,date,title,i['url'])
 			with open('html/'+mp_name+'_'+date+'_'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 			save_history(html.unescape(i['url']))
 		except Exception as err:
-			with open('html/'+mp_name+'_'+date+'_'+str(randint(1,10))+'.html', 'w', encoding='utf-8') as f:
+			with open('html/'+mp_name+'_'+date+'_'+str(randint(100,100000))+'.html', 'w', encoding='utf-8') as f:
 				f.write(content);print(err,i['url'])
 		with open(fname, 'a+', encoding=encoding) as f2:
 			f2.write(date+','+i['title'] + ','+html.unescape(i['url'])+ ','+i['cover_img_1_1']+'\n')

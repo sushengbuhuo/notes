@@ -2,6 +2,11 @@ import asyncio,os
 from pyppeteer import launch
 import tkinter,time
 import shutil
+# import pyppeteer.chromium_downloader
+# PYPPETEER_CHROMIUM_REVISION = '1263111'
+# print('默认版本：{}'.format(pyppeteer.__chromium_revision__))
+# print('可执行文件默认路径：{}'.format(pyppeteer.chromium_downloader.chromiumExecutable.get('win64')))
+# print('win64平台下载链接为：{}'.format(pyppeteer.chromium_downloader.downloadURLs.get('win64')))
 # from playwright.sync_api import sync_playwright 文件名带#会失败
 if not os.path.exists('pdf'):
     os.mkdir('pdf')
