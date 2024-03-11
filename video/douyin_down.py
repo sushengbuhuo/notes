@@ -11,6 +11,44 @@ fname=input("请输入文件名：")
 # 油猴脚本抓取视频地址 https://greasyfork.org/scripts/471880
 # https://v.douyin.com/rWa6bh8/
 # UnicodeDecodeError: 'utf-8' codec can't decode byte 0xea in position 0: invalid continuation byte gb18030 ISO-8859-1
+"""
+
+function downloadData(encoding) {
+        let text = userKey.join(",") + "\n" + userData.join(",") + "\n\n";
+        text += "作品描述,作品链接,点赞数,评论数,收藏数,分享数,发布时间,封面,时长,标签,话题,下载链接\n";//item.collectCount, item.shareCount, item.date, item.url].join(",") + "\n"
+        aweme_list.forEach(item => {
+            let tag=item.tag.map(obj => obj.tag_name)
+        let topic=item.topic.map(obj => obj.hashtag_name)
+            text += ['"' + item.desc + '"', "https://www.douyin.com/video/"+item.awemeId, item.diggCount, item.commentCount,item.collectCount, item.shareCount, item.date, item.image,item.duration,tag.join("#"),topic.join("#"),item.url].join(",") + "\n"
+        });
+        if (encoding === "gbk")
+            text = str2gbk(text);
+        txt2file(text, userData[0] + ".csv");
+    }
+   if (self._url.indexOf("/aweme/v1/web/aweme/post") > -1) {
+                        var json = JSON.parse(self.response);
+                        let post_data = json.aweme_list.map(item => Object.assign(
+                            {"awemeId": item.aweme_id, "desc": item.desc},
+                            {
+                                "diggCount": item.statistics.digg_count,
+                                "commentCount": item.statistics.comment_count,
+                                "collectCount": item.statistics.collect_count,
+                                "shareCount": item.statistics.share_count
+                            },
+                            {
+                                "date": new Date(item.create_time * 1000).toLocaleString(),
+                                "url": item.video.play_addr.url_list[0],
+                                "image": item.video.cover.url_list[0].replace(/\\u([\d\w]{4})/gi, function (match, grp) {return String.fromCharCode(parseInt(grp, 16));}),
+                                "duration":item.duration,
+                                "tag":item.video_tag,
+                                "topic":item.text_extra,
+                            }));
+                        aweme_list = aweme_list.concat(post_data);
+                        if (timer !== undefined)
+                            clearTimeout(timer);
+                        timer = setTimeout(() => createDownloadButton(), 1000);
+                    } 
+"""
 f = open(f'{fname}', encoding='gbk')
 csv_reader = csv.reader(f)
 def trimName(name):
