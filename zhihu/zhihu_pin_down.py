@@ -1,7 +1,7 @@
 import time,sys
 import re
 import os
-import requests,json
+import requests,json,time,random
 from bs4 import BeautifulSoup
 import asyncio,os
 from pyppeteer import launch
@@ -92,6 +92,7 @@ if file_extension == '.xlsx':
     print('列标题',df.columns)
     print('行标题',df.index)
     for i in tqdm(df['想法链接'].tolist(), desc='下载进度'):
+        time.sleep(random.randint(1, 2))
         down('https:'+i)
         # break
 elif file_extension == '.txt':

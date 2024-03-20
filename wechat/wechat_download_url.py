@@ -8,6 +8,7 @@ requests.packages.urllib3.disable_warnings()
 headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat",
         'referer': 'https://mp.weixin.qq.com',
+        # "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
     }
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','').replace('#','--')
@@ -34,8 +35,8 @@ with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
     f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
 with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
-def down(url,position,copyright,digest):
-    response = requests.get(url, headers=headers)
+def down(url,position,copyright,digest,is_pay):
+    response = requests.get(url, headers=headers)#, params={'key': '', 'uin': 'xx'}
     global nums
     encoding = 'utf-8-sig'
     is_down_view = 1
@@ -77,7 +78,7 @@ def down(url,position,copyright,digest):
         print('文章链接',url,date)
         nums = nums+1
         # copyright="否"
-        is_pay = '否'
+        # is_pay = '否'
         province_name = country_name = comments_html=''
         read_num,like_num,old_like_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
         if is_down_view == 1:
@@ -92,8 +93,8 @@ def down(url,position,copyright,digest):
             except Exception as e:
                pass
                # print('获取地区失败',e,url)
-            if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
-                is_pay = '是'
+            # if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
+            #     is_pay = '是'
             #转载原创文章误判 读取txt才用
             # if '>原创</span>' in content:
         	   #  copyright="是"
@@ -317,7 +318,7 @@ def image(response,headers,date,title):
             f6.write(img_data.content)
     return str(num)
 def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
-    time.sleep(random.randint(1, 2))
+    time.sleep(random.randint(1, 1))
     str_comment = re.search(r'var comment_id = "(.*)" \|\| "(.*)" \* 1;', content) or re.search(r"d\.comment_id = xml \? getXmlValue\('comment_id\.DATA'\) : '(.*)';", content)
     str_msg = re.search(r"var appmsgid = \"\" \|\| '' \|\| '(.*)'", content) or re.search(r"window.appmsgid = '(.*?)' \|\| '' \|\| '';", content)   or re.search(r"window.appmsgid = '' \|\| '(.*?)' \|\| '';", content)   or re.search(r"window.appmsgid = '' \|\| '' \|\| '(.*?)';", content)  or re.search(r"var appmsgid = \"(.*)\" \|\| '' \|\| '';",content)  or re.search(r"var appmsgid = \"\" \|\| '(.*)' \|\| '';",content)
     str_token = re.search(r'window\.appmsg_token = "(.*)";', content) or re.search(r'var appmsg_token = "(.*)";', content)
@@ -404,15 +405,15 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
 for line in csv_reader:
     if line[2] == "文章链接":
         continue
-    res = down(line[2],line[8],line[7],line[3])
-    time.sleep(random.randint(1, 2))
+    res = down(line[2],line[8],line[7],line[3],line[9])
+    time.sleep(random.randint(1, 1))
     if not res:
        continue
     if res == "error":
        break
 for item in urls:
-    res = down(item,'1','否','')
-    time.sleep(random.randint(1, 2))
+    res = down(item,'1','','','')
+    time.sleep(random.randint(1, 1))
     if not res:
        continue
     if res == "error":

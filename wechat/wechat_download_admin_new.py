@@ -139,10 +139,12 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                            author = re.search(r'<meta name="author" content="(.*)"\s?/>', content).group(1)
                         except Exception as e:
                            pass
-                        if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
-                            is_pay = '是'
+                        # if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
+                        #     is_pay = '是'
                     if item['copyright_type'] == 0:
                         copyright="否"
+                    if item['is_pay_subscribe'] == 1:
+                        is_pay="是"
                     #下载视频
                     if is_down_video:
                         try:

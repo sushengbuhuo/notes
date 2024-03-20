@@ -15,8 +15,7 @@ def trimName(name):
 filename=filename.replace('.csv','')
 f = open(f'{filename}.csv', encoding='UTF8')
 csv_reader = csv.reader(f)
-# df = pd.read_csv('5044429589.csv',encoding='utf_8_sig')
-# df = df[df['头条文章地址'].notnull()]
+# df = read_csv('5044429589.csv',encoding='utf_8_sig')
 # urls=df.头条文章地址.tolist()
 # urls=[urls[0]]
 # print("数量",len(urls))
@@ -32,7 +31,7 @@ for line in csv_reader:
 		# print(title,weibo_time)
 		if not weibo_time.startswith('20'):
 			weibo_time=time.strftime('%Y')+'-'+weibo_time.strip().split(' ')[0]
-		with open('articles/'+weibo_time+'_'+trimName(title)+'.html', 'w+', encoding='utf-8') as f:
+		with open('weibo_articles/'+weibo_time+'_'+trimName(title)+'.html', 'w+', encoding='utf-8') as f:
 			f.write(res.text.replace('"//','https://'))
 			print('下载文章中',line[3])
 	except Exception as e:
