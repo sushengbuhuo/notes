@@ -196,9 +196,11 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     }
     data = {
         "is_only_read": "1",
+        "is_need_reward": "1",
         "is_temp_url": "0",
         "appmsg_type": "9",
         'reward_uin_count': '0',
+        # 'comment_id':'3190316509655433217'
         # 'vid':'wxv_3145693246921261058',
         # 'item_show_type':'5',
         # 'finder_export_id':'export/UzFfAgtgekIEAQAAAAAAYSg1SChmpgAAAAstQy6ubaLX4KHWvLEZgBPEiINUJm9aZK2GzNPgMIttAAqM1EV1ILMbcYvWHeA2',
@@ -236,6 +238,7 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     reward_num = 0
     if 'reward_total_count' in content:
         reward_num = content['reward_total_count']
+    share_num=content.get('appmsgstat').get('share_num',0)
     # 视频号文章 https://mp.weixin.qq.com/s/8yTuzaYWkiwJcHgLkBlaMA 
     # if 'finder_fav_num' in content["appmsgstat"]:
     #     likeNum = content["appmsgstat"]['finder_fav_num']
@@ -245,6 +248,8 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     print("阅读数:"+str(readNum))
     print("点赞数:"+str(likeNum))
     print("在看数:"+str(old_like_num))
+    print("赞赏数:"+str(reward_num))
+    print("分享数:"+str(share_num))#,str(content['comment_count'])
     return str(readNum), str(likeNum),str(old_like_num),str(reward_num)
 def video(content, headers,date,article_url,title):
     # vid = re.search(r'wxv_.{19}',res.text).group(0)

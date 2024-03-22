@@ -103,11 +103,11 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                     title = item['title']
                     link = html.unescape(item['link'])
                     nums = nums+1
-                    if is_down_copyright == 1 and item['copyright_type'] == 0:
+                    if is_down_copyright == 1 and item['copyright_type'] != 1:
                        print('过滤链接',link,date)
                        continue
                     print('文章链接',link,date)
-                    copyright="是"
+                    copyright="否"
                     is_pay = '否'
                     author=item['author_name']
                     if item['is_deleted'] or fail == 1:
@@ -141,8 +141,8 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                            pass
                         # if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                         #     is_pay = '是'
-                    if item['copyright_type'] == 0:
-                        copyright="否"
+                    if item['copyright_type'] == 1:
+                        copyright="是"
                     if item['is_pay_subscribe'] == 1:
                         is_pay="是"
                     #下载视频
