@@ -32,7 +32,7 @@ f = open(f'{sname}.csv', encoding='UTF8')
 csv_reader = csv.reader(f)
 print(len(urls))
 with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
+    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+','+'分享数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
 with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
 def down(url,position,copyright,digest,is_pay):
@@ -74,15 +74,15 @@ def down(url,position,copyright,digest,is_pay):
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))# %H:%M:%S
         # if int(ct) > 1660321824:
         #     return False
-        print('文章数量',nums)
-        print('文章链接',url,date)
+        print('文章数量：',nums)
+        print('文章链接：',url,date)
         nums = nums+1
         # copyright="否"
         # is_pay = '否'
         province_name = country_name = comments_html=''
-        read_num,like_num,old_like_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
+        read_num,like_num,old_like_num,share_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
         if is_down_view == 1:
-            read_num,like_num,old_like_num,reward_num = view(url,appmsg_token,uin,key,pass_ticket)
+            read_num,like_num,old_like_num,reward_num,share_num = view(url,appmsg_token,uin,key,pass_ticket)
             if read_num == "error":
             	print('获取阅读数失败',url)
             	return "error"
@@ -147,16 +147,16 @@ def down(url,position,copyright,digest,is_pay):
             #     with open(date+'-'+str(random.randint(100,1000))+'.html', 'w', encoding='utf-8') as f:
             #         f.write(content+comments_html)
         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
-            f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+digest+ '\n\n'+ '\n\n')
+            f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+html.unescape(digest)+ '\n\n'+ '\n\n')
         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f2:
             f2.write(url+ '\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write(date+','+trimName(title) + ','+url+ ','+digest+ ','+trimName(author)+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+            f.write(date+','+trimName(title) + ','+url+ ','+html.unescape(digest)+ ','+trimName(html.unescape(author))+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+share_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
         return True
     except Exception as e:
         print(e,url)#;raise Exception("抓取失败了："+url)
         with open(f'{sname}下载失败文章列表.csv', 'a+', encoding=encoding) as f6:
-            f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+',,'+copyright+ ','+position+ ','+''+ ','+''+','+''+',0,0,0,0,0,0,0'+'\n')
+            f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+',,'+copyright+ ','+position+ ','+''+ ','+''+','+''+',0,0,0,0,0,0,0,0'+'\n')
         # with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
             # f5.write(url+'\n')
 def view(link,appmsg_token,uin,key,pass_ticket):
@@ -168,7 +168,7 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     parsed_url = urlparse(link)
     query_params = parse_qs(parsed_url.query)
     if not '__biz' in query_params:
-        return 'error','0','0','0'
+        return 'error','0','0','0','0'
     __biz=query_params['__biz'][0]
     # 早期文章http://mp.weixin.qq.com/mp/appmsg/show?__biz=MjM5Nzg5OTk5NA==&appmsgid=10014557&itemidx=4&sign=4c61d5477f07877436cd04b18ec2c884#wechat_redirect
     if 'mid' in query_params:
@@ -184,7 +184,7 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     if 'itemidx' in query_params:
         idx=query_params['itemidx'][0]
     if not mid or not sn or not __biz or not idx:
-        return 'error','0','0','0'
+        return 'error','0','0','0','0'
     url = "http://mp.weixin.qq.com/mp/getappmsgext"#获取详情页
     
     cookies = """rewardsn   
@@ -222,7 +222,7 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     content = requests.post(url, headers=headers, data=data, params=params).json()
     # print(params,content,data)
     if not 'appmsgstat' in content:
-    	return 'error','0','0','0'
+    	return 'error','0','0','0','0'
     try:
         readNum = content["appmsgstat"]["read_num"]
     except:
@@ -245,12 +245,12 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     # if 'finder_like_num' in content["appmsgstat"]:
     #     old_like_num = content["appmsgstat"]['finder_like_num']
     time.sleep(random.randint(1, 2))
-    print("阅读数:"+str(readNum))
-    print("点赞数:"+str(likeNum))
-    print("在看数:"+str(old_like_num))
-    print("赞赏数:"+str(reward_num))
-    print("分享数:"+str(share_num))#,str(content['comment_count'])
-    return str(readNum), str(likeNum),str(old_like_num),str(reward_num)
+    print("文章阅读数:"+str(readNum))
+    print("文章点赞数:"+str(likeNum))
+    print("文章在看数:"+str(old_like_num))
+    print("文章赞赏数:"+str(reward_num))
+    print("文章分享数:"+str(share_num))#,str(content['comment_count'])
+    return str(readNum), str(likeNum),str(old_like_num),str(reward_num),str(share_num)
 def video(content, headers,date,article_url,title):
     # vid = re.search(r'wxv_.{19}',res.text).group(0)
     time.sleep(1)
@@ -380,7 +380,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
                 data_comments.append([comment_time,nick_name,content,like_num,reply_content])
                 comments_excel.append([date,title_article,url,nick_name,content,like_num,reply_content,comment_time,country_name,province_name])
                 # print(comment_time,nick_name,content,like_num)
-                comments_html = comments_html + f'<li class="js_comment_item discuss_item"><div class="discuss_item_hd"><div class="user_info"><div class="nickname_wrp"><img class="avatar" src="{logo_url}"><strong class="nickname">{nick_name}        来自{country_name}---{province_name}</strong></div></div></div><div class="discuss_message"><span class="discuss_status"></span><div class="discuss_message_content js_comment_content">{content}</div></div>'
+                comments_html = comments_html + f'<li class="js_comment_item discuss_item"><div class="discuss_item_hd"><div class="user_info"><div class="nickname_wrp"><img class="avatar" src="{logo_url}"><strong class="nickname">{nick_name}        来自{country_name}---{province_name}   {comment_time}</strong></div></div></div><div class="discuss_message"><span class="discuss_status"></span><div class="discuss_message_content js_comment_content">{content}</div></div>'
                 for reply in reply_list:
                     reply_nick_name = reply.get('nick_name')
                     reply_nick_content = reply.get('content')
