@@ -1,7 +1,7 @@
 import time,sys
 import re
 import os
-import requests,json,time,random
+import requests,json
 from bs4 import BeautifulSoup
 import asyncio,os
 from pyppeteer import launch
@@ -12,7 +12,7 @@ headers = {
         'origin': 'https://zhuanlan.zhihu.com',
         'referer': 'https://zhuanlan.zhihu.com/',
         'User-Agent': ('Mozilla/5.0'),
-        'cookie':''
+        'cookie':'',
     }
 def replace_invalid_chars(filename):
     invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n']
@@ -37,16 +37,18 @@ def down(url):
         content = content.replace('data-actualsrc', 'src')
         content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1><h3>%s</h3>%s</body></html>' % (
             title,url, content)
-        with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
-            f.write(content)
+        # with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
+        #     f.write(content)
         # res = requests.get(url, headers=headers)
         # contents = re.search(r'<div class="Post-RichText">(.*?)</div>',res.text).group(1)
         # with open('zzz.html', 'w', encoding='utf-8') as f:
         # 	f.write(contents)
+        return answer_date
     except Exception as e:
         with open(f'下载失败知乎文章列表.txt', 'a+', encoding='utf-8') as f:
             f.write(url+'\n')
         print('下载文章失败', url,e)
+        return ''
 
 if not os.path.exists('html'):
     os.mkdir('html')
@@ -75,13 +77,25 @@ if not os.path.exists(filename):
 # down('https://zhuanlan.zhihu.com/p/')
 # asyncio.get_event_loop().run_until_complete(down('https://zhuanlan.zhihu.com/p/'))
 file_name, file_extension = os.path.splitext(filename)
+with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
+    f.write('时间'+','+'标题' + ','+'链接'+ ','+'赞同数'+ ','+'评论数'+'\n')
 if file_extension == '.xlsx':
     df=pd.read_excel(filename)
     print('列标题',df.columns)
     print('行标题',df.index)
-    for i in tqdm(df['知乎链接'].tolist(), desc='下载进度'):
-        time.sleep(random.randint(1, 2))
-        down('https:'+i)
+    time.sleep(1)
+    for index, row in df.iterrows():
+        t=down('https:'+row['知乎链接'])
+        fav=str(row['文章赞同数'])
+        comment = str(row['文章评论数'])
+        if comment == 'nan':
+            comment = '0'
+        if fav == 'nan':
+            fav='0'
+        with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
+            f.write(t+','+replace_invalid_chars(row['知乎标题']) + ','+'https:'+row['知乎链接']+ ','+fav+ ','+comment+'\n')
+    # for i in tqdm(df['知乎链接'].tolist(), desc='下载进度'):
+    #     down('https:'+i)
         # break
 elif file_extension == '.txt':
     with open(f'{filename}', encoding='utf-8') as f:

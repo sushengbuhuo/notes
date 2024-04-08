@@ -1,7 +1,7 @@
 import time,sys
 import re
 import os
-import requests,json,time,random
+import requests,json
 from bs4 import BeautifulSoup
 import asyncio,os
 from pyppeteer import launch
@@ -40,21 +40,25 @@ def down(url):
         content = content.replace('data-actualsrc', 'src')
         content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1><h3>%s</h3>%s</body></html>' % (
             title, url,content)
-        with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
-            f.write(content)
+        # with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
+        #     f.write(content)
         # res = requests.get(url, headers=headers)
         # contents = re.search(r'<div class="Post-RichText">(.*?)</div>',res.text).group(1)
         # with open('zzz.html', 'w', encoding='utf-8') as f:
         # 	f.write(contents)
+        return answer_date
     except Exception as e:
         with open(f'下载失败知乎回答列表.txt', 'a+', encoding='utf-8') as f:
             f.write(url+'\n')
         print('下载回答失败', url,e)
+        return ''
 
 if not os.path.exists('html'):
     os.mkdir('html')
 
 filename = input('请输入知乎回答excel文件名：')
+with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
+    f.write('时间'+','+'标题' + ','+'链接'+ ','+'赞同数'+ ','+'评论数'+'\n')
 # filename='zhihu_answer.xlsx'
 if not os.path.exists(filename):
     sys.exit('文件不存在')
@@ -63,9 +67,19 @@ if file_extension == '.xlsx':
     df=pd.read_excel(filename)
     print('列标题',df.columns)
     print('行标题',df.index)
-    for i in tqdm(df['知乎问题链接'].tolist(), desc='下载进度'):
-        time.sleep(random.randint(1, 2))
-        down('https:'+i)
+    time.sleep(1)
+    for index, row in df.iterrows():
+        t=down('https:'+row['知乎问题链接'])
+        fav=str(row['知乎赞同数'])
+        comment = str(row['知乎评论数'])
+        if comment == 'nan':
+            comment = '0'
+        if fav == 'nan':
+            fav='0'
+        with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
+            f.write(t+','+replace_invalid_chars(row['知乎问题标题']) + ','+'https:'+row['知乎问题链接']+ ','+fav+ ','+comment+'\n')
+    # for i in tqdm(df['知乎问题链接'].tolist(), desc='下载进度'):
+    #     t=down('https:'+i)
         # break
 elif file_extension == '.txt':
     with open(f'{filename}', encoding='utf-8') as f:
