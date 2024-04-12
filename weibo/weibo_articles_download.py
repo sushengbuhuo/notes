@@ -22,17 +22,18 @@ csv_reader = csv.reader(f)
 if not os.path.exists('weibo_articles'):
     os.mkdir('weibo_articles')
 for line in csv_reader:
-	if line[3] == "头条文章地址" or not line[3]:
+	if line[14] == "文章链接" or not line[14]:
 		continue
 	try:
-		res=requests.get(line[3],headers=headers, verify=False)
+		res=requests.get(line[14],headers=headers, verify=False)
+		content=re.sub(r'wx\d*', 'lz', res.text)
 		title = re.search(r'<title>(.*?)</title>',res.text).group(1)
 		weibo_time = re.search(r'<span class="time".*>(.*?)</span>',res.text).group(1)
 		# print(title,weibo_time)
 		if not weibo_time.startswith('20'):
 			weibo_time=time.strftime('%Y')+'-'+weibo_time.strip().split(' ')[0]
 		with open('weibo_articles/'+weibo_time+'_'+trimName(title)+'.html', 'w+', encoding='utf-8') as f:
-			f.write(res.text.replace('"//','https://'))
-			print('下载文章中',line[3])
+			f.write(content.replace('"//','https://'))
+			print('下载文章中',line[14])
 	except Exception as e:
-		print('错误信息',e,line[3])
+		print('错误信息',e,line[14])

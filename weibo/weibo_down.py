@@ -610,13 +610,19 @@ class Weibo(object):
                 weibo['retweet_num'] = footer['retweet_num']  # 转发数
                 weibo['comment_num'] = footer['comment_num']  # 评论数
                 matches = re.findall(r'#([^#]+)#', weibo['content'])
-                # matches2 = re.findall(r'【([^】]+)】', weibo['content'])
+                matches2 = re.findall(r'【([^】]+)】', weibo['content'])
                 weibo['topic'] = ''
-                # weibo['title'] = ''
+                weibo['title'] = ''
                 if matches:
                     weibo['topic'] = "### ".join(matches)
-                # if matches2:
-                #     weibo['title'] = ", ".join(matches2)
+                if matches2:
+                    weibo['title'] = ", ".join(matches2)
+                hrefs = info.xpath('div//a/@href')
+                weibo['article_url'] = ''
+                for article_url in hrefs:
+                    if 'https://weibo.com/ttarticle/p/show?id=' in article_url:
+                        weibo['article_url'] = article_url
+                        break
             else:
                 weibo = None
             return weibo
@@ -731,7 +737,8 @@ class Weibo(object):
                 '转发数',
                 '评论数',
                 '话题',
-                # '标题',
+                '标题',
+                '文章链接',
             ]
             if not self.filter:
                 result_headers.insert(3, '被转发微博原始图片链接')

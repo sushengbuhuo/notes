@@ -80,7 +80,7 @@ def down(url,position,copyright,digest,is_pay):
         # copyright="否"
         # is_pay = '否'
         province_name = country_name = comments_html=''
-        read_num,like_num,old_like_num,share_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
+        read_num,like_num,old_like_num,share_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0','0'
         if is_down_view == 1:
             read_num,like_num,old_like_num,reward_num,share_num = view(url,appmsg_token,uin,key,pass_ticket)
             if read_num == "error":
@@ -246,8 +246,8 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     #     old_like_num = content["appmsgstat"]['finder_like_num']
     time.sleep(random.randint(1, 2))
     print("文章阅读数:"+str(readNum))
-    print("文章点赞数:"+str(likeNum))
-    print("文章在看数:"+str(old_like_num))
+    print("文章在看数:"+str(likeNum))
+    print("文章点赞数:"+str(old_like_num))
     print("文章赞赏数:"+str(reward_num))
     print("文章分享数:"+str(share_num))#,str(content['comment_count'])
     return str(readNum), str(likeNum),str(old_like_num),str(reward_num),str(share_num)
