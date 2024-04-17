@@ -251,14 +251,17 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     print("文章赞赏数:"+str(reward_num))
     print("文章分享数:"+str(share_num))#,str(content['comment_count'])
     return str(readNum), str(likeNum),str(old_like_num),str(reward_num),str(share_num)
-def video(content, headers,date,article_url,title):
+def video2(content, headers,date,article_url,title):
     # vid = re.search(r'wxv_.{19}',res.text).group(0)
     time.sleep(1)
-    # print('视频id',vid)
+    # print('视频id',vid) unescape(encodedString.replace(/\\x/g, "%")); 视频号 https://mp.weixin.qq.com/s/pl8y30DALob_bKQmbdXcnQ
+    videos_snap = re.findall(r'var\s+video_snap_json\s+\=\s+"\{\\x22list\\x22:(.*?)\}"\s+\|\|\s+"";',content)
     videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",content)
     if not videos:
         videos = re.findall(r"source_link\: \'http://v\.qq\.com/x/page/(.*?)\.html\' \|\| \'\'\,",content)
     num = 0
+    if videos_snap:
+        num = len(json.loads(videos_snap[0].replace('\\x22', '"')))
     if not os.path.exists('video'):
         os.mkdir('video')
     for i in videos:
@@ -287,8 +290,40 @@ def video(content, headers,date,article_url,title):
             with open('video/'+date+'_'+trimName(title)+'_'+str(num)+'.mp4','wb') as f:
                 f.write(video_data.content)
     return str(num)
-
-def audio(content,headers,date,title):
+def video(content, headers,date,article_url,title):
+    # vid = re.search(r'wxv_.{19}',res.text).group(0)
+    # time.sleep(1)
+    # print('视频id',vid) unescape(encodedString.replace(/\\x/g, "%")); 视频号 https://mp.weixin.qq.com/s/pl8y30DALob_bKQmbdXcnQ
+    videos_snap = re.findall(r'var\s+video_snap_json\s+\=\s+"\{\\x22list\\x22:(.*?)\}"\s+\|\|\s+"";',content)
+    num = 0
+    if videos_snap:
+        num = len(json.loads(videos_snap[0].replace('\\x22', '"')));print('视频号数量',num)
+    if not os.path.exists('video'):
+        os.mkdir('video')
+    matches = re.search(r'var\s*videoPageInfos\s*=\s*(\[.*?\]);', content, re.DOTALL)
+    if not matches:
+        return str(num)
+    json_array = matches.group(1)
+    vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',json_array,flags=re.S)
+    if not vinfo:
+        return str(num)
+    for v in vinfo:
+        v_url = re.search(r"url:\s+'(.*?)',",v)
+        if not v_url:
+            v_url = re.search(r"url:\s+\('(.*?)'\)",v)
+        # print(v,v_url)
+        if v_url:
+            video_url = html.unescape(v_url.group(1).replace(r'\x26','&'));print('视频地址',video_url)
+            # vids = list(set(vids)) #去重
+            num+=1
+            print('正在下载视频：'+trimName(title)+'.mp4')
+            video_data = requests.get(video_url,headers=headers)
+            with open('视频链接合集.csv','a+') as f4:
+                f4.write(date+','+trimName(title)+','+video_url+','+article_url+'\n')
+            with open('video/'+date+'_'+trimName(title)+'_'+str(num)+'.mp4','wb') as f:
+                f.write(video_data.content)
+    return str(num)
+def audio2(content,headers,date,title):
     # aid = re.search(r'"voice_id":"(.*?)"',res.text).group(1)
     aids = re.findall(r'"voice_id":"(.*?)"',content)
     if not aids:
@@ -300,6 +335,26 @@ def audio(content,headers,date,title):
     for id in aids:
         num +=1
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
+        audio_data = requests.get(url,headers=headers)
+        print('正在下载音频：'+title+'.mp3')
+        with open('audio/'+date+'___'+trimName(title)+'___'+str(num)+'.mp3','wb') as f5:
+            f5.write(audio_data.content)
+    return str(num)
+def audio(content,headers,date,title):
+    matches = re.search(r'voiceList=(\{.*\})', content)
+    if not matches:
+        return '0'
+    json_array = json.loads(matches.group(1))
+    if not json_array['voice_in_appmsg']:
+        return '0'
+    # time.sleep(1)
+    num = 0
+    if not os.path.exists('audio'):
+        os.mkdir('audio')
+    for item in json_array['voice_in_appmsg']:
+        num +=1
+        aid=item['voice_id']
+        url = f'https://res.wx.qq.com/voice/getvoice?mediaid={aid}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
         with open('audio/'+date+'___'+trimName(title)+'___'+str(num)+'.mp3','wb') as f5:
@@ -359,10 +414,12 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             return "error","status"
         if ret == 0:
             elected_comment = resp['elected_comment']
+            comment_num = resp['elected_comment_total_cnt']
             print('评论数:',len(elected_comment),resp['elected_comment_total_cnt'])
             # with open(date+'_'+trimName(title_article)+'.csv', 'a+', encoding='utf-8') as f:
             #     f.write('评论时间'+','+'评论昵称' + ','+'评论内容'+ ','+'评论点赞数'+ '\n')
             for comment in elected_comment:
+                comment_num+=comment.get('reply_new')['reply_total_cnt']
                 nick_name = comment.get('nick_name')  # 昵称
                 logo_url = comment.get('logo_url')  # 头像
                 # comment_time = datetime.fromtimestamp(comment.get('create_time'))  # 评论时间
@@ -404,7 +461,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerows(comments_excel)
-            return str(resp['elected_comment_total_cnt']),comments_html
+            return str(comment_num),comments_html
         return '0',''
     return '0',''
 for line in csv_reader:
