@@ -15,9 +15,9 @@ headers = {
         'cookie':''
     }
 def replace_invalid_chars(filename):
-    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n']
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
     for char in invalid_chars:
-        filename = filename.replace(char, '-')
+        filename = filename.replace(char, ' ')
     return filename
 def down(url):
     try:
@@ -32,7 +32,7 @@ def down(url):
             if imgs:
                 for i in imgs:
                     content+=f'<img  src="{i}"><br>'
-        RichContent = soup.find(class_='RichContent-inner')
+        RichContent = soup.find(class_='CopyrightRichText-richText')
         if RichContent:
             content2=RichContent.get_text()
             if content2 != '':
@@ -101,3 +101,4 @@ elif file_extension == '.txt':
     urls=contents.split('\n')
     for item in tqdm(urls, desc='下载进度'):
         down(item)
+        time.sleep(random.randint(1,3))

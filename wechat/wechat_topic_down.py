@@ -2,8 +2,16 @@ import requests,re,os,time,sys,html,urllib3
 from random import randint
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat"
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat",
+        'referer': 'https://mp.weixin.qq.com',
     }
+def replace_invalid_chars(filename):
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
+    for char in invalid_chars:
+        filename = filename.replace(char, ' ')
+    return filename
+def trimName(name):
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ')
 def get_history():
     history = []
     with open('wechat_topic_list.txt', 'a+') as f:
@@ -31,10 +39,8 @@ def audio(res,headers,date,title):
         if not audio_data.content:
             continue
         print('正在下载音频：'+title+'.mp3')
-        with open('audio/'+date+'_'+trimName(title)+'_'+str(tmp)+'.mp3','wb') as f5:
+        with open('audio/'+date+'_'+replace_invalid_chars(title)+'_'+str(tmp)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
-def trimName(name):
-    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，')
 def video(res, headers,date,title,article_url):
     # vids = re.findall(r'wxv_\d{19}',res.text)
     if not os.path.exists('video'):
@@ -59,7 +65,7 @@ def video(res, headers,date,title,article_url):
             video_data = requests.get(video_url,headers=headers)
             with open('视频链接合集.csv','a+') as f4:
                 f4.write(date+','+trimName(title)+','+video_url+','+article_url+'\n')
-            with open('video/'+date+'_'+trimName(title)+'_'+str(num)+'.mp4','wb') as f:
+            with open('video/'+date+'_'+replace_invalid_chars(title)+'_'+str(num)+'.mp4','wb') as f:
                 f.write(video_data.content)
         
     time.sleep(1)
@@ -80,7 +86,7 @@ def video(res, headers,date,title,article_url):
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
 topic_url = ''
-print('本工具更新于2024年3月5日，获取最新版本请关注公众号苏生不惑')
+print('本工具更新于2024年5月1日，获取最新版本请关注公众号苏生不惑')
 if len(sys.argv) > 1:
    topic_url = sys.argv[1]
 if not topic_url:
@@ -91,7 +97,7 @@ if not topic_url:
 # 苏生不惑话题 topic_url='https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MzIyMjg2ODExMA==&action=getalbum&album_id=2267160702144708611&scene=173&from_msgid=2247502369&from_itemidx=2&count=3&nolastread=1#wechat_redirect'
 biz=re.search(r'__biz=(.*?)[&#]',topic_url).group(1)
 album_id=re.search(r'album_id=(.*?)[&#]',topic_url).group(1)
-response = requests.get(topic_url, headers=headers)
+response = requests.get(html.unescape(topic_url), headers=headers)
 mp_name=re.search(r'<div class="album__author-name">(.*?)</div>',response.text)
 if mp_name:
    mp_name = mp_name.group(1)
@@ -115,7 +121,7 @@ if voiceids:
 		# print(i,voice_url)
 		audio_data = requests.get(voice_url,headers=headers)
 		print('正在下载音频：'+i+'.mp3')
-		with open('audio/'+trimName(i)+'.mp3','wb') as f:
+		with open('audio/'+replace_invalid_chars(i)+'.mp3','wb') as f:
 			f.write(audio_data.content)
 			save_history(voice_url)
 	print('下载完成')
@@ -142,7 +148,7 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 		print('已经下载过文章:'+html.unescape(j))
 		continue
 	print('开始下载',j,k)
-	res = requests.get(j,proxies={'http': None,'https': None},verify=False, headers=headers)
+	res = requests.get(html.unescape(j),proxies={'http': None,'https': None},verify=False, headers=headers)
 	content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
 	try:
 		title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
@@ -157,11 +163,11 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 		ct = ct.group(1)
 		date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
 		cover_data = requests.get(cover,headers=headers)
-		with open('cover/'+date+'_'+trimName(k)+'.jpg','wb') as f:
+		with open('cover/'+date+'_'+replace_invalid_chars(k)+'.jpg','wb') as f:
 			f.write(cover_data.content)
 		audio(res,headers,date,title)
 		video(res,headers,date,title,j)
-		with open('html/'+mp_name+'_'+date+'_'+trimName(k)+'.html', 'w', encoding='utf-8') as f:
+		with open('html/'+mp_name+'_'+date+'_'+replace_invalid_chars(k)+'.html', 'w', encoding='utf-8') as f:
 			f.write(content)
 		save_history(html.unescape(j))
 	except Exception as err:
@@ -189,7 +195,7 @@ def download(msgid,mp_name,itemidx):
 			continue
 		date = time.strftime('%Y-%m-%d', time.localtime(int(i['create_time'])))
 		print('开始下载',i['url'],i['title'])
-		res = requests.get(i['url'],proxies={'http': None,'https': None},verify=False, headers=headers)
+		res = requests.get(html.unescape(i['url']),proxies={'http': None,'https': None},verify=False, headers=headers)
 		content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
 		try:
 			title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
@@ -204,11 +210,11 @@ def download(msgid,mp_name,itemidx):
 			ct = ct.group(1)
 			date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
 			cover_data = requests.get(cover,headers=headers)
-			with open('cover/'+date+'_'+trimName(i['title'])+'.jpg','wb') as f:
+			with open('cover/'+date+'_'+replace_invalid_chars(i['title'])+'.jpg','wb') as f:
 				f.write(cover_data.content)
 			audio(res,headers,date,title)
 			video(res,headers,date,title,i['url'])
-			with open('html/'+mp_name+'_'+date+'_'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
+			with open('html/'+mp_name+'_'+date+'_'+replace_invalid_chars(i['title'])+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 			save_history(html.unescape(i['url']))
 		except Exception as err:

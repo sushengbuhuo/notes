@@ -15,9 +15,9 @@ headers = {
         'cookie':'',
     }
 def replace_invalid_chars(filename):
-    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n']
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
     for char in invalid_chars:
-        filename = filename.replace(char, '-')
+        filename = filename.replace(char, ' ')
     return filename
 def down(url):
     try:
@@ -37,8 +37,8 @@ def down(url):
         content = content.replace('data-actualsrc', 'src')
         content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1><h3>%s</h3>%s</body></html>' % (
             title,url, content)
-        # with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
-        #     f.write(content)
+        with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
+            f.write(content)
         # res = requests.get(url, headers=headers)
         # contents = re.search(r'<div class="Post-RichText">(.*?)</div>',res.text).group(1)
         # with open('zzz.html', 'w', encoding='utf-8') as f:
@@ -103,3 +103,4 @@ elif file_extension == '.txt':
     urls=contents.split('\n')
     for item in tqdm(urls, desc='下载进度'):
         down(item)
+        time.sleep(1)

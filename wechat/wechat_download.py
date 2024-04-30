@@ -20,7 +20,7 @@ def down(offset, biz, uin, key,pass_ticket):
         'http': None,
     }
     param = {
-        'action': 'getmsg',
+        'action': 'getmsg',#视频列表 s/gAdGPFj0pomdKcE5s9-Gkw getvideo
         '__biz': biz,
         'f': 'json',
         'offset': offset,
@@ -102,7 +102,8 @@ def down(offset, biz, uin, key,pass_ticket):
                         province_name = country_name = ''
                         is_pay = '否'
                         print('文章数量',nums)
-                        if nums > 32000:
+                        copyright_stat = child.get('copyright_stat', 0)
+                        if nums > 2000:
                            can_msg_continue = 0
                            return True
                         read_num,like_num,old_like_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
@@ -125,10 +126,11 @@ def down(offset, biz, uin, key,pass_ticket):
                             # if '壁纸' not in child['title']:
                             #     continue
                             if is_down_comment == 1:
-                            	try:
-                            		comments_num,comments_html = comments(res.text,date,headers,url_comment,biz,uin,key,pass_ticket,html.unescape(child['content_url']))
-                            	except Exception as e:
-                            		print('获取评论数失败',e,child['content_url'])
+                                comments_num,comments_html = comments(res.text,date,headers,url_comment,biz,uin,key,pass_ticket,html.unescape(child['content_url']))
+                                if comments_num == "error":
+                                    print('获取评论数失败',html.unescape(child['content_url']))
+                                    can_msg_continue = 0
+                                    return True
                             	# print(comments_num,comments_html)
                             if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                                is_pay = '是'
@@ -175,14 +177,14 @@ def down(offset, biz, uin, key,pass_ticket):
                                 print('下载封面失败',e,child['content_url'])
                         
                         copyright = '否'
-                        if child['copyright_stat'] == 11:
+                        if copyright_stat == 11:
                             copyright = '是'
                         # print(read_num,like_num,old_like_num,child['content_url'])
                         nums = nums+1
                         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                            f.write(date+','+trimName(child['title']) + ','+html.unescape(child['content_url'])+ ','+trimName(html.unescape(child['digest']))+ ','+trimName(child['author'])+','+child['cover']+','+child['source_url'].replace(',', '，')+','+copyright+ ','+str(position)+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+                            f.write(date+','+trimName(html.unescape(child['title'])) + ','+html.unescape(child['content_url'])+ ','+trimName(html.unescape(child['digest']))+ ','+trimName(html.unescape(child['author']))+','+child['cover']+','+child['source_url'].replace(',', '，')+','+copyright+ ','+str(position)+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
                         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
-                            f2.write('[{}]'.format(date+'_'+child['title']) + '({})'.format(html.unescape(child['content_url']))+ '\n\n'+'文章简介:'+html.unescape(child['digest'])+ '\n\n'+'文章作者:'+child['author']+ '\n\n')
+                            f2.write('[{}]'.format(date+'_'+html.unescape(child['title'])) + '({})'.format(html.unescape(child['content_url']))+ '\n\n'+'文章简介:'+html.unescape(child['digest'])+ '\n\n'+'文章作者:'+html.unescape(child['author'])+ '\n\n')
                         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
                             f3.write(html.unescape(child['content_url'])+'\n')
                 #文章摘要digest
@@ -194,7 +196,8 @@ def down(offset, biz, uin, key,pass_ticket):
                     province_name = country_name = ''
                     is_pay = '否'
                     print('文章数量',nums)
-                    if nums > 32000:
+                    copyright_stat = msg_info.get('copyright_stat', 0)
+                    if nums > 2000:
                        can_msg_continue = 0
                        return True
                     read_num,like_num,old_like_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0'
@@ -217,10 +220,11 @@ def down(offset, biz, uin, key,pass_ticket):
                         # if '壁纸' not in title:
                         #     continue
                         if is_down_comment == 1:
-                        	try:
-                        		comments_num,comments_html = comments(res.text,date,headers,url_comment,biz,uin,key,pass_ticket,html.unescape(url))
-                        	except Exception as e:
-                        		print('获取评论数失败',e,url)
+                            comments_num,comments_html = comments(res.text,date,headers,url_comment,biz,uin,key,pass_ticket,html.unescape(url))
+                            if comments_num == "error":
+                                print('获取评论数失败',html.unescape(url))
+                                can_msg_continue = 0
+                                return True
                         	# print(comments_num,comments_html)
                         if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
                             is_pay = '是'
@@ -267,16 +271,16 @@ def down(offset, biz, uin, key,pass_ticket):
                         except Exception as e:
                             print('下载封面失败',e,url)
                     copyright = '否'
-                    if msg_info['copyright_stat'] == 11:
+                    if copyright_stat == 11:
                         copyright = '是'
                     nums = nums+1;
                     #csv
                     with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                        f.write(date+','+trimName(title) + ','+html.unescape(url)+ ','+trimName(html.unescape(msg_info['digest']))+','+ trimName(msg_info['author']) +','+msg_info['cover']+','+msg_info['source_url'].replace(',', '，')+ ','+copyright+ ','+'1'+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+ ','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+                        f.write(date+','+trimName(html.unescape(title)) + ','+html.unescape(url)+ ','+trimName(html.unescape(msg_info['digest']))+','+ trimName(html.unescape(msg_info['author'])) +','+msg_info['cover']+','+msg_info['source_url'].replace(',', '，')+ ','+copyright+ ','+'1'+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+ ','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
                     #生成markdown
                     with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
                         # f.write('文章标题:'+date+'_'+title + '文章链接'+url+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面图地址:'+msg_info['cover']+ '\n')
-                        f2.write('[{}]'.format(date+'_'+title) + '({})'.format(html.unescape(url))+ '\n\n'+'文章简介:'+html.unescape(msg_info['digest'])+ '\n\n'+'文章作者:'+msg_info['author']+ '\n\n')
+                        f2.write('[{}]'.format(date+'_'+html.unescape(title)) + '({})'.format(html.unescape(url))+ '\n\n'+'文章简介:'+html.unescape(msg_info['digest'])+ '\n\n'+'文章作者:'+html.unescape(msg_info['author'])+ '\n\n')
                         # f.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n'+'简介:'+msg_info['digest']+ '\n'+'封面:'+'![{}]'.format(title) + '({})'.format(msg_info['cover'])+ '\n')
                     with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
                          f3.write(html.unescape(url)+'\n')
@@ -463,6 +467,11 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             return str(len(elected_comment)),comments_html
         return '0',''
     return '0',''
+def replace_invalid_chars(filename):
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
+    for char in invalid_chars:
+        filename = filename.replace(char, ' ')
+    return filename
 def trimName(name):
-    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ')
 down(0,biz,uin,key,pass_ticket)

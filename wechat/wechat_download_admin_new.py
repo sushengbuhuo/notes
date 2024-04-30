@@ -3,8 +3,13 @@ import time
 import json,html
 import random,re,os,csv
 requests.packages.urllib3.disable_warnings()
+def replace_invalid_chars(filename):
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
+    for char in invalid_chars:
+        filename = filename.replace(char, ' ')
+    return filename
 def trimName(name):
-    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ')
 msg_url = "https://mp.weixin.qq.com/cgi-bin/appmsgpublish"
 Cookie = ""
 headers = {
@@ -83,9 +88,9 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                 article_type = '群发'
                 # 正常2 自己删除7 被举报违规8 未发送成功违规6
                 if publish_info['sent_result']['msg_status'] ==2:
-                    fans = publish_info['sent_status']['total']
+                    fans = publish_info['sent_status'].get('total',0)
                 elif publish_info['sent_result']['msg_status'] ==7 or publish_info['sent_result']['msg_status'] ==8:
-                    fans = publish_info['sent_status']['total']
+                    fans = publish_info['sent_status'].get('total',0)
                     # msg_fail_reason = publish_info['sent_result']['msg_fail_reason']
                 elif publish_info['sent_result']['msg_status'] == 6:
                     # msg_fail_reason = publish_info['sent_result']['msg_fail_reason']
@@ -174,9 +179,9 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                         except Exception as e:
                             print('下载封面失败',e,link)
                     with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-                        f.write(date+','+trimName(item['title']) + ','+link+ ','+trimName(html.unescape(item['digest']))+ ','+author+','+item['cover']+','+''+','+copyright+ ','+str(item['itemidx'])+ ','+is_pay+ ','+country_name+','+province_name+','+article_type+','+delete_status+','+str(fans)+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+                        f.write(date+','+trimName(html.unescape(item['title'])) + ','+link+ ','+trimName(html.unescape(item['digest']))+ ','+trimName(author)+','+item['cover']+','+''+','+copyright+ ','+str(item['itemidx'])+ ','+is_pay+ ','+country_name+','+province_name+','+article_type+','+delete_status+','+str(fans)+','+read_num+','+like_num+','+old_like_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
                     with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
-                        f2.write('[{}]'.format(date+'_'+item['title']) + '({})'.format(link)+ '\n\n'+'文章简介:'+html.unescape(item['digest'])+ '\n\n'+'文章作者:'+author+ '\n\n')
+                        f2.write('[{}]'.format(date+'_'+html.unescape(item['title'])) + '({})'.format(link)+ '\n\n'+'文章简介:'+html.unescape(item['digest'])+ '\n\n'+'文章作者:'+author+ '\n\n')
                     with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
                         f3.write(link+'\n')
                 except Exception as e:

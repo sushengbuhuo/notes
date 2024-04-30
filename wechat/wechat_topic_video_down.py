@@ -129,7 +129,7 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 		print('已经下载过文章:'+html.unescape(j))
 		continue
 	print('开始下载',j,k)
-	res = requests.get(j,proxies={'http': None,'https': None},verify=False, headers=headers)
+	res = requests.get(html.unescape(j),proxies={'http': None,'https': None},verify=False, headers=headers)
 	content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
 	try:
 		title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
@@ -176,7 +176,7 @@ def download(msgid,mp_name,itemidx):
 			continue
 		date = time.strftime('%Y-%m-%d', time.localtime(int(i['create_time'])))
 		print('开始下载',i['url'],i['title'])
-		res = requests.get(i['url'],proxies={'http': None,'https': None},verify=False, headers=headers)
+		res = requests.get(html.unescape(i['url']),proxies={'http': None,'https': None},verify=False, headers=headers)
 		content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
 		try:
 			title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)

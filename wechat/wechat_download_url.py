@@ -10,8 +10,13 @@ headers = {
         'referer': 'https://mp.weixin.qq.com',
         # "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
     }
+def replace_invalid_chars(filename):
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
+    for char in invalid_chars:
+        filename = filename.replace(char, ' ')
+    return filename
 def trimName(name):
-    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','').replace('#','--')
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ')
 def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
@@ -36,7 +41,7 @@ with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
 with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
 def down(url,position,copyright,digest,is_pay):
-    response = requests.get(url, headers=headers)#, params={'key': '', 'uin': 'xx'}
+    response = requests.get(html.unescape(url), headers=headers)#, params={'key': '', 'uin': 'xx'}
     global nums
     encoding = 'utf-8-sig'
     is_down_view = 1
@@ -101,13 +106,13 @@ def down(url,position,copyright,digest,is_pay):
             #下载视频
             if is_down_video:
                 try:
-                    videos = video(content,headers,date,url,trimName(title))
+                    videos = video(content,headers,date,url,replace_invalid_chars(title))
                 except Exception as e:
                     print('下载视频失败',e,url)
             #下载音频
             if is_down_audio:
                 try:
-                    audios = audio(content,headers,date,trimName(title))
+                    audios = audio(content,headers,date,replace_invalid_chars(title))
                 except Exception as e:
                     print('下载音频失败',e,url)
             # 下载封面
@@ -116,14 +121,14 @@ def down(url,position,copyright,digest,is_pay):
                     os.mkdir('cover')
                 try:
                     cover_data = requests.get(cover,headers=headers)
-                    with open('cover/'+date+'_'+trimName(title)+'.jpg','wb') as f:
+                    with open('cover/'+date+'_'+replace_invalid_chars(title)+'.jpg','wb') as f:
                         f.write(cover_data.content)
                 except Exception as e:
                     print('下载封面失败',e,url)
             #下载图片
             if is_down_img:
                 try:
-                    image(response,headers,date,trimName(title))
+                    image(response,headers,date,replace_invalid_chars(title))
                 except Exception as e:
                     print('下载图片失败',e,url)
             if is_down_comment == 1:
@@ -132,7 +137,7 @@ def down(url,position,copyright,digest,is_pay):
                     print('获取评论数失败',url)
                     return "error"
             # try:
-            #      with open(date+'-'+trimName(title)+'.txt', 'a+', encoding='utf-8') as f:
+            #      with open(date+'-'+replace_invalid_chars(title)+'.txt', 'a+', encoding='utf-8') as f:
             #         soup = BeautifulSoup(content, 'html.parser')
             #         contentSoup = soup.find("div", {"id": "js_content"})
             #         result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
@@ -141,22 +146,22 @@ def down(url,position,copyright,digest,is_pay):
             # except Exception as err:
             #     print('下载txt出错了',err,url)
             # try:
-            #     with open(date+'-'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+            #     with open(date+'-'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
             #         f.write(content+comments_html)
             # except Exception as err:
             #     with open(date+'-'+str(random.randint(100,1000))+'.html', 'w', encoding='utf-8') as f:
             #         f.write(content+comments_html)
         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
-            f2.write('[{}]'.format(date+'_'+title) + '({})'.format(url)+ '\n\n'+'文章简介:'+html.unescape(digest)+ '\n\n'+ '\n\n')
+            f2.write('[{}]'.format(date+'_'+html.unescape(title)) + '({})'.format(url)+ '\n\n'+'文章简介:'+html.unescape(digest)+ '\n\n'+ '\n\n')
         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f2:
             f2.write(url+ '\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write(date+','+trimName(title) + ','+url+ ','+html.unescape(digest)+ ','+trimName(html.unescape(author))+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+share_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+            f.write(date+','+trimName(html.unescape(title)) + ','+url+ ','+trimName(html.unescape(digest))+ ','+trimName(html.unescape(author))+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+share_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
         return True
     except Exception as e:
         print(e,url)#;raise Exception("抓取失败了："+url)
         with open(f'{sname}下载失败文章列表.csv', 'a+', encoding=encoding) as f6:
-            f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+',,'+copyright+ ','+position+ ','+''+ ','+''+','+''+',0,0,0,0,0,0,0,0'+'\n')
+            f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+',,'+copyright+ ','+position+ ','+is_pay+ ','+''+','+''+',0,0,0,0,0,0,0,0'+'\n')
         # with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
             # f5.write(url+'\n')
 def view(link,appmsg_token,uin,key,pass_ticket):
@@ -251,9 +256,9 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     print("文章赞赏数:"+str(reward_num))
     print("文章分享数:"+str(share_num))#,str(content['comment_count'])
     return str(readNum), str(likeNum),str(old_like_num),str(reward_num),str(share_num)
-def video2(content, headers,date,article_url,title):
+def video(content, headers,date,article_url,title):
     # vid = re.search(r'wxv_.{19}',res.text).group(0)
-    time.sleep(1)
+    # time.sleep(1) https://mp.weixin.qq.com/s/goqAKIypCsI4vVLjdhmXSg https://mp.weixin.qq.com/s/gAdGPFj0pomdKcE5s9-Gkw
     # print('视频id',vid) unescape(encodedString.replace(/\\x/g, "%")); 视频号 https://mp.weixin.qq.com/s/pl8y30DALob_bKQmbdXcnQ
     videos_snap = re.findall(r'var\s+video_snap_json\s+\=\s+"\{\\x22list\\x22:(.*?)\}"\s+\|\|\s+"";',content)
     videos = re.findall(r"source_link\: xml \? getXmlValue\(\'video_page_info\.source_link\.DATA\'\) : \'http://v\.qq\.com/x/page/(.*?)\.html\'\,",content)
@@ -271,40 +276,15 @@ def video2(content, headers,date,article_url,title):
             f6.write(f'http://v.qq.com/x/page/{i}.html'+'\n')
         with open('视频链接合集.csv','a+') as f:
             f.write(date+','+title+','+f'http://v.qq.com/x/page/{i}.html'+','+article_url+'\n')
-    vinfo = re.findall(r'window\.__mpVideoTransInfo\s+\=\s+([\s\S]*?)\];',content,flags=re.S)
+    vinfo = re.findall(r'window\.__mpVideoTransInfo\s+\=\s+([\s\S]*?)\];',content,flags=re.S)#匹配任意数量（包括零个）的任意字符，直到遇到下一个匹配项。这样的表达式通常用于匹配多行文本，包括换行符在内的所有内容。
     if not vinfo:
         vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',content,flags=re.S)
-    for v in vinfo:
-        v_url = re.search(r"url:\s+'(.*?)',",v)
-        if not v_url:
-            v_url = re.search(r"url:\s+\('(.*?)'\)",v)
-        # print(v,v_url)
-        if v_url:
-            video_url = html.unescape(v_url.group(1).replace(r'\x26','&'))
-            # vids = list(set(vids)) #去重
-            num+=1
-            print('正在下载视频：'+trimName(title)+'.mp4')
-            video_data = requests.get(video_url,headers=headers)
-            with open('视频链接合集.csv','a+') as f4:
-                f4.write(date+','+trimName(title)+','+video_url+','+article_url+'\n')
-            with open('video/'+date+'_'+trimName(title)+'_'+str(num)+'.mp4','wb') as f:
-                f.write(video_data.content)
-    return str(num)
-def video(content, headers,date,article_url,title):
-    # vid = re.search(r'wxv_.{19}',res.text).group(0)
-    # time.sleep(1)
-    # print('视频id',vid) unescape(encodedString.replace(/\\x/g, "%")); 视频号 https://mp.weixin.qq.com/s/pl8y30DALob_bKQmbdXcnQ
-    videos_snap = re.findall(r'var\s+video_snap_json\s+\=\s+"\{\\x22list\\x22:(.*?)\}"\s+\|\|\s+"";',content)
-    num = 0
-    if videos_snap:
-        num = len(json.loads(videos_snap[0].replace('\\x22', '"')));print('视频号数量',num)
-    if not os.path.exists('video'):
-        os.mkdir('video')
-    matches = re.search(r'var\s*videoPageInfos\s*=\s*(\[.*?\]);', content, re.DOTALL)
-    if not matches:
-        return str(num)
-    json_array = matches.group(1)
-    vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',json_array,flags=re.S)
+    if not vinfo:
+        matches = re.search(r'var\s*videoPageInfos\s*=\s*(\[.*?\]);', content, re.DOTALL)
+        if not matches:
+            return str(num)
+        json_array = matches.group(1)
+        vinfo = re.findall(r'mp_video_trans_info:\s+([\s\S]*?)\],',json_array,flags=re.S) 
     if not vinfo:
         return str(num)
     for v in vinfo:
@@ -316,11 +296,11 @@ def video(content, headers,date,article_url,title):
             video_url = html.unescape(v_url.group(1).replace(r'\x26','&'));print('视频地址',video_url)
             # vids = list(set(vids)) #去重
             num+=1
-            print('正在下载视频：'+trimName(title)+'.mp4')
+            print('正在下载视频：'+replace_invalid_chars(title)+'.mp4')
             video_data = requests.get(video_url,headers=headers)
             with open('视频链接合集.csv','a+') as f4:
                 f4.write(date+','+trimName(title)+','+video_url+','+article_url+'\n')
-            with open('video/'+date+'_'+trimName(title)+'_'+str(num)+'.mp4','wb') as f:
+            with open('video/'+date+'_'+replace_invalid_chars(title)+'_'+str(num)+'.mp4','wb') as f:
                 f.write(video_data.content)
     return str(num)
 def audio2(content,headers,date,title):
@@ -337,7 +317,7 @@ def audio2(content,headers,date,title):
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={id}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        with open('audio/'+date+'___'+trimName(title)+'___'+str(num)+'.mp3','wb') as f5:
+        with open('audio/'+date+'___'+replace_invalid_chars(title)+'___'+str(num)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
     return str(num)
 def audio(content,headers,date,title):
@@ -357,7 +337,7 @@ def audio(content,headers,date,title):
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={aid}'
         audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        with open('audio/'+date+'___'+trimName(title)+'___'+str(num)+'.mp3','wb') as f5:
+        with open('audio/'+date+'___'+replace_invalid_chars(title)+'___'+str(num)+'.mp3','wb') as f5:
             f5.write(audio_data.content)
     return str(num)
 def image(response,headers,date,title):
@@ -374,7 +354,7 @@ def image(response,headers,date,title):
         num+=1
         img_data = requests.get(i,headers=headers)
         print('正在下载图片：'+i)
-        with open('images/'+date+'_'+title+'_'+str(num)+'.jpg','wb') as f6:
+        with open('images/'+date+'_'+replace_invalid_chars(title)+'_'+str(num)+'.jpg','wb') as f6:
             f6.write(img_data.content)
     return str(num)
 def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
