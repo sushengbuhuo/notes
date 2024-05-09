@@ -16,7 +16,7 @@ def replace_invalid_chars(filename):
         filename = filename.replace(char, ' ')
     return filename
 def trimName(name):
-    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ')
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ').replace('\r\n', ' ').replace('"', '“').replace('\t', ' ')
 def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
