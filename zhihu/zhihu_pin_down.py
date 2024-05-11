@@ -101,4 +101,4 @@ elif file_extension == '.txt':
     urls=contents.split('\n')
     for item in tqdm(urls, desc='下载进度'):
         down(item)
-        time.sleep(random.randint(1,3))
+        time.sleep(random.randint(1,2))

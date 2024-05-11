@@ -101,8 +101,9 @@ def down(url,position,copyright,digest,is_pay):
             # if '<div class="pay__qrcode-title">微信扫一扫付费阅读本文</div>' in content:
             #     is_pay = '是'
             #转载原创文章误判 读取txt才用
-            # if '>原创</span>' in content:
-        	   #  copyright="是"
+            # if 'xx' not in content:
+        	#    print('过滤文章',url)
+            #    return True
             #下载视频
             if is_down_video:
                 try:
@@ -142,7 +143,7 @@ def down(url,position,copyright,digest,is_pay):
             #         contentSoup = soup.find("div", {"id": "js_content"})
             #         result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
             #         # result_text = re.sub(r'\n+', '\n', soup.get_text())
-            #         f.write('\n'.join(result_text))
+            #         f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
             # except Exception as err:
             #     print('下载txt出错了',err,url)
             # try:
@@ -365,7 +366,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
     str_title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r"window\.msg_title = '(.*)' \|\| '';", content)
     # print(str_comment,str_msg,str_token)
     comments_html = """
-    <link rel="stylesheet" href="https://kbtxwer.gitee.io/wxMessage.css"><div class="discuss_container" id="js_cmt_main" style="display: block;">
+    <link rel="stylesheet" href="https://lovecn.github.io/wxMessage.css"><div class="discuss_container" id="js_cmt_main" style="display: block;">
 <div class="mod_title_context">
 <strong class="mod_title">精选留言</strong>
 </div>

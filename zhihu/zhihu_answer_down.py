@@ -67,9 +67,9 @@ if file_extension == '.xlsx':
     df=pd.read_excel(filename)
     print('列标题',df.columns)
     print('行标题',df.index)
-    time.sleep(1)
     for index, row in df.iterrows():
         t=down('https:'+row['知乎问题链接'])
+        time.sleep(1)
         fav=str(row['知乎赞同数'])
         comment = str(row['知乎评论数'])
         if comment == 'nan':

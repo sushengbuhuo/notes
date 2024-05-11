@@ -2,18 +2,31 @@ import requests
 import time
 import json,html
 import random,re,os,csv,sys
+from datetime import datetime
 requests.packages.urllib3.disable_warnings()
 def replace_invalid_chars(filename):
     invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
     for char in invalid_chars:
         filename = filename.replace(char, ' ')
     return filename
+def get_history():
+    history = []
+    with open('weibo_video_history.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
 
+def save_history(url):
+    with open('weibo_video_history.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
 if not os.path.exists('video'):
     os.mkdir('video')
-uid=input('请输入微博uid：')
-name=input('请输入微博视频分类名称：')
-cookie=input('请输入微博cookie：')
+uid=input('公众号苏生不惑提示你，请输入微博uid：')
+name=input('公众号苏生不惑提示你，请输入微博视频分类名称：')
+cookie=input('公众号苏生不惑提示你，请输入微博cookie：')
+
 headers = {
 'referer': 'https://weibo.com',
     "Cookie": cookie,
@@ -46,11 +59,19 @@ def down(cid,cursor):
 	if result:
 		pass
 	for x in result['data']['list']:
-		time.sleep(1)
+		history = get_history()
+		if x.get('idstr') in history:
+			print('已经下载过视频:'+x.get('page_info').get('media_info').get('titles')[0]['title'])
+			continue
+		time.sleep(2)
 		video_data = requests.get(x.get('page_info').get('media_info').get('playback_list')[0]['play_info']['url'],headers=headers,verify=False,timeout=10)
-		print('开始下载视频:',x.get('page_info').get('media_info').get('titles')[0]['title'])
-		with open('video/'+replace_invalid_chars(x.get('page_info').get('media_info').get('titles')[0]['title'])+'.mp4','wb') as f:
+		parsed_time = datetime.strptime(x.get('created_at'), "%a %b %d %H:%M:%S %z %Y")
+		formatted_time = parsed_time.strftime("%Y-%m-%d")
+		title = formatted_time+'-'+x.get('page_info').get('media_info').get('titles')[0]['title']
+		print('开始下载视频:',title)
+		with open('video/'+replace_invalid_chars(title)+'.mp4','wb') as f:
 			f.write(video_data.content)
+		save_history(x.get('idstr'))
 	if result['data']['next_cursor'] != -1:
 		down(cid,result['data']['next_cursor'])
 down(cid,0)
