@@ -50,7 +50,7 @@ def down(offset, biz, uin, key,pass_ticket):
     time.sleep(2)
     htmls = [];global nums
     encoding = 'utf-8-sig'
-    is_down =1
+    is_down = 0
     is_down_video = 0
     is_down_audio = 0
     is_down_view = 0
@@ -97,7 +97,7 @@ def down(offset, biz, uin, key,pass_ticket):
                 for child in child_msg_info:
                     position+=1
                     if child['content_url'] and is_all:# and child['copyright_stat'] == 11:
-                        print('文章链接',html.unescape(child['content_url']))
+                        print('文章链接',html.unescape(child['content_url']),date)
                         comments_html = ''
                         province_name = country_name = ''
                         is_pay = '否'
@@ -191,7 +191,7 @@ def down(offset, biz, uin, key,pass_ticket):
                 #文章封面cover
                 if url:#  and msg_info['copyright_stat'] == 11:
                     #获取阅读数在看数点赞数
-                    print('文章链接',html.unescape(url))
+                    print('文章链接',html.unescape(url),date)
                     comments_html = ''
                     province_name = country_name = ''
                     is_pay = '否'

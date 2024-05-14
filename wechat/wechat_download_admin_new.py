@@ -83,7 +83,7 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
             msg_fail_reason = ''
             fail = 0
             delete_status = '否'
-            print('文章信息',publish_info.items())
+            # print('文章信息',publish_info.items())
             if publish_info['type'] == 9:
                 article_type = '群发'
                 # 正常2 自己删除7 被举报违规8 未发送成功违规6
@@ -102,9 +102,9 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                     # if item['update_time'] < 1672329600:
                     #     return True
                     print('文章数量',nums)
-                    if nums > 5:
-                       return True
-                    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(item['update_time'])) # %H:%M:%S
+                    # if nums > 5:
+                    #    return True
+                    date = time.strftime('%Y-%m-%d', time.localtime(item['update_time'])) # %H:%M:%S
                     title = item['title']
                     link = html.unescape(item['link'])
                     nums = nums+1
