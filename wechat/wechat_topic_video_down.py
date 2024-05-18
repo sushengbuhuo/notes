@@ -78,7 +78,7 @@ def video(res, headers,date,title,article_url):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('此工具更新于2023年10月13日')
+print('此工具更新于2024年5月18日')
 topic_url = ''
 if len(sys.argv) > 1:
    topic_url = sys.argv[1]
@@ -125,11 +125,11 @@ if not os.path.exists('html'):
 for i,j,k,g in zip(msgids,links,titles,itemidxs):
 	msgid = i
 	itemidx = g
-	if html.unescape(j) in urls:
-		print('已经下载过文章:'+html.unescape(j))
+	if html.unescape(html.unescape(j)) in urls:
+		print('已经下载过文章:'+html.unescape(html.unescape(j)))
 		continue
 	print('开始下载',j,k)
-	res = requests.get(html.unescape(j),proxies={'http': None,'https': None},verify=False, headers=headers)
+	res = requests.get(html.unescape(html.unescape(j)),proxies={'http': None,'https': None},verify=False, headers=headers)
 	content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
 	try:
 		title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
@@ -150,12 +150,12 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 		video(res,headers,date,title,j)
 		with open('html/'+mp_name+'_'+date+'_'+trimName(k)+'.html', 'w', encoding='utf-8') as f:
 			f.write(content)
-			save_history(html.unescape(j))
+			save_history(html.unescape(html.unescape(j)))
 	except Exception as err:
 		with open('html/'+mp_name+'_'+date+'_'+str(randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
 			f.write(content);print(err,j)
 	with open(fname, 'a+', encoding=encoding) as f2:
-		f2.write(''+','+k + ','+html.unescape(j)+ ','+''+'\n')
+		f2.write(''+','+k + ','+html.unescape(html.unescape(j))+ ','+''+'\n')
 def download(msgid,mp_name,itemidx):
 	url = f'https://mp.weixin.qq.com/mp/appmsgalbum?action=paging&__biz={biz}&album_id={album_id}&count=10&begin_msgid={msgid}&begin_itemidx={itemidx}&uin=&key=&pass_ticket=&wxtoken=&devicetype=Windows10x64&clientversion=63040026&__biz=MzUyMzUyNzM4Ng%3D%3D&appmsg_token=&x5=0&f=json'
 	response = requests.get(url, headers=headers)
@@ -171,12 +171,12 @@ def download(msgid,mp_name,itemidx):
 		# print(response_dict)
 		msgid = i['msgid']
 		itemidx = i['itemidx']
-		if html.unescape(i['url']) in urls:
-			print('已经下载过文章:'+html.unescape(i['url']))
+		if html.unescape(html.unescape(i['url'])) in urls:
+			print('已经下载过文章:'+html.unescape(html.unescape(i['url'])))
 			continue
 		date = time.strftime('%Y-%m-%d', time.localtime(int(i['create_time'])))
 		print('开始下载',i['url'],i['title'])
-		res = requests.get(html.unescape(i['url']),proxies={'http': None,'https': None},verify=False, headers=headers)
+		res = requests.get(html.unescape(html.unescape(i['url'])),proxies={'http': None,'https': None},verify=False, headers=headers)
 		content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
 		try:
 			title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
@@ -197,12 +197,12 @@ def download(msgid,mp_name,itemidx):
 			video(res,headers,date,title,i['url'])
 			with open('html/'+mp_name+'_'+date+'_'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
-				save_history(html.unescape(i['url']))
+				save_history(html.unescape(html.unescape(i['url'])))
 		except Exception as err:
 			with open('html/'+mp_name+'_'+date+'_'+str(randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
 				f.write(content);print(err,i['url'])
 		with open(fname, 'a+', encoding=encoding) as f2:
-			f2.write(date+','+i['title'] + ','+html.unescape(i['url'])+ ','+i['cover_img_1_1']+'\n')
+			f2.write(date+','+i['title'] + ','+html.unescape(html.unescape(i['url']))+ ','+i['cover_img_1_1']+'\n')
 	if response_dict['getalbum_resp']['continue_flag'] == 1:
 		# print(msgid)
 		time.sleep(1)
