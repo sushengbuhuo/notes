@@ -7,7 +7,12 @@ from bs4 import BeautifulSoup
 #https://segmentfault.com/a/1190000042751896 https://blog.csdn.net/Harden13_/article/details/121895009
 ##爬虫 https://github.com/srx-2000/spider_collection https://github.com/13060923171/Crawl-Project3
 def trimName(name):
-    return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ').replace('"', '“')
+def replace_invalid_chars(filename):
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
+    for char in invalid_chars:
+        filename = filename.replace(char, ' ')
+    return filename
 def video(vid,title):
     url = f'https://www.zhihu.com/zvideo/{vid}'
     if not os.path.exists('video'):
@@ -46,7 +51,8 @@ def get_list():
     while True:
         # print('抓取中', url)
         try:
-            resp = requests.get(url, headers=headers)
+            ts=str(int(time.time()))
+            resp = requests.get(url, headers=headers)#;print(headers,url,resp.json())
             content = resp.content.decode("utf-8")
             j = json.loads(content)
             #j = resp.json()
@@ -60,20 +66,20 @@ def get_list():
             # if aid not in akeys and article['type'] == 'article':
                 # article_dict[aid] = article['title']
             if article['type'] == 'zvideo':
-               video(article['id'],trimName(article['title']))
-               with open('知乎专栏合集.csv', 'a+', encoding=encoding) as f:
+               video(article['id'],replace_invalid_chars(article['title']))
+               with open('知乎专栏列表.csv', 'a+', encoding=encoding) as f:
                     f.write('视频' + ','+trimName(article['title']) + ','+'https://www.zhihu.com/zvideo/'+str(article['id'])+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['created_at']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['updated_at']))+','+article['description']+','+str(article['comment_count'])+ ','+str(article['voteup_count'])+'\n')
             if article['type'] == 'answer':
-               answer(article['content'], trimName(article['question']['title']), article['updated_time'])
-               with open('知乎专栏合集.csv', 'a+', encoding=encoding) as f:
+               answer(article['content'], replace_invalid_chars(article['question']['title']), article['updated_time'])
+               with open('知乎专栏列表.csv', 'a+', encoding=encoding) as f:
                     f.write('回答' + ','+trimName(article['question']['title']) + ','+'https://www.zhihu.com/question/'+str(article['question']['id'])+'/answer/'+str(article['id'])+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['created_time']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['updated_time']))+','+article['excerpt']+','+str(article['comment_count'])+ ','+str(article['voteup_count'])+'\n')
             if article['type'] == 'article':
-               articles(article['content'], trimName(article['title']), article['updated'])
-               with open('知乎专栏合集.csv', 'a+', encoding=encoding) as f:
+               articles(article['content'], replace_invalid_chars(article['title']), article['updated'])
+               with open('知乎专栏列表.csv', 'a+', encoding=encoding) as f:
                     f.write('文章' + ','+trimName(article['title']) + ','+article['url']+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['created']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['updated']))+','+article['excerpt']+','+str(article['comment_count'])+ ','+str(article['voteup_count'])+'\n')
         if j['paging']['is_end']:
             break
-        url = j['paging']['next']
+        url = j['paging']['next'].replace('http','https')
         time.sleep(2)
 
     # with open('zhihu_ids.txt', 'w', encoding='utf-8') as f:
@@ -102,16 +108,16 @@ def get_top_list():
             # if aid not in akeys and article['type'] == 'article':
                 # article_dict[aid] = article['title']
             if article['type'] == 'zvideo':
-               video(article['id'],trimName(article['title']))
-               with open('知乎专栏合集.csv', 'a+', encoding=encoding) as f:
+               video(article['id'],replace_invalid_chars(article['title']))
+               with open('知乎专栏列表.csv', 'a+', encoding=encoding) as f:
                     f.write('视频' + ','+trimName(article['title']) + ','+'https://www.zhihu.com/zvideo/'+str(article['id'])+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['created_at']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['updated_at']))+','+article['description']+','+str(article['comment_count'])+ ','+str(article['voteup_count'])+'\n')
             if article['type'] == 'answer':
-               answer(article['content'], trimName(article['question']['title']), article['updated_time'])
-               with open('知乎专栏合集.csv', 'a+', encoding=encoding) as f:
+               answer(article['content'], replace_invalid_chars(article['question']['title']), article['updated_time'])
+               with open('知乎专栏列表.csv', 'a+', encoding=encoding) as f:
                     f.write('回答' + ','+trimName(article['question']['title']) + ','+'https://www.zhihu.com/question/'+str(article['question']['id'])+'/answer/'+str(article['id'])+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['created_time']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['updated_time']))+','+article['excerpt']+','+str(article['comment_count'])+ ','+str(article['voteup_count'])+'\n')
             if article['type'] == 'article':
-               articles(article['content'], trimName(article['title']), article['updated'])
-               with open('知乎专栏合集.csv', 'a+', encoding=encoding) as f:
+               articles(article['content'], replace_invalid_chars(article['title']), article['updated'])
+               with open('知乎专栏列表.csv', 'a+', encoding=encoding) as f:
                     f.write('文章' + ','+trimName(article['title']) + ','+article['url']+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['created']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['updated']))+','+article['excerpt']+','+str(article['comment_count'])+ ','+str(article['voteup_count'])+'\n')
         break
         time.sleep(2)
@@ -165,17 +171,20 @@ def to_pdf():
     pdfkit.from_file(htmls, '知乎专栏合集.pdf')
 
 if __name__ == '__main__':
-    url = input('公众号苏生不惑 提示你输入知乎专栏链接:')
+    print('本工具更新于2024年5月25日，获取最新版本请关注公众号苏生不惑')
+    url = input('公众号苏生不惑提示你输入知乎专栏链接:')
     if not url:
-        url = 'https://www.zhihu.com/column/c_1299656585577177088'
+        url = 'https://www.zhihu.com/column/c_1721130763582382082'#https://www.zhihu.com/column/c_161945759
+    cookie = input('公众号苏生不惑提示你输入知乎cookie:')
     author = re.search(r'https?://www.zhihu.com/column/(.*)',url).group(1)
     headers = {
         'origin': 'https://zhuanlan.zhihu.com',
         'referer': 'https://zhuanlan.zhihu.com/%s' % author,
-        'User-Agent': ('Mozilla/5.0'),
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 FirePHP/0.7.4',
+        'cookie':cookie
     }
 
-    with open('知乎专栏合集.csv', 'a+', encoding='utf-8-sig') as f:
+    with open('知乎专栏列表.csv', 'a+', encoding='utf-8-sig') as f:
         f.write('类型' + ','+'标题' + ','+'链接'+ ','+'创建时间'+ ','+'更新时间'+','+'简介'+','+'评论数'+ ','+'赞同数'+'\n')
     get_top_list()
     get_list()
