@@ -1,6 +1,6 @@
 import time,sys
 import re
-import os
+import os,random
 import requests,json
 from bs4 import BeautifulSoup
 import asyncio,os
@@ -14,13 +14,29 @@ headers = {
         'User-Agent': ('Mozilla/5.0'),
         'cookie':'',
     }
+def get_history():
+    history = []
+    with open('zhihu_history.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
+
+def save_history(url):
+    with open('zhihu_history.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
 def replace_invalid_chars(filename):
     invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
     for char in invalid_chars:
         filename = filename.replace(char, ' ')
     return filename
+urls_history = get_history()
 def down(url):
     try:
+        if url in urls_history:
+            print('已经下载过：',url)
+            return ''
         html = requests.get(url, headers=headers).text
         soup = BeautifulSoup(html, 'lxml')
         content = soup.find(class_='Post-RichText').prettify()
@@ -43,11 +59,12 @@ def down(url):
         # contents = re.search(r'<div class="Post-RichText">(.*?)</div>',res.text).group(1)
         # with open('zzz.html', 'w', encoding='utf-8') as f:
         # 	f.write(contents)
+        save_history(url)
         return answer_date
     except Exception as e:
         with open(f'下载失败知乎文章列表.txt', 'a+', encoding='utf-8') as f:
             f.write(url+'\n')
-        print('下载文章失败', url,e)
+        print('下载文章失败', url,e);raise Exception("抓取失败了："+url)
         return ''
 
 if not os.path.exists('html'):
@@ -85,9 +102,9 @@ if file_extension == '.xlsx':
     print('行标题',df.index)
     for index, row in df.iterrows():
         t=down('https:'+row['知乎链接'])
-        time.sleep(1)
         fav=str(row['文章赞同数'])
         comment = str(row['文章评论数'])
+        time.sleep(random.randint(2, 3))
         if comment == 'nan':
             comment = '0'
         if fav == 'nan':
@@ -103,4 +120,4 @@ elif file_extension == '.txt':
     urls=contents.split('\n')
     for item in tqdm(urls, desc='下载进度'):
         down(item)
-        time.sleep(1)
+        time.sleep(random.randint(2, 3))

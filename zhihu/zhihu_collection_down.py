@@ -1,4 +1,4 @@
-import time,sys
+import time,sys,random
 import re
 import os
 import requests,json
@@ -48,6 +48,7 @@ def get_list():
     url = f'https://www.zhihu.com/api/v4/collections/{collection_id}/items?limit=10&offset=0'
     article_dict = {}
     encoding = 'utf-8-sig'
+    num = 0
     while True:
         # print('抓取中', url)
         try:
@@ -59,7 +60,9 @@ def get_list():
             data = j['data']
         except Exception as e:
             print('抓取失败',e)
-
+        num = num+len(data)
+        if num > 2000:
+            break
         for article in data:
             aid = article['content']['id']
             akeys = article_dict.keys()
@@ -67,20 +70,20 @@ def get_list():
                 # article_dict[aid] = article['title']
             if article['content']['type'] == 'zvideo':
                video(article['content']['id'],replace_invalid_chars(article['content']['title']))
-               with open('知乎收藏夹列表.csv', 'a+', encoding=encoding) as f:
+               with open('知乎收藏夹列表目录.csv', 'a+', encoding=encoding) as f:
                     f.write('视频' + ','+trimName(article['content']['title']) + ','+'https://www.zhihu.com/zvideo/'+str(article['content']['id'])+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['created_at']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['updated_at']))+','+article['content']['description']+','+str(article['content']['comment_count'])+ ','+str(article['content']['voteup_count'])+'\n')
             if article['content']['type'] == 'answer':
                answer(article['content']['content'], replace_invalid_chars(article['content']['question']['title']), article['content']['updated_time'])
-               with open('知乎收藏夹列表.csv', 'a+', encoding=encoding) as f:
+               with open('知乎收藏夹列表目录.csv', 'a+', encoding=encoding) as f:
                     f.write('回答' + ','+trimName(article['content']['question']['title']) + ','+'https://www.zhihu.com/question/'+str(article['content']['question']['id'])+'/answer/'+str(article['content']['id'])+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['created_time']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['updated_time']))+','+article['content']['excerpt']+','+str(article['content']['comment_count'])+ ','+str(article['content']['voteup_count'])+'\n')
             if article['content']['type'] == 'article':
                articles(article['content']['content'], replace_invalid_chars(article['content']['title']), article['content']['updated'])
-               with open('知乎收藏夹列表.csv', 'a+', encoding=encoding) as f:
+               with open('知乎收藏夹列表目录.csv', 'a+', encoding=encoding) as f:
                     f.write('文章' + ','+trimName(article['content']['title']) + ','+article['content']['url']+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['created']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['updated']))+','+article['content']['excerpt_title']+','+str(article['content']['comment_count'])+ ','+str(article['content']['voteup_count'])+'\n')
         if j['paging']['is_end']:
             break
         url = j['paging']['next']
-        time.sleep(2)
+        time.sleep(random.randint(3,6))
 
     # with open('zhihu_ids.txt', 'w', encoding='utf-8') as f:
     #     items = sorted(article_dict.items())
@@ -99,10 +102,10 @@ def to_pdf():
     pdfkit.from_file(htmls, '知乎收藏夹合集.pdf')
 
 if __name__ == '__main__':
-    print('本工具更新于2024年5月25日，获取最新版本请关注公众号苏生不惑')
+    print('本工具更新于2024年6月6日，获取最新版本请关注公众号苏生不惑')
     url = input('公众号苏生不惑提示你输入知乎收藏夹链接:')
     if not url:
-        url = 'https://www.zhihu.com/collection/185257226'#https://www.zhihu.com/column/c_161945759
+        url = 'https://www.zhihu.com/collection/40047806'
     cookie = input('公众号苏生不惑提示你输入知乎cookie:')
     collection_id = re.search(r'https?://www.zhihu.com/collection/(.*)',url).group(1)
     headers = {

@@ -1,20 +1,19 @@
-import requests,re,csv,time,random,urllib3,sys
+import requests,re,csv,time,random,urllib3,sys,os
 from bs4 import BeautifulSoup
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import requests,re,csv,time,random,pandas as pd
-import numpy as np
-from pyecharts import options as opts
-from pyecharts.charts import Bar
-from pyecharts.charts import Pie
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-import jieba
-from wordcloud import WordCloud,ImageColorGenerator
-import numpy as np
-from PIL import Image
+
+# import numpy as np
+# from pyecharts import options as opts
+# from pyecharts.charts import Bar
+# from pyecharts.charts import Pie
+# from wordcloud import WordCloud
+# import matplotlib.pyplot as plt
+# import jieba,pandas as pd
+# from wordcloud import WordCloud,ImageColorGenerator
+# from PIL import Image
 from datetime import datetime
 def trimName(name):
-    return name.replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，')
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ').replace('"', '“')
 def count_csv_rows(filename):
     with open(filename, 'r', newline='', encoding='utf-8-sig') as file:
         csv_reader = csv.reader(file)
@@ -119,7 +118,6 @@ def reverse_cut_to_length(content, code_func, cut_num=4, fill_num=7):
 # reverse_cut_to_length('5002742349956958', base62_encode, 7, 4)
 # print(reverse_cut_to_length('O19l8FMg6', base62_decode, 4, 7))
 def close_on_any_input():
-    # 提示用户输入任何字符
     print("输入任何字符关闭程序...")
     # 等待用户输入
     input()
@@ -136,77 +134,81 @@ def remove_query_params(url):
         url_without_query = url
     
     return url_without_query
-while True:
-	url = ''
-	cookie = ''
-	if len(sys.argv) > 1:
-		url = sys.argv[1]
-	if not url:
-		print('本工具更新于2024年3月5日，获取最新版本请关注公众号苏生不惑')
-		url=input('请输入微博链接：')
-		if not url:
-			sys.exit('微博链接为空')
-		cookie=input('请输入微博cookie：')
-		if not cookie:
-			sys.exit('cookie为空')
-
-	headers = {
+print('本工具更新于2024年6月6日，获取最新版本请关注公众号苏生不惑')
+url = input('公众号苏生不惑 提示你，请输入微博链接或者文件名：')
+cookie=input('公众号苏生不惑 提示你，请输入微博cookie：')
+urls=[]
+if os.path.exists(url):
+    contents = ''
+    with open(url, encoding='utf-8') as f:
+        contents = f.read()
+    urls=contents.split('\n')
+else:
+    urls.insert(0,url)
+urls = [x for x in urls if x != '']
+print('微博数量：',len(urls))
+if len(urls) == 0:
+    sys.exit('微博链接为空')
+if not cookie:
+    sys.exit('cookie为空')
+headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
         'Cookie': cookie
                # 'Referer': 'https://m.weibo.cn/detail/4497103885505673',
                # 'Sec-Fetch-Mode': 'navigate'
     }
-	# https://weibo.com/1744395855/NFM1mexIw  https://m.weibo.cn/detail/4999560443466204
-	m=re.search(r'https://(www\.)?weibo\.com/\d+/(.*)',remove_query_params(url))
-	if m:
-		mid=reverse_cut_to_length(m.group(2), base62_decode, 4, 7)
-		comments(mid,count,headers,0)
 
-	m2=re.search(r'https://m\.weibo\.cn/(detail|status)/(\d+)',remove_query_params(url))
-	if m2:
-		comments(m2.group(2),count,headers,0)
-
-	print('done!')
-def ip_detail(mid):
-    df = pd.read_csv(f"{mid}.csv",encoding='utf-8',on_bad_lines='skip')
-    df2=df.评论地区.value_counts().sort_values(ascending=False).head(10)
-    ip = df2.index.tolist()
-    counts = df2.values.tolist()
-    bar = (
-        Bar()
-            .add_xaxis(ip)
-            .add_yaxis("", counts)
-    )
-    pie = (
-        Pie()
-        .add("", [list(z) for z in zip(ip, counts)],radius=["40%", "75%"], )
-        .set_global_opts(title_opts=opts.TitleOpts(title="饼图",pos_left="center",pos_top="20"))
-        .set_global_opts(legend_opts=opts.LegendOpts(type_="scroll", pos_left="80%", orient="vertical"))
-        .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {d}%"), )
-    )
-    pie.render(str(mid) +'.html')
-    # df2.to_csv(str(mid) +".csv",encoding="utf_8_sig",index=False)
-def wordcloud_img(mid):
-    font = r'C:\Windows\Fonts\simhei.ttf'
-    STOPWORDS = {"回复", '的','可以','吗','了','有','ca'}#https://github.com/baipengyan/Chinese-StopWords https://github.com/elephantnose/characters
-    df = pd.read_csv(f"{mid}.csv",encoding='utf-8',on_bad_lines='skip', usecols=[3])#取第4列
-    df_copy = df.copy()
-    print(df)
-    df_copy['comment'] = df_copy['评论内容'].apply(lambda x: str(x).split())  # 去掉空格
-    print(df_copy)
-    df_list = df_copy.values.tolist()
-    comment = jieba.cut(str(df_list), cut_all=False)
-    words = ' '.join(comment)
-    # cloud_mask = np.array(Image.open("wangfei.jpg"))
-    wc = WordCloud(width=2000, height=1800, background_color='white', font_path=font,
-                   stopwords=STOPWORDS, contour_width=3, contour_color='steelblue')
-    wc.generate(words)
-    # image_colors = ImageColorGenerator(cloud_mask)#给词云上色
-    # wc.recolor(color_func=image_colors)
-    #看看词频高的有哪些,把无用信息去除 https://github.com/Brucepk/luoxiang/blob/master/bilibili_ciyun.py
-    process_word = WordCloud.process_text(wc, words)
-    sort = sorted(process_word.items(), key=lambda e: e[1], reverse=True)
-    print(sort[:50])
-    wc.to_file(f"{mid}.jpg")
-ip_detail('5000660202553386')
-wordcloud_img('5000660202553386')
+for url in urls:
+    # https://weibo.com/1744395855/NFM1mexIw  https://m.weibo.cn/detail/4999560443466204
+    m=re.search(r'https://(www\.)?weibo\.com/\d+/(.*)',remove_query_params(url))
+    if m:
+        mid = m.group(2)
+        if not mid.isdigit():
+            mid=reverse_cut_to_length(m.group(2), base62_decode, 4, 7)
+        comments(mid,count,headers,0)
+    m2=re.search(r'https://m\.weibo\.cn/(detail|status)/(\d+)',remove_query_params(url))
+    if m2:
+        comments(m2.group(2),count,headers,0)
+# def ip_detail(mid):
+#     df = pd.read_csv(f"{mid}.csv",encoding='utf-8',on_bad_lines='skip')
+#     df2=df.评论地区.value_counts().sort_values(ascending=False).head(10)
+#     ip = df2.index.tolist()
+#     counts = df2.values.tolist()
+#     bar = (
+#         Bar()
+#             .add_xaxis(ip)
+#             .add_yaxis("", counts)
+#     )
+#     pie = (
+#         Pie()
+#         .add("", [list(z) for z in zip(ip, counts)],radius=["40%", "75%"], )
+#         .set_global_opts(title_opts=opts.TitleOpts(title="饼图",pos_left="center",pos_top="20"))
+#         .set_global_opts(legend_opts=opts.LegendOpts(type_="scroll", pos_left="80%", orient="vertical"))
+#         .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {d}%"), )
+#     )
+#     pie.render(str(mid) +'.html')
+#     # df2.to_csv(str(mid) +".csv",encoding="utf_8_sig",index=False)
+# def wordcloud_img(mid):
+#     font = r'C:\Windows\Fonts\simhei.ttf'
+#     STOPWORDS = {"回复", '的','可以','吗','了','有','ca'}#https://github.com/baipengyan/Chinese-StopWords https://github.com/elephantnose/characters
+#     df = pd.read_csv(f"{mid}.csv",encoding='utf-8',on_bad_lines='skip', usecols=[3])#取第4列
+#     df_copy = df.copy()
+#     print(df)
+#     df_copy['comment'] = df_copy['评论内容'].apply(lambda x: str(x).split())  # 去掉空格
+#     print(df_copy)
+#     df_list = df_copy.values.tolist()
+#     comment = jieba.cut(str(df_list), cut_all=False)
+#     words = ' '.join(comment)
+#     # cloud_mask = np.array(Image.open("wangfei.jpg"))
+#     wc = WordCloud(width=2000, height=1800, background_color='white', font_path=font,
+#                    stopwords=STOPWORDS, contour_width=3, contour_color='steelblue')
+#     wc.generate(words)
+#     # image_colors = ImageColorGenerator(cloud_mask)#给词云上色
+#     # wc.recolor(color_func=image_colors)
+#     #看看词频高的有哪些,把无用信息去除 https://github.com/Brucepk/luoxiang/blob/master/bilibili_ciyun.py
+#     process_word = WordCloud.process_text(wc, words)
+#     sort = sorted(process_word.items(), key=lambda e: e[1], reverse=True)
+#     print(sort[:50])
+#     wc.to_file(f"{mid}.jpg")
+# ip_detail('5000660202553386')
+# wordcloud_img('5000660202553386')
