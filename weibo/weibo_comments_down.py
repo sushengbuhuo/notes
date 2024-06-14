@@ -40,23 +40,24 @@ def comments(mid,count,headers,max_id):
     urls_history = get_history()
     if mid in urls_history:
         return False
-    user_url=f'https://weibo.com/ajax/statuses/show?id={mid}&locale=zh-CN'
-    user_res=requests.get(user_url, headers=headers, verify=False,timeout=5).json()
-    if user_res['ok'] != 1:
-        with open(f'下载失败微博.txt', 'a+', encoding='utf-8') as f:
-            f.write(mid+ '\n')
-        return False
-    name=replace_invalid_chars(user_res['user']['screen_name'])
+    # user_url=f'https://weibo.com/ajax/statuses/show?id={mid}&locale=zh-CN'
+    # user_res=requests.get(user_url, headers=headers, verify=False,timeout=5).json();print(user_res);
+    # if user_res['ok'] != 1:
+    #     with open(f'下载失败微博.txt', 'a+', encoding='utf-8') as f:
+    #         f.write(mid+ '\n')
+    #     return False
+    # name=replace_invalid_chars(user_res['user']['screen_name'])
     if max_id == 0:
-        with open(f'{name}---{mid}.csv', 'a+', encoding='utf-8-sig') as f:
+        with open(f'{mid}.csv', 'a+', encoding='utf-8-sig') as f:
             f.write('微博昵称'+','+'微博uid' + ','+'评论时间'+','+'评论内容'+','+'评论地区'+','+'回复数'+','+'点赞数'+ '\n')
     url=f'https://weibo.com/ajax/statuses/buildComments?is_reload=1&id={mid}&is_show_bulletin=2&is_mix=0&count={count}&uid=2087169013&fetch_level=0&locale=zh-CN&max_id={max_id}'
-    num=count_csv_rows(f'{name}---{mid}.csv')
-    if num > 5000:
+    # print('评论',url)
+    num=count_csv_rows(f'{mid}.csv')
+    if num > 10000:
         return False
-    save_history(mid)
     res=requests.get(url, headers=headers, verify=False,timeout=5).json()
     if not res["data"]:
+        save_history(mid)
         print(res)
         return False
     for v in res["data"]:
@@ -68,21 +69,22 @@ def comments(mid,count,headers,max_id):
             source = v.get('source','')
             total_number = v.get('total_number',0)
             print(v['text_raw'])
-            with open(f'{name}---{mid}.csv', 'a+', encoding='utf-8-sig') as f:
+            with open(f'{mid}.csv', 'a+', encoding='utf-8-sig') as f:
                 f.write(trimName(v['user']['screen_name'])+','+trimName(v['user']['idstr']) + ','+formatted_datetime+ ','+trimName(v['text_raw'])+ ','+source+ ','+str(total_number)+ ','+str(v['like_counts'])+'\n')
             if total_number > 0:
-                commentsChild(name,mid,v['id'],20,headers,0)
+                commentsChild(mid,v['id'],20,headers,0)
         except Exception as e:
             print(e,url,res)#;raise Exception(e)
     if res['max_id'] == 0:
         print(res['trendsText'])
+        save_history(mid)
         return False
-    random.randint(2, 5)
+    time.sleep(random.randint(2, 3))
     comments(mid,count,headers,res['max_id'])		
     return True
-def commentsChild(name,mid,midChild,count,headers,max_id):
+def commentsChild(mid,midChild,count,headers,max_id):
 	url=f'https://weibo.com/ajax/statuses/buildComments?flow=1&is_reload=1&id={midChild}&is_show_bulletin=2&is_mix=1&fetch_level=1&max_id={max_id}&count={count}&uid=2087169013&locale=zh-CN'
-	# print('子评论',url)
+	# print('回复',url)
 	res=requests.get(url, headers=headers, verify=False,timeout=5).json()
 	if not res["data"]:
 		print(res)
@@ -92,19 +94,19 @@ def commentsChild(name,mid,midChild,count,headers,max_id):
 		formatted_datetime = parsed_datetime.strftime("%Y-%m-%d %H:%M:%S")
 		try:
 			# soup = BeautifulSoup(v['source'], 'html.parser')
-			# source = soup.text#删除HTML标签
+			# source = soup.text#删除HTML标签{name}---{mid}.csv
 			source = v.get('source','')
 			total_number = v.get('total_number',0)
 			print(v['text_raw'])
-			with open(f'{name}---{mid}.csv', 'a+', encoding='utf-8-sig') as f:
+			with open(f'{mid}.csv', 'a+', encoding='utf-8-sig') as f:
 				f.write(trimName(v['user']['screen_name'])+','+trimName(v['user']['idstr']) + ','+formatted_datetime+ ','+trimName(v['text_raw'])+ ','+source+ ','+str(total_number)+ ','+str(v['like_counts'])+'\n')
 		except Exception as e:
 			print(e,url,res);raise Exception(e)
 	if res['max_id'] == 0:
 		print(res['trendsText'])
 		return False
-	time.sleep(random.randint(2, 5))
-	commentsChild(name,mid,midChild,count,headers,res['max_id'])		
+	time.sleep(random.randint(2, 3))
+	commentsChild(mid,midChild,count,headers,res['max_id'])		
 	return True
 count = 20
 
@@ -187,6 +189,7 @@ headers = {
     }
 
 for url in urls:
+    print('开始下载',url)
     # https://weibo.com/1744395855/NFM1mexIw  https://m.weibo.cn/detail/4999560443466204
     m=re.search(r'https://(www\.)?weibo\.com/\d+/(.*)',remove_query_params(url))
     if m:
