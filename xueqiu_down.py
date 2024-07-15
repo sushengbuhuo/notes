@@ -65,7 +65,7 @@ def articles(username,user_id,page,tp,headers,since,over):
                     f.write(article_content.replace('<p style="display:none;">','<p style="">'))
             except Exception as err:
                 print('出错了',err,'https://xueqiu.com'+v['target'])
-                with open('{username}/'+date+'_'+str(random.randint(1,10000))+'.html', 'w', encoding='utf-8') as f:
+                with open(f'{username}/'+date+'_'+str(random.randint(1,10000))+'.html', 'w', encoding='utf-8') as f:
                     f.write(res.text)
             print(f'开始下载第{num}条数据',date,trimName(v['title']),'https://xueqiu.com'+v['target'])
             num +=1

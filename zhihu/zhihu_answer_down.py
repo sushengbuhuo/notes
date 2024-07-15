@@ -68,6 +68,8 @@ if file_extension == '.xlsx':
     print('列标题',df.columns)
     print('行标题',df.index)
     for index, row in df.iterrows():
+        if not row['知乎问题链接']:
+            continue
         t=down('https:'+row['知乎问题链接'])
         time.sleep(1)
         fav=str(row['知乎赞同数'])
