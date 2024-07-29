@@ -20,6 +20,19 @@ def trimName(name):
 def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
+def get_history():
+    history = []
+    with open('wechat_url.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
+
+def save_history(url):
+    with open('wechat_url.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
+urls_history = get_history()
 contents = ""
 nums = 0
 encoding = 'utf-8-sig'
@@ -41,6 +54,9 @@ with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
 with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
 def down(url,position,copyright,digest,is_pay):
+    if url in urls_history:
+       print('已经下载过：',url)
+       return True
     response = requests.get(html.unescape(url), headers=headers)#, params={'key': '', 'uin': 'xx'}
     global nums
     encoding = 'utf-8-sig'
@@ -158,6 +174,7 @@ def down(url,position,copyright,digest,is_pay):
             f2.write(url+ '\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
             f.write(date+','+trimName(html.unescape(title)) + ','+url+ ','+trimName(html.unescape(digest))+ ','+trimName(html.unescape(author))+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+share_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+        save_history(url)
         return True
     except Exception as e:
         print(e,url)#;raise Exception("抓取失败了："+url)

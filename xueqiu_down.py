@@ -14,6 +14,13 @@ def get_history():
 def save_history(url):
     with open('xueqiu_history.txt', 'a+') as f:
         f.write(url.strip() + '\n')
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+
 def replace_invalid_chars(filename):
     invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
     for char in invalid_chars:
@@ -45,9 +52,9 @@ def articles(username,user_id,page,tp,headers,since,over):
                 print('已经下载过:'+'https://xueqiu.com'+v['target'])
                 continue
             date = time.strftime('%Y-%m-%d', time.localtime(v['created_at'] / 1000))
-            if num > 20000:
-                print('下载完成')
-                return False
+            # if num > 20000:
+            #     print('下载完成')
+            #     return False
             # if (v['created_at'] / 1000) > str_to_time(over):
             #     continue
             # if v['mark'] == 0 and (v['created_at'] / 1000) < str_to_time(since):
@@ -65,7 +72,7 @@ def articles(username,user_id,page,tp,headers,since,over):
                     f.write(article_content.replace('<p style="display:none;">','<p style="">'))
             except Exception as err:
                 print('出错了',err,'https://xueqiu.com'+v['target'])
-                with open(f'{username}/'+date+'_'+str(random.randint(1,10000))+'.html', 'w', encoding='utf-8') as f:
+                with open(f'{username}/'+date+'_'+str(random.randint(1,100000))+'.html', 'w', encoding='utf-8') as f:
                     f.write(res.text)
             print(f'开始下载第{num}条数据',date,trimName(v['title']),'https://xueqiu.com'+v['target'])
             num +=1
@@ -76,7 +83,10 @@ url = input('公众号玩转互联网达人提示你，请输入雪球主页链�
 if not url:
 	url = 'https://xueqiu.com/u/4104161666'
 	sys.exit('链接为空')
-cookie = input('公众号玩转互联网达人提示你，请输入雪球cookie：')
+cookie = get_cookie()
+if not cookie:
+    cookie = input('公众号玩转互联网达人提示你，请输入雪球cookie：')
+
 print('类型含义，0：全部：1：原发布2：长文')
 tp=input('公众号玩转互联网达人提示你，请输入下载类型：')
 # since=input('公众号苏生不惑提示你，输入开始时间：')
@@ -101,7 +111,7 @@ with open(f'{username}雪球文章数据.csv', 'a+', encoding='utf-8-sig') as f:
 while True:
     print("页数：",page)
     res = articles(username,user_id,page,tp,headers,since,over)
-    time.sleep(random.randint(2,5))
+    time.sleep(random.randint(3,6))
     if not res:
         break
     page+=1
