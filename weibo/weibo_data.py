@@ -1,11 +1,11 @@
-import re,requests,time,json,csv,sys,random
+import re,requests,time,json,csv,sys,random,os,calendar
 from lxml import etree
 from collections import OrderedDict
 from datetime import date, datetime, timedelta
+from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
-
 def base62_encode(num, alphabet=ALPHABET):
     num = int(num)
     if num == 0:
@@ -74,7 +74,7 @@ def parse_weibo(weibo_info):
         weibo["bid"] = 'https://weibo.com/'+str(weibo["user_id"])+'/'+weibo_info["bid"]
         text_body = weibo_info["text"]
         selector = etree.HTML(text_body)
-        remove_html_tag=0
+        remove_html_tag=1
         if remove_html_tag:
             weibo["text"] = selector.xpath("string(.)")
         else:
@@ -98,7 +98,8 @@ def get_pics(weibo_info):
         else:
             pics = ""
         return pics
-# 微博导出
+def trimName(name):
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ').replace('"', '“')
 def down():
     with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
         f.write('微博链接'+','+'微博昵称' +','+'微博mid' + ','+'微博uid'+ ','+'微博日期'+ ','+'微博内容'+','+'微博转发数'+','+'微博评论数'+','+'微博点赞数'+'\n')
@@ -130,13 +131,83 @@ def down():
             print('开始抓取微博内容：',i,mid)
             time.sleep(random.randint(1, 3))
             if not weibo:
-                res.append([i,'','','','','','','',''])
+                res.append([i,'x','x','x','x','x','x','x','x'])
             else:
                 res.append([i,weibo['screen_name'],'\t'+str(weibo['id']),'\t'+str(weibo['user_id']),weibo['created_at'],weibo['text'],weibo['reposts_count'],weibo['comments_count'],weibo['attitudes_count']])
         except Exception as e:
             print("出错了",i,e)
-            res.append([i,'','','','','','','',''])
+            res.append([i,'x','x','x','x','x','x','x','x'])
     with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerows(res)
-down()
+with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
+    # f.write('链接'+','+'平台' +','+'日期' + ','+'标题'+ ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
+    f.write('微博链接'+','+'微博类型' +','+'发布时间' + ','+'微博内容'+ ','+'图片链接'+ ','+'发布来源'+ ','+'发布地区'+ ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+cookie = get_cookie()
+print('本工具更新于2024年8月1日,获取最新版本关注公众号苏生不惑')
+if not cookie:
+    cookie=input('请输入微博cookie:')
+headers = {"User_Agent": user_agent,'cookie':cookie}
+url='https://www.weibo.com/ajax/profile/detail'
+res=requests.get(url, headers=headers, verify=False,timeout=5).json()
+if not res['data']['created_at']:
+    sys.exit(1)
+uid=input('请输入微博uid:')
+if not uid:
+    uid=re.search(r'.*\?uid=(\d+)',res['data']['verified_url']).group(1)
+
+print(uid)
+def data(uid,page,since_id):
+    url =f'https://www.weibo.com/ajax/statuses/mymblog?uid={uid}&page={page}&feature=0&since_id={since_id}'
+    # print(f'开始第{page}页',url)
+    res=requests.get(url, headers=headers, verify=False,timeout=5).json()
+    if not res["data"]['list']:
+        return False
+    try:
+        t = int(time.mktime(datetime.strptime(res["data"]['list'][0]['created_at'], "%a %b %d %H:%M:%S %z %Y").timetuple()))
+        now = datetime.now()
+        first_day_last_month = (now - timedelta(days=now.day) ).replace(day=1)
+        # t2 = int(time.mktime(datetime.strptime(first_day_last_month[0:10]+' 00:00:00', "%Y-%m-%d %H:%M:%S").timetuple()))
+        today = datetime.today()
+        last_month = today.month - 6 if today.month > 1 else 12
+        last_year = today.year if today.month > 1 else today.year - 1
+        last_day_of_last_month = calendar.monthrange(last_year, last_month)[1]
+        first_day_of_last_month = datetime(last_year, last_month, 1)
+        # print(int(first_day_of_last_month.timestamp()))
+        # dt = datetime.strptime(first_day_of_last_month, '%Y-%m-%d %H:%M:%S')
+        if t < int(first_day_of_last_month.timestamp()):
+            return False
+        for v in res["data"]['list']:
+            if 'deleted' in v and v['deleted'] == 1:
+                continue
+            parsed_datetime = datetime.strptime(v['created_at'], "%a %b %d %H:%M:%S %z %Y")
+            formatted_datetime = parsed_datetime.strftime("%m月%d日")
+            timestamp = int(time.mktime(parsed_datetime.timetuple()))
+            print(parsed_datetime.strftime("%Y-%m-%d %H:%M:%S"),v['mid'],v['text_raw'])
+            soup = BeautifulSoup(v['source'], 'html.parser')
+            pics=''
+            if v['pic_num'] > 0:
+                for j,k in v['pic_infos'].items():
+                    pics+=k['largest']['url'].replace('/large/','/oslarge/')+';'
+            weibo_type='原创'
+            if 'retweeted_status' in v:
+                weibo_type='转发'
+            if v['user']['idstr'] != uid:
+                weibo_type='快转'
+            with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
+                # f.write('https://m.weibo.cn/detail/'+v['mid']+','+'微博'+','+formatted_datetime +','+trimName(v['text_raw']) +','+str(v['reads_count']) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
+                f.write(f'https://www.weibo.com/{uid}/'+v['mblogid']+','+weibo_type+','+parsed_datetime.strftime("%Y-%m-%d %H:%M:%S") +','+trimName(v['text_raw']) +','+pics+','+soup.get_text()+','+v.get('region_name','')+','+str(v.get('reads_count',0)) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
+        if res["data"]['since_id'] == 0:
+            return False
+        time.sleep(random.randint(2, 6))
+        page+=1
+        data(uid,page,res["data"]['since_id'])
+    except Exception as e:
+        print('error',e)
+data(uid,1,'')
