@@ -140,9 +140,9 @@ def down():
     with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerows(res)
-with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
+with open('微博.csv', 'a+', encoding='utf-8-sig', newline='') as f:
     # f.write('链接'+','+'平台' +','+'日期' + ','+'标题'+ ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
-    f.write('微博链接'+','+'微博类型' +','+'发布时间' + ','+'微博内容'+ ','+'图片链接'+ ','+'发布来源'+ ','+'发布地区'+ ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
+    f.write('微博链接'+','+'mid'+','+'微博类型' +','+'微博内容'+ ','+'图片链接'+ ','+'发布来源'+ ','+'发布地区'+ ','+'发布时间' + ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
 def get_cookie():
     cookie = ''
     if os.path.exists('cookie.txt'):
@@ -158,12 +158,21 @@ url='https://www.weibo.com/ajax/profile/detail'
 res=requests.get(url, headers=headers, verify=False,timeout=5).json()
 if not res['data']['created_at']:
     sys.exit(1)
+myuid=re.search(r'.*\?uid=(\d+)',res['data']['verified_url']).group(1)
+month = 6
 uid=input('请输入微博uid:')
+if uid != "" and uid != myuid:
+    month = 1
 if not uid:
-    uid=re.search(r'.*\?uid=(\d+)',res['data']['verified_url']).group(1)
+    uid=myuid
 
-print(uid)
-def data(uid,page,since_id):
+# print(uid,month)
+def timeAgo(day):
+    current_date = datetime.now()
+    months_ago = current_date - timedelta(days=day)
+    months_ago_first_day = months_ago.replace(day=1)
+    return months_ago_first_day.strftime("%Y-%m-%d %H:%M:%S")
+def data(uid,page,since_id,month):
     url =f'https://www.weibo.com/ajax/statuses/mymblog?uid={uid}&page={page}&feature=0&since_id={since_id}'
     # print(f'开始第{page}页',url)
     res=requests.get(url, headers=headers, verify=False,timeout=5).json()
@@ -171,17 +180,11 @@ def data(uid,page,since_id):
         return False
     try:
         t = int(time.mktime(datetime.strptime(res["data"]['list'][0]['created_at'], "%a %b %d %H:%M:%S %z %Y").timetuple()))
-        now = datetime.now()
-        first_day_last_month = (now - timedelta(days=now.day) ).replace(day=1)
-        # t2 = int(time.mktime(datetime.strptime(first_day_last_month[0:10]+' 00:00:00', "%Y-%m-%d %H:%M:%S").timetuple()))
-        today = datetime.today()
-        last_month = today.month - 6 if today.month > 1 else 12
-        last_year = today.year if today.month > 1 else today.year - 1
-        last_day_of_last_month = calendar.monthrange(last_year, last_month)[1]
-        first_day_of_last_month = datetime(last_year, last_month, 1)
-        # print(int(first_day_of_last_month.timestamp()))
-        # dt = datetime.strptime(first_day_of_last_month, '%Y-%m-%d %H:%M:%S')
-        if t < int(first_day_of_last_month.timestamp()):
+        months_ago_first_day = timeAgo(month*30)
+        date_object = datetime.strptime(months_ago_first_day, "%Y-%m-%d %H:%M:%S")
+        # date_object = datetime.fromtimestamp(int(date_object.timestamp()))
+        # print(months_ago_first_day,time.strftime('%Y-%m-%d', time.localtime(int(date_object.timestamp()))))
+        if t < int(date_object.timestamp()):
             return False
         for v in res["data"]['list']:
             if 'deleted' in v and v['deleted'] == 1:
@@ -189,6 +192,8 @@ def data(uid,page,since_id):
             parsed_datetime = datetime.strptime(v['created_at'], "%a %b %d %H:%M:%S %z %Y")
             formatted_datetime = parsed_datetime.strftime("%m月%d日")
             timestamp = int(time.mktime(parsed_datetime.timetuple()))
+            if timestamp < int(date_object.timestamp()):
+                continue
             print(parsed_datetime.strftime("%Y-%m-%d %H:%M:%S"),v['mid'],v['text_raw'])
             soup = BeautifulSoup(v['source'], 'html.parser')
             pics=''
@@ -200,14 +205,14 @@ def data(uid,page,since_id):
                 weibo_type='转发'
             if v['user']['idstr'] != uid:
                 weibo_type='快转'
-            with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
+            with open('微博.csv', 'a+', encoding='utf-8-sig', newline='') as f:
                 # f.write('https://m.weibo.cn/detail/'+v['mid']+','+'微博'+','+formatted_datetime +','+trimName(v['text_raw']) +','+str(v['reads_count']) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
-                f.write(f'https://www.weibo.com/{uid}/'+v['mblogid']+','+weibo_type+','+parsed_datetime.strftime("%Y-%m-%d %H:%M:%S") +','+trimName(v['text_raw']) +','+pics+','+soup.get_text()+','+v.get('region_name','')+','+str(v.get('reads_count',0)) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
+                f.write(f'https://www.weibo.com/{uid}/'+v['mblogid']+','+v['mid']+','+weibo_type+','+trimName(v['text_raw']) +','+pics+','+soup.get_text()+','+v.get('region_name','')+','+parsed_datetime.strftime("%Y-%m-%d %H:%M") +','+str(v.get('reads_count',0)) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
         if res["data"]['since_id'] == 0:
             return False
         time.sleep(random.randint(2, 6))
         page+=1
-        data(uid,page,res["data"]['since_id'])
+        data(uid,page,res["data"]['since_id'],month)
     except Exception as e:
         print('error',e)
-data(uid,1,'')
+data(uid,1,'',month)
