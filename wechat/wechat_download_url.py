@@ -273,7 +273,13 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     print("文章点赞数:"+str(old_like_num))
     print("文章赞赏数:"+str(reward_num))
     print("文章分享数:"+str(share_num))#,str(content['comment_count'])
-    return str(readNum), str(likeNum),str(old_like_num),str(reward_num),str(share_num)
+    readNum2=str(readNum)
+    if readNum > 10000:
+        tmp=readNum/10000
+        readNum2=sprintf(tmp,1)+'万'
+    if readNum > 100000:
+        readNum2='10万+'
+    return readNum2, str(likeNum),str(old_like_num),str(reward_num),str(share_num)
 def video(content, headers,date,article_url,title):
     # vid = re.search(r'wxv_.{19}',res.text).group(0)
     # time.sleep(1) https://mp.weixin.qq.com/s/goqAKIypCsI4vVLjdhmXSg https://mp.weixin.qq.com/s/gAdGPFj0pomdKcE5s9-Gkw
