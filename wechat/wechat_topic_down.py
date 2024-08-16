@@ -86,11 +86,11 @@ def video(res, headers,date,title,article_url):
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
 topic_url = ''
-print('本工具更新于2024年5月1日，获取最新版本请关注公众号苏生不惑')
+# print('本工具更新于2024年8月16日，获取最新版本请关注公众号苏生不惑')
 if len(sys.argv) > 1:
    topic_url = sys.argv[1]
 if not topic_url:
-   topic_url = input('公众号苏生不惑提示你，请输入公众号话题地址：')
+   topic_url = input('公众号苏生不惑提示你，请输入公众号话题链接：')
 # 纯音频 topic_url='https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MjM5NjAxOTU4MA==&action=getalbum&album_id=1777378132866465795&scene=173#wechat_redirect'
 # 纯文章 topic_url = 'https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MjM5NjAxOTU4MA==&action=getalbum&album_id=1681628721901830149&scene=173&from_msgid=3009294038&from_itemidx=1&count=3&nolastread=1'
 # 纯视频 topic_url = 'https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&album_id=1333036982024585217&__biz=MzU1OTgyMzQzNw==#wechat_redirect'
@@ -129,16 +129,16 @@ if voiceids:
 
 urls = get_history()
 encoding = 'utf-8-sig'
-fname = f'公众号{mp_name}话题文章列表.csv'
+fname = f'公众号{mp_name}话题文章.csv'
 with open(fname, 'a+', encoding=encoding) as f:
     f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章封面'+'\n')
 msgids = re.findall('data-msgid="(.*)"',response.text)
 links = re.findall('data-link="(.*)"',response.text)
 titles = re.findall('data-title="(.*)"',response.text)
 itemidxs = re.findall('data-itemidx="(.*)"',response.text)
-print(msgids,links,titles)
-if not os.path.exists('cover'):
-	os.mkdir('cover')
+# print(msgids,links,titles)
+# if not os.path.exists('cover'):
+# 	os.mkdir('cover')
 if not os.path.exists('html'):
 	os.mkdir('html')
 for i,j,k,g in zip(msgids,links,titles,itemidxs):
@@ -147,7 +147,7 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 	if html.unescape(j) in urls:
 		print('已经下载过文章:'+html.unescape(j))
 		continue
-	print('开始下载',j,k)
+	print('开始下载',html.unescape(j),k)
 	res = requests.get(html.unescape(j),proxies={'http': None,'https': None},verify=False, headers=headers)
 	content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
 	try:
@@ -162,19 +162,22 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 		title = title.group(1)
 		ct = ct.group(1)
 		date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-		cover_data = requests.get(cover,headers=headers)
-		with open('cover/'+date+'_'+replace_invalid_chars(k)+'.jpg','wb') as f:
-			f.write(cover_data.content)
-		audio(res,headers,date,title)
-		video(res,headers,date,title,j)
+		date2 = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))
+		# cover_data = requests.get(cover,headers=headers)
+		# with open('cover/'+date+'_'+replace_invalid_chars(k)+'.jpg','wb') as f:
+			# f.write(cover_data.content)
+		# audio(res,headers,date,title)
+		# video(res,headers,date,title,j)
 		with open('html/'+mp_name+'_'+date+'_'+replace_invalid_chars(k)+'.html', 'w', encoding='utf-8') as f:
 			f.write(content)
+		with open(fname, 'a+', encoding=encoding) as f2:
+			f2.write(date2+','+k + ','+html.unescape(j)+ ','+cover+'\n')
 		save_history(html.unescape(j))
 	except Exception as err:
-		with open('html/'+mp_name+'_'+date+'_'+str(randint(10,100000))+'.html', 'w', encoding='utf-8') as f:
-			f.write(content);print(err,j)
-	with open(fname, 'a+', encoding=encoding) as f2:
-		f2.write(''+','+k + ','+html.unescape(j)+ ','+''+'\n')
+		with open(f'{mp_name}下载失败文章.txt', 'a+', encoding=encoding) as f5:
+			f5.write(html.unescape(j)+'\n');print(err,html.unescape(j))
+		# with open('html/'+mp_name+'_'+str(randint(10,100000))+'.html', 'w', encoding='utf-8') as f:
+		# 	f.write(content);print(err,j);raise Exception("抓取失败了："+j)
 def download(msgid,mp_name,itemidx):
 	url = f'https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&__biz={biz}&album_id={album_id}&count=10&begin_msgid={msgid}&begin_itemidx={itemidx}&uin=&key=&pass_ticket=&wxtoken=&devicetype=Windows10x64&clientversion=63040026&__biz=MzUyMzUyNzM4Ng%3D%3D&appmsg_token=&x5=0&f=json'
 	response = requests.get(url, headers=headers)
@@ -194,7 +197,8 @@ def download(msgid,mp_name,itemidx):
 			print('已经下载过文章:'+html.unescape(i['url']))
 			continue
 		date = time.strftime('%Y-%m-%d', time.localtime(int(i['create_time'])))
-		print('开始下载',i['url'],i['title'])
+		date2 = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(i['create_time'])))
+		print('开始下载',html.unescape(i['url']),i['title'])
 		res = requests.get(html.unescape(i['url']),proxies={'http': None,'https': None},verify=False, headers=headers)
 		content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
 		try:
@@ -209,21 +213,24 @@ def download(msgid,mp_name,itemidx):
 			title = title.group(1)
 			ct = ct.group(1)
 			date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-			cover_data = requests.get(cover,headers=headers)
-			with open('cover/'+date+'_'+replace_invalid_chars(i['title'])+'.jpg','wb') as f:
-				f.write(cover_data.content)
-			audio(res,headers,date,title)
-			video(res,headers,date,title,i['url'])
+			# cover_data = requests.get(cover,headers=headers)
+			# with open('cover/'+date+'_'+replace_invalid_chars(i['title'])+'.jpg','wb') as f:
+				# f.write(cover_data.content)
+			# audio(res,headers,date,title)
+			# video(res,headers,date,title,i['url'])
 			with open('html/'+mp_name+'_'+date+'_'+replace_invalid_chars(i['title'])+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 			save_history(html.unescape(i['url']))
 		except Exception as err:
-			with open('html/'+mp_name+'_'+date+'_'+str(randint(100,100000))+'.html', 'w', encoding='utf-8') as f:
-				f.write(content);print(err,i['url'])
+			# with open(f'{mp_name}下载失败文章.txt', 'a+', encoding=encoding) as f6:
+			# 	f6.write(html.unescape(i['url'])+'\n');
+			print(err,html.unescape(i['url']))
+			# with open('html/'+mp_name+'_'+date+'_'+str(randint(100,100000))+'.html', 'w', encoding='utf-8') as f:
+			# 	f.write(content);print(err,i['url']);raise Exception("抓取失败了："+i['url'])
 		with open(fname, 'a+', encoding=encoding) as f2:
-			f2.write(date+','+i['title'] + ','+html.unescape(i['url'])+ ','+i['cover_img_1_1']+'\n')
+			f2.write(date2+','+i['title'] + ','+html.unescape(i['url'])+ ','+i['cover_img_1_1']+'\n')
 	if response_dict['getalbum_resp']['continue_flag'] == '1':
 		# print(msgid)
-		time.sleep(1)
+		time.sleep(randint(2, 5))
 		download(msgid,mp_name,itemidx)
 download(msgid,mp_name,itemidx)

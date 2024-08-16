@@ -115,7 +115,7 @@ def main():
             res = requests.get(html.unescape(url),proxies={'http': None,'https': None},verify=False, headers=headers).json()
             # dt_obj = datetime.strptime(res['created_at'], '%a %b %d %H:%M:%S %z %Y')
             # created_at = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
-            created_at=line[7]
+            created_at=line[7];day=created_at.replace(':','：').replace(' ','-')
             dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
             date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
             if not os.path.exists(year):
@@ -124,12 +124,15 @@ def main():
                 os.mkdir(f'{year}/{date}')
             if not os.path.exists(f'{year}/{date}/{minute}'):
                 os.mkdir(f'{year}/{date}/{minute}')
-            with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
-                f2.write(res['text_raw'])
+            if not os.path.exists('doc'):
+                os.mkdir('doc')
+            # with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
+            #     f2.write(res['text_raw'])
             document = Document()
-            # document.add_heading('文本内容', 0)
+            document.add_heading(created_at, 0)
             document.add_paragraph(res['text_raw'])
-            document.save(f'{year}/{date}/{minute}/{m}.docx')
+            document.save(f'doc/{day}.docx')
+            # document.save(f'{year}/{date}/{minute}/{m}.docx')
             print('开始下载',line[0],created_at)
             print(res['text_raw'])
             if res['pic_num'] > 0:
@@ -137,18 +140,18 @@ def main():
                 #     os.mkdir(f'{date}/image')
                 for j,k in res['pic_infos'].items():
                     print('图片:',k['largest']['url'])
-                    img_data = requests.get(k['largest']['url'].replace('/large/','/oslarge/'),headers=headers,timeout=5)
-                    with open(f'{year}/{date}/{minute}/'+j+'.jpg','wb') as f3:
-                        f3.write(img_data.content)
+                    # img_data = requests.get(k['largest']['url'].replace('/large/','/oslarge/'),headers=headers,timeout=5)
+                    # with open(f'{year}/{date}/{minute}/'+j+'.jpg','wb') as f3:
+                        # f3.write(img_data.content)
             if 'page_info' in res and 'media_info' in res.get('page_info') and 'playback_list' in res.get('page_info').get('media_info'):
                 # if not os.path.exists(f'{date}/video'):
                     # os.mkdir(f'{date}/video')
                 video_url = res.get('page_info').get('media_info').get('playback_list')[0]['play_info']['url']
                 title=res.get('page_info').get('media_info').get('name')+res.get('page_info').get('object_id')
                 print('视频:',video_url)
-                video_data = requests.get(video_url,headers=headers,verify=False,timeout=10)
-                with open(f'{year}/{date}/{minute}/'+replace_invalid_chars(title)+'.mp4','wb') as f4:
-                    f4.write(video_data.content)
+                # video_data = requests.get(video_url,headers=headers,verify=False,timeout=10)
+                # with open(f'{year}/{date}/{minute}/'+replace_invalid_chars(title)+'.mp4','wb') as f4:
+                    # f4.write(video_data.content)
             save_history(line[0])
             # url = "https://mp.weixin.qq.com/s/S24LAiMtAfdGS9XM0ZMU2A"
             # 查看当前 桌面视图大小 https://miyakogi.github.io/pyppeteer/reference.html
