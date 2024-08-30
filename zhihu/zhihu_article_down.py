@@ -50,7 +50,7 @@ def down(url):
         # content = content.replace('h1>', 'h2>')
         # content = re.sub(r'<noscript>.*?</noscript>', '', content)
         # content = re.sub(r'src="data:image.*?"', '', content)
-        content = content.replace('data-actualsrc', 'src')
+        content = content.replace('data-original', 'src')
         content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1><h3>%s</h3>%s</body></html>' % (
             title,url, content)
         with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
