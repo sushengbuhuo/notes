@@ -378,7 +378,10 @@ def image(response,headers,date,title):
         num+=1
         img_data = requests.get(i,headers=headers)
         print('正在下载图片：'+i)
-        with open('images/'+date+'_'+replace_invalid_chars(title)+'_'+str(num)+'.jpg','wb') as f6:
+        ext = '.jpg'
+        if 'wx_fmt=gif' in i:
+            ext = '.gif'
+        with open('images/'+date+'_'+replace_invalid_chars(title)+'_'+str(num)+ext,'wb') as f6:
             f6.write(img_data.content)
     return str(num)
 def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
