@@ -93,6 +93,8 @@ def down(url,position,copyright,digest,is_pay):
         ct = ct.group(1)
         author = author.group(1)
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))# %H:%M:%S
+        if len(title) > 100:
+            title = title[0:64]
         # if int(ct) > 1660321824:
         #     return False
         print('文章数量：',nums)
@@ -370,8 +372,11 @@ def image(response,headers,date,title):
     imgs.extend(imgs2)
     time.sleep(1)
     num = 0
+    title=date+'_'+replace_invalid_chars(html.unescape(title))
     if not os.path.exists('images'):
         os.mkdir('images')
+    # if not os.path.exists(f'images/{title}'):
+    #     os.mkdir(f'images/{title}')
     for i in imgs:
         if not re.match(r'^https?://.*',i):
             continue
@@ -381,7 +386,7 @@ def image(response,headers,date,title):
         ext = '.jpg'
         if 'wx_fmt=gif' in i:
             ext = '.gif'
-        with open('images/'+date+'_'+replace_invalid_chars(title)+'_'+str(num)+ext,'wb') as f6:
+        with open(f'images/'+title+'_'+str(num)+ext,'wb') as f6:
             f6.write(img_data.content)
     return str(num)
 def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):

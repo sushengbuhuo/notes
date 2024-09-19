@@ -16,26 +16,36 @@ def get_history():
         for line in lines:
             history.append(line.strip())
     return history
-
+def replace_invalid_chars(filename):
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
+    for char in invalid_chars:
+        filename = filename.replace(char, ' ')
+    return filename
 def save_history(url):
     with open('wechat_history.txt', 'a+') as f:
         f.write(url.strip() + '\n')
-def images(res,headers,date,title):
-    imgs=re.findall('data-src="(.*?)"',res.text)
-    imgs2= re.findall("cdn_url: '(.*?)',",res.text)
+def images(response,headers,date,title):
+    imgs=re.findall('data-src="(.*?)"',response.text)
+    imgs2= re.findall("cdn_url: '(.*?)',",response.text)
     imgs.extend(imgs2)
     time.sleep(1)
-    num = 0
-    if not os.path.exists('image'):
-        os.mkdir('image')
+    num = 0;title=date+'_'+replace_invalid_chars(html.unescape(title.replace('.','')))
+    if not os.path.exists('images'):
+        os.mkdir('images')
+    if not os.path.exists(f'images/{title}'):
+        os.mkdir(f'images/{title}')
     for i in imgs:
         if not re.match(r'^https?://.*',i):
             continue
         num+=1
         img_data = requests.get(i,headers=headers)
         print('正在下载图片：'+i)
-        with open('image/'+date+'_'+trimName(title)+'_'+str(num)+'.jpg','wb') as f:
-            f.write(img_data.content)
+        ext = '.jpg'
+        if 'wx_fmt=gif' in i:
+            ext = '.gif'
+        with open(f'images/{title}/'+title+'_'+str(num)+ext,'wb') as f6:
+            f6.write(img_data.content)
+    return str(num)
 def cover(res,headers,date,title):
     cover_url = re.search(r'<meta property="og:image" content="(.*)"\s?/>', res.text)
     if not cover_url:
@@ -111,7 +121,7 @@ def video(res, headers,date,title,article_url,duration):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('本工具更新于2024年3月5日，获取最新版本请关注公众号苏生不惑')
+print('本工具更新于2024年9月19日，获取最新版本请关注公众号苏生不惑')
 # 视频 https://mp.weixin.qq.com/s/goqAKIypCsI4vVLjdhmXSg
 # 音频 https://mp.weixin.qq.com/s/uzRSOhiH3XbS3Vwr7jGLWg
 url = ''
@@ -160,6 +170,8 @@ for mp_url in urls:
            ct = re.search(r'window\.ct = \'(.*?)\'', content)
         # print(cover,title,ct)
         title = title.group(1)
+        if len(title) > 100:
+            title = title[0:64]
         ct = ct.group(1)
         date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
         print(f'开始下载第{num}篇：',date,title,html.unescape(mp_url))
@@ -168,7 +180,7 @@ for mp_url in urls:
         video(res,headers,date,title,mp_url,int(duration))
         images(res,headers,date,title)
         save_history(html.unescape(mp_url))
-        with open('html/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+        with open('html/'+date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
         with open('html/'+str(randint(1000,100000))+'.html', 'w', encoding='utf-8') as f2:
