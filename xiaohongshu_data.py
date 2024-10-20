@@ -1,4 +1,5 @@
 import requests,json,time,datetime,os,re,html,csv
+from urllib.parse import urlparse, parse_qs
 from random import randint
 import traceback,urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -46,12 +47,14 @@ if not os.path.exists('video'):
 	os.mkdir('video')
 def data(url):
 	try:
-		url=remove_query_params(url)
+		# url=remove_query_params(url)
 		response = requests.get(url, headers=headers)
 		res = re.findall(r'<script>window\.__INITIAL_STATE__=(.*?)</script></body></html>',response.text,flags=re.S)
 		print('开始下载:',url)
 		data=json.loads(res[0].replace('undefined','""'))
-		note_id = re.search(r'https?://www\.xiaohongshu\.com/explore/(.*)',url).group(1)
+		# note_id = re.search(r'https?://www\.xiaohongshu\.com/explore/(.*)',url).group(1)
+		path_segments = urlparse(url).path.split('/')
+		note_id = path_segments[-1]
 		ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data['note']['noteDetailMap'][note_id]['note']['time'] / 1000))
 		utime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data['note']['noteDetailMap'][note_id]['note']['lastUpdateTime'] / 1000))
 		ip=data['note']['noteDetailMap'][note_id]['note'].get('ipLocation','')
@@ -65,9 +68,9 @@ def data(url):
 			print(data['note']['noteDetailMap'][note_id]['note'])
 			for key, value in data['note']['noteDetailMap'][note_id]['note']['video']['media']['stream'].items():
 				if len(value) > 0:
-					video_data = requests.get(value[0]['masterUrl'],headers=headers)
-					with open('video/'+ctime[0:10]+'_'+replace_invalid_chars(trimName(data['note']['noteDetailMap'][note_id]['note']['title']))+'.mp4','wb') as ff:
-						ff.write(video_data.content)
+					# video_data = requests.get(value[0]['masterUrl'],headers=headers)
+					# with open('video/'+ctime[0:10]+'_'+replace_invalid_chars(trimName(data['note']['noteDetailMap'][note_id]['note']['title']))+'.mp4','wb') as ff:
+						# ff.write(video_data.content)
 					break
 		images = ''
 		if len(data['note']['noteDetailMap'][note_id]['note']['imageList']) > 0:
@@ -76,10 +79,10 @@ def data(url):
 				# picUrl = f"https://sns-img-qc.xhscdn.com/{img['traceId']}"
 				images+=trimName(img['urlDefault'].replace('\u002F','/'))+"，"
 				num+=1
-				img_data = requests.get(img['urlDefault'].replace('\u002F','/'),headers=headers)
-				print('正在下载图片：'+img['urlDefault'].replace('\u002F','/'))
-				with open('image/'+ctime[0:10]+'_'+replace_invalid_chars(trimName(data['note']['noteDetailMap'][note_id]['note']['title']))+'_'+str(num)+'.jpg','wb') as f6:
-					f6.write(img_data.content)
+				# img_data = requests.get(img['urlDefault'].replace('\u002F','/'),headers=headers)
+				# print('正在下载图片：'+img['urlDefault'].replace('\u002F','/'))
+				# with open('image/'+ctime[0:10]+'_'+replace_invalid_chars(trimName(data['note']['noteDetailMap'][note_id]['note']['title']))+'_'+str(num)+'.jpg','wb') as f6:
+					# f6.write(img_data.content)
 		tags = ''
 		if len(data['note']['noteDetailMap'][note_id]['note']['tagList']) > 0:
 			for tag in data['note']['noteDetailMap'][note_id]['note']['tagList']:
