@@ -88,7 +88,7 @@ def save_history(url):
     with open('weibo_history.txt', 'a+') as f:
         f.write(url.strip() + '\n')
 def main():
-    f = open(f'微博.csv', encoding='UTF8')
+    f = open(f'2061847537.csv', encoding='UTF8')
     csv_reader = csv.reader(f)
     # for root, dirs, files in os.walk('.'):
     num = 0
@@ -118,12 +118,12 @@ def main():
             created_at=line[7];day=created_at.replace(':','：').replace(' ','-')
             dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
             date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
-            if not os.path.exists(year):
-                os.mkdir(year)
-            if not os.path.exists(f'{year}/{date}'):
-                os.mkdir(f'{year}/{date}')
-            if not os.path.exists(f'{year}/{date}/{minute}'):
-                os.mkdir(f'{year}/{date}/{minute}')
+            # if not os.path.exists(year):
+            #     os.mkdir(year)
+            # if not os.path.exists(f'{year}/{date}'):
+            #     os.mkdir(f'{year}/{date}')
+            # if not os.path.exists(f'{year}/{date}/{minute}'):
+            #     os.mkdir(f'{year}/{date}/{minute}')
             if not os.path.exists('doc'):
                 os.mkdir('doc')
             # with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
@@ -205,5 +205,62 @@ def main():
 #         # break
 #         # htmls += [name for name in files if name.endswith(".html")]
 #     # print(htmls)
-main()
+def main2():
+    f = open(f'1744395855.csv', encoding='UTF8')
+    csv_reader = csv.reader(f)
+    num = 0
+    history = get_history()
+    for line in csv_reader:
+        if line[0] in history:
+            print('已经下载过:'+line[0])
+            continue
+        time.sleep(random.randint(1, 3))
+        # if num>10:
+        #     break
+        if '微博' in line[0]:
+            continue
+        num +=1
+        try:
+            created_at=line[7];day=created_at.replace(':','：').replace(' ','-')
+            dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
+            date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
+            mid = line[0].split('/')[-1]
+            # if not os.path.exists(year):
+            #     os.mkdir(year)
+            # if not os.path.exists(f'{year}/{date}'):
+            #     os.mkdir(f'{year}/{date}')
+            # if not os.path.exists(f'{year}/{date}/{minute}'):
+            #     os.mkdir(f'{year}/{date}/{minute}')
+            if not os.path.exists('doc'):
+                os.mkdir('doc')
+            # with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
+            #     f2.write(res['text_raw'])
+            document = Document()
+            document.add_heading(created_at, 0)
+            document.add_paragraph(line[1])
+            if line[2] and line[2] != '无':
+                pics =line[2].split(',')
+                if len(pics) > 0:
+                    if not os.path.exists(f'image'):
+                        os.mkdir(f'image')
+                    for item in pics:
+                        print('图片:',item)
+                        filename = os.path.basename(item).split('.')[0]
+                        # img_data = requests.get(item.replace('/large/','/orj360/'),headers=headers,timeout=5)
+                        img_data = requests.get(item,headers=headers,timeout=5)
+                        with open(f'image/'+mid+'-'+filename+'.jpg','wb') as f3:
+                            f3.write(img_data.content)
+                            picture = document.add_picture(f'image/'+mid+'-'+filename+'.jpg')
+                            picture.width = int(picture.width * 0.08)
+                            picture.height = int(picture.height * 0.08)
+            document.save(f'doc/{day}-{mid}.docx')
+            print('开始下载',line[0],created_at)
+            print(line[1])
+            save_history(line[0])
+        except Exception as e:
+            print(e)
+    # break
+    # htmls += [name for name in files if name.endswith(".html")]
+    # await browser.close()
+main2()
     
