@@ -5,7 +5,9 @@ import json,html
 import random,re,os,csv
 requests.packages.urllib3.disable_warnings()
 headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat"
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat",
+        "Cookie": '',
+        'referer': 'https://www.douyin.com/',
     }
 fname=input("请输入文件名：")
 # 油猴脚本抓取视频地址 https://greasyfork.org/scripts/471880
@@ -49,27 +51,53 @@ function downloadData(encoding) {
                         timer = setTimeout(() => createDownloadButton(), 1000);
                     } 
 """
+if not os.path.exists('douyin'):
+  os.mkdir('douyin')
 f = open(f'{fname}', encoding='gbk')
 csv_reader = csv.reader(f)
+next(csv_reader)
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
-def down(title,date,url):
-	try:
-		if not os.path.exists('douyin'):
-			os.mkdir('douyin')
-		print('开始下载视频：',date,title)
-		video_data = requests.get(url,headers=headers)
-		with open('douyin/'+date.replace('/','-').replace(' ','')+'_'+trimName(title)+'.mp4','wb') as f:
-			f.write(video_data.content)
-	except Exception as e:
-		print('出错了',e)
+def replace_invalid_chars(filename):
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
+    for char in invalid_chars:
+        filename = filename.replace(char, ' ')
+    return filename
+def get_history():
+    history = []
+    with open('douyin_url.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
+
+def save_history(url):
+    with open('douyin_url.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
+urls_history = get_history()
+def down(title,date,url,down_url):
+  if url in urls_history:
+    print('已经下载过',url)
+    return True
+  try:
+    print('开始下载视频：',date,title,url,down_url)
+    video_data = requests.get(down_url,headers=headers)
+    if video_data.status_code != 200:
+      print('抖音视频链接失效')
+      return 'error'
+    with open('douyin/'+date.replace('/','-').replace(' ','')+'_'+replace_invalid_chars(title)+'.mp4','wb') as f:
+      f.write(video_data.content);print('下载成功')
+    save_history(url)
+  except Exception as e:
+    print('出错了',e)
+    return False
 for line in csv_reader:
     # print(line)
     if len(line) == 0:
        continue
-    if line[6] == "年龄" or line[6] == "" or line[6] == "下载链接":
-        continue
-    res = down(line[0],line[5][0:10],line[6])
+    res = down(line[1],line[7][0:10],line[2],line[12]);#break;
+    time.sleep(1)
     if not res:
        continue
     if res == "error":
