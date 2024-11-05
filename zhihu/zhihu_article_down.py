@@ -4,15 +4,22 @@ import os,random
 import requests,json
 from bs4 import BeautifulSoup
 import asyncio,os
-from pyppeteer import launch
-import tkinter,time
+#from pyppeteer import launch
+#import tkinter,time
 import pandas as pd
 from tqdm import tqdm
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+cookie = get_cookie()
 headers = {
         'origin': 'https://zhuanlan.zhihu.com',
         'referer': 'https://zhuanlan.zhihu.com/',
         'User-Agent': ('Mozilla/5.0'),
-        'cookie':'',
+        'cookie':cookie
     }
 def get_history():
     history = []
@@ -64,7 +71,7 @@ def down(url):
     except Exception as e:
         with open(f'下载失败知乎文章列表.txt', 'a+', encoding='utf-8') as f:
             f.write(url+'\n')
-        print('下载文章失败', url,e);raise Exception("抓取失败了："+url)
+        print('下载文章失败', url,e)#;raise Exception("抓取失败了："+url)
         return ''
 
 if not os.path.exists('html'):

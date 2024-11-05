@@ -1,19 +1,26 @@
 import time,sys
 import re
 import os
-import requests,json
+import requests,json,random
 from bs4 import BeautifulSoup
 import asyncio,os
-from pyppeteer import launch
-import tkinter,time
+#from pyppeteer import launch
+#import tkinter,time
 import pandas as pd
 from tqdm import tqdm
 from datetime import datetime
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+cookie = get_cookie()
 headers = {
         'origin': 'https://zhuanlan.zhihu.com',
         'referer': 'https://zhuanlan.zhihu.com/',
         'User-Agent': ('Mozilla/5.0'),
-        'cookie':''
+        'cookie':cookie
     }
 def replace_invalid_chars(filename):
     invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
@@ -68,10 +75,10 @@ if file_extension == '.xlsx':
     print('列标题',df.columns)
     print('行标题',df.index)
     for index, row in df.iterrows():
+        time.sleep(1)
         if not row['知乎问题链接']:
             continue
         t=down('https:'+row['知乎问题链接'])
-        time.sleep(1)
         fav=str(row['知乎赞同数'])
         comment = str(row['知乎评论数'])
         if comment == 'nan':
@@ -87,9 +94,12 @@ elif file_extension == '.txt':
     with open(f'{filename}', encoding='utf-8') as f:
         contents = f.read()
     urls=contents.split('\n')
-    for item in tqdm(urls, desc='下载进度'):
+    for item in urls:
         down(item)
-        time.sleep(1)
+        time.sleep(random.randint(1,2))
+    # for item in tqdm(urls, desc='下载进度'):
+    #     down(item)
+    #     time.sleep(random.randint(1,2))
 
 # https://www.cnblogs.com/flyup/p/15264897.html 
 # 所有数据df.values 二维数组 df.values[i , j]，第i行第j列的值 df.values[[i1 , i2 , i3]]，第i1、i2、i3行数据 df.values[: , j]，第j列数据df.iloc[:, j].values

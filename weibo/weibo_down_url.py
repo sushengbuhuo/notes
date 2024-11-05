@@ -1,7 +1,8 @@
 import requests,re,os,time,html,sys,csv
 import random
 import traceback,urllib3
-from docx import Document
+from os.path import basename
+from docx import Document, ImagePart
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 def base62_encode(num, alphabet=ALPHABET):
@@ -206,7 +207,7 @@ def main():
 #         # htmls += [name for name in files if name.endswith(".html")]
 #     # print(htmls)
 def main2():
-    f = open(f'1744395855.csv', encoding='UTF8')
+    f = open(f'李健.csv', encoding='UTF8')
     csv_reader = csv.reader(f)
     num = 0
     history = get_history()
@@ -214,9 +215,9 @@ def main2():
         if line[0] in history:
             print('已经下载过:'+line[0])
             continue
-        time.sleep(random.randint(1, 3))
-        # if num>10:
-        #     break
+        # time.sleep(random.randint(1, 3))
+        if num>10:
+            break
         if '微博' in line[0]:
             continue
         num +=1
@@ -262,5 +263,46 @@ def main2():
     # break
     # htmls += [name for name in files if name.endswith(".html")]
     # await browser.close()
-main2()
-    
+# main2()
+def calculate_time(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"函数 {func.__name__} 执行时间为: {end_time - start_time} 秒")
+        return result
+    return wrapper
+
+# 应用装饰器到函数
+@calculate_time
+def long_running_function():
+    time.sleep(2)
+
+# long_running_function()
+def fibonacci():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+# 生成斐波那契数列 使用yield关键字来生成一个值，并且在每次生成值后暂停执行，等待下一次调用
+# fib = fibonacci()
+# print(next(fib))  # 输出：0
+# print(next(fib))  # 输出：1
+# print(next(fib))  # 输出：1
+# if filename.endswith((".csv", ".xls", ".xlsx")):
+# squared_sum = sum(x**2 for x in range(1, 11)) list(x**2 for x in range(1, 11)) list({1, 2, 3, 4, 5}.union({3, 4, 5, 6, 7}))
+# sorted_list = sorted(my_list) for index, value in enumerate(my_list): for item1, item2 in zip(list1, list2): for key, value in kwargs.items():
+# list(filter(lambda x: x % 2 == 0, [1,2,3])) list(map(lambda x: x**2, numbers)) list(reversed(numbers)) 
+# with open("file1.txt") as file1, open("file2.txt") as file2: 
+# x, y, z = [4, 5, 6]  a, b, c = (1, 2, 3) copy.deepcopy(original_list)
+# 提取word图片 通过xpath从xlm文档中提取 使用解压软件解压Word文档即可得到xlm文件
+doc = Document("doc/2024-06-01-15：00-OgYOE74vC.docx")
+for p in doc.paragraphs:
+    images = p._element.xpath('.//pic:pic')  # 获取所有图片
+    for image in images:
+        for img_id in image.xpath('.//a:blip/@r:embed'):  # 获取图片id
+            part = doc.part.related_parts[img_id]  # 根据图片id获取对应的图片
+            if isinstance(part, ImagePart):
+                # 保存图片
+                with open(basename(part.partname), "wb") as f:
+                    f.write(part.blob)

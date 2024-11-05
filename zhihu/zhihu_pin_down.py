@@ -1,18 +1,25 @@
 import time,sys
 import re
-import os
-import requests,json,time,random
+import os,random
+import requests,json
 from bs4 import BeautifulSoup
 import asyncio,os
-from pyppeteer import launch
-import tkinter,time
+#from pyppeteer import launch
+#import tkinter,time
 import pandas as pd
 from tqdm import tqdm
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+cookie = get_cookie()
 headers = {
         'origin': 'https://zhuanlan.zhihu.com',
         'referer': 'https://zhuanlan.zhihu.com/',
         'User-Agent': ('Mozilla/5.0'),
-        'cookie':''
+        'cookie':cookie,
     }
 def replace_invalid_chars(filename):
     invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
@@ -94,8 +101,8 @@ if file_extension == '.xlsx':
     for i in tqdm(df['想法链接'].tolist(), desc='下载进度'):
         if not i:
             continue
-        time.sleep(random.randint(1, 2))
         down('https:'+i)
+        time.sleep(random.randint(1,2))
         # break
 elif file_extension == '.txt':
     with open(f'{filename}', encoding='utf-8') as f:

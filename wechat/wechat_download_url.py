@@ -16,7 +16,7 @@ def replace_invalid_chars(filename):
         filename = filename.replace(char, ' ')
     return filename
 def trimName(name):
-    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ').replace('\r\n', ' ').replace('"', '“').replace('\t', ' ')
+    return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ').replace('"', '“')
 def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
@@ -36,7 +36,7 @@ urls_history = get_history()
 contents = ""
 nums = 0
 encoding = 'utf-8-sig'
-sname='公众号'
+sname=''
 fname=f'{sname}数据'
 urls=[]
 # with open(f'{sname}.md', encoding='utf-8') as f:
@@ -60,18 +60,18 @@ def down(url,position,copyright,digest,is_pay):
     response = requests.get(html.unescape(url), headers=headers)#, params={'key': '', 'uin': 'xx'}
     global nums
     encoding = 'utf-8-sig'
-    is_down_view = 1
+    is_down_view = 0
     is_down = 1
     is_down_video = 0
     is_down_audio = 0
     is_down_img = 0
     is_down_cover=0
-    is_down_comment = 0
+    is_down_comment = 1
     pass_ticket = ""
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
-    appmsg_token = "-JKIOE"
+    appmsg_token = ""
     key=""
-    uin = "=="
+    uin = ""
     biz="=="
     content = response.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com').replace('因网络连接问题，剩余内容暂无法加载。', '')#+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
     try:
@@ -92,7 +92,7 @@ def down(url,position,copyright,digest,is_pay):
         title = title.group(1)
         ct = ct.group(1)
         author = author.group(1)
-        date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))# %H:%M:%S
+        date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))# %H:%M:%S
         if len(title) > 100:
             title = title[0:64]
         # if int(ct) > 1660321824:
@@ -120,8 +120,8 @@ def down(url,position,copyright,digest,is_pay):
             #     is_pay = '是'
             #转载原创文章误判 读取txt才用
             # if 'xx' not in content:
-        	#    print('过滤文章',url)
-            #    return True
+            #     print('过滤文章',url)
+            #     return True
             #下载视频
             if is_down_video:
                 try:
@@ -156,7 +156,7 @@ def down(url,position,copyright,digest,is_pay):
                     print('获取评论数失败',url)
                     return "error"
             # try:
-            #      with open(date+'-'+replace_invalid_chars(title)+'.txt', 'a+', encoding='utf-8') as f:
+            #      with open(date+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
             #         soup = BeautifulSoup(content, 'html.parser')
             #         contentSoup = soup.find("div", {"id": "js_content"})
             #         result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
@@ -164,12 +164,12 @@ def down(url,position,copyright,digest,is_pay):
             #         f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
             # except Exception as err:
             #     print('下载txt出错了',err,url)
-            # try:
-            #     with open(date+'-'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
-            #         f.write(content+comments_html)
-            # except Exception as err:
-            #     with open(date+'-'+str(random.randint(100,1000))+'.html', 'w', encoding='utf-8') as f:
-            #         f.write(content+comments_html)
+            try:
+                with open(date+'-'+replace_invalid_chars(html.unescape(title))+'.html', 'w', encoding='utf-8') as f:
+                    f.write(content+comments_html)
+            except Exception as err:
+                with open(date+'-'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
+                    f.write(content+comments_html)
         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
             f2.write('[{}]'.format(date+'_'+html.unescape(title)) + '({})'.format(url)+ '\n\n'+'文章简介:'+html.unescape(digest)+ '\n\n'+ '\n\n')
         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f2:
@@ -212,8 +212,7 @@ def view(link,appmsg_token,uin,key,pass_ticket):
         return 'error','0','0','0','0'
     url = "http://mp.weixin.qq.com/mp/getappmsgext"#获取详情页
     
-    cookies = """rewardsn   
-
+    cookies = """
     """
     headers = {
         "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
@@ -276,11 +275,11 @@ def view(link,appmsg_token,uin,key,pass_ticket):
     print("文章赞赏数:"+str(reward_num))
     print("文章分享数:"+str(share_num))#,str(content['comment_count'])
     readNum2=str(readNum)
-    if readNum > 10000:
-        tmp=readNum/10000
-        readNum2=sprintf(tmp,1)+'万'
-    if readNum > 100000:
-        readNum2='10万+'
+    # if readNum > 10000:
+    #     tmp=readNum/10000
+    #     readNum2=sprintf(tmp,1)+'万'
+    # if readNum > 100000:
+    #     readNum2='10万+'
     return readNum2, str(likeNum),str(old_like_num),str(reward_num),str(share_num)
 def video(content, headers,date,article_url,title):
     # vid = re.search(r'wxv_.{19}',res.text).group(0)
@@ -361,10 +360,10 @@ def audio(content,headers,date,title):
         num +=1
         aid=item['voice_id']
         url = f'https://res.wx.qq.com/voice/getvoice?mediaid={aid}'
-        audio_data = requests.get(url,headers=headers)
+        # audio_data = requests.get(url,headers=headers)
         print('正在下载音频：'+title+'.mp3')
-        with open('audio/'+date+'___'+replace_invalid_chars(title)+'___'+str(num)+'.mp3','wb') as f5:
-            f5.write(audio_data.content)
+        # with open('audio/'+date+'___'+replace_invalid_chars(title)+'___'+str(num)+'.mp3','wb') as f5:
+            # f5.write(audio_data.content)
     return str(num)
 def image(response,headers,date,title):
     imgs=re.findall('data-src="(.*?)"',response.text)
@@ -391,7 +390,8 @@ def image(response,headers,date,title):
     return str(num)
 def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
     time.sleep(random.randint(1, 1))
-    str_comment = re.search(r'var comment_id = "(.*)" \|\| "(.*)" \* 1;', content) or re.search(r"d\.comment_id = xml \? getXmlValue\('comment_id\.DATA'\) : '(.*)';", content)
+    # var comment_id = "3673619994014777351" || "3673619994014777351" * 1;  var comment_id = '3294608332607045632' || '0';
+    str_comment = re.search(r"var comment_id = '(.*)' \|\| '0';", content) or re.search(r'var comment_id = "(.*)" \|\| "(.*)" \* 1;', content) or re.search(r"d\.comment_id = xml \? getXmlValue\('comment_id\.DATA'\) : '(.*)';", content)
     str_msg = re.search(r"var appmsgid = \"\" \|\| '' \|\| '(.*)'", content) or re.search(r"window.appmsgid = '(.*?)' \|\| '' \|\| '';", content)   or re.search(r"window.appmsgid = '' \|\| '(.*?)' \|\| '';", content)   or re.search(r"window.appmsgid = '' \|\| '' \|\| '(.*?)';", content)  or re.search(r"var appmsgid = \"(.*)\" \|\| '' \|\| '';",content)  or re.search(r"var appmsgid = \"\" \|\| '(.*)' \|\| '';",content)
     str_token = re.search(r'window\.appmsg_token = "(.*)";', content) or re.search(r'var appmsg_token = "(.*)";', content)
     str_title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r"window\.msg_title = '(.*)' \|\| '';", content)
