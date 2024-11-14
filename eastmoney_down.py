@@ -25,7 +25,7 @@ headers = {
     'Connection':'keep-alive',
 }
 def down(page):
-	data1={'parm':f'ctoken=mdGfR6OXdEc4cii06HYA7-IMNL88s8KxN_Pg9iesJQqjcIyuHXu_nJwJymyL3m-0zXTx7sHwdIDsC9bNh71YM3VJ-NjilJHwuLKxXr2UI2KuZwOpPjMHscy20HTNvXSE_yA9RmguCNM-ZIqMnIJxsYnJUduXWZPkks_aSIeAs9Q&utoken=FobyicMgeV4XKdbUhrvvY0QBhrziMEAsJdkk7KmvNW1_zk6Y5Ux1mL0auEKqjwFCCSbWaLa8laGXziKTbxU-oWCXXLQmoJOjMF-iwlt7gI0FvnGue-KoLM0Nv5kNbGEmzg3r75A6-Aq4axT6obA-jBZuOAEymqI8DKZJZDhaa0nrpyNswEU-gUvQZul1JhUT1mAXKUaol6FH7WnX2AnLHvrgDS7RV3C1P4qd0AtdDFJcxssfzB3M8A134FQOjX-x3NhriP3zfR8Q_Izo9H8kbJVLF3dv61xu&deviceid=172.30.66.125&version=9001&product=Guba&plat=Wap&gtoken=&uid=3825336190592976&type=1&ps=10&p={page}','sumit':'form','type':'Post','url':'userpostlist/api/article/UserDynamicListV2'}
+	data1={'parm':f'ctoken=mdGfR6OXdEc4cii06HYA7-IMNL88s8KxN_Pg9iesJQqjcIyuHXu_nJwJymyL3m-0zXTx7sHwdIDsC9bNh71YM3VJ-NjilJHwuLKxXr2UI2KuZwOpPjMHscy20HTNvXSE_yA9RmguCNM-ZIqMnIJxsYnJUduXWZPkks_aSIeAs9Q&utoken=FobyicMgeV4XKdbUhrvvY0QBhrziMEAsJdkk7KmvNW1_zk6Y5Ux1mL0auEKqjwFCCSbWaLa8laGXziKTbxU-oWCXXLQmoJOjMF-iwlt7gI0FvnGue-KoLM0Nv5kNbGEmzg3r75A6-Aq4axT6obA-jBZuOAEymqI8DKZJZDhaa0nrpyNswEU-gUvQZul1JhUT1mAXKUaol6FH7WnX2AnLHvrgDS7RV3C1P4qd0AtdDFJcxssfzB3M8A134FQOjX-x3NhriP3zfR8Q_Izo9H8kbJVLF3dv61xu&deviceid=172.30.66.125&version=9001&product=Guba&plat=Wap&gtoken=&uid=2717094178652400&type=1&ps=10&p={page}','sumit':'form','type':'Post','url':'userpostlist/api/article/UserDynamicListV2'}
 	p=page+1
 	time.sleep(2)
 	# print(data)
@@ -36,36 +36,40 @@ def down(page):
 	for i in data:
 		print(i['post_title'],i['post_publish_time'],i['post_id'])
 		pid=i['post_id']
-		data2={'parm':f'ctoken=mdGfR6OXdEc4cii06HYA7-IMNL88s8KxN_Pg9iesJQqjcIyuHXu_nJwJymyL3m-0zXTx7sHwdIDsC9bNh71YM3VJ-NjilJHwuLKxXr2UI2KuZwOpPjMHscy20HTNvXSE_yA9RmguCNM-ZIqMnIJxsYnJUduXWZPkks_aSIeAs9Q&utoken=FobyicMgeV4XKdbUhrvvY0QBhrziMEAsJdkk7KmvNW1_zk6Y5Ux1mL0auEKqjwFCCSbWaLa8laGXziKTbxU-oWCXXLQmoJOjMF-iwlt7gI0FvnGue-KoLM0Nv5kNbGEmzg3r75A6-Aq4axT6obA-jBZuOAEymqI8DKZJZDhaa0nrpyNswEU-gUvQZul1JhUT1mAXKUaol6FH7WnX2AnLHvrgDS7RV3C1P4qd0AtdDFJcxssfzB3M8A134FQOjX-x3NhriP3zfR8Q_Izo9H8kbJVLF3dv61xu&deviceid=$IP$&version=9008000&product=StockWay&plat=Wap&location=&postid={pid}&IsMatch=false&type=0&cutword=true','sumit':'form','type':'post','url':'content/api/Post/ArticleContent'}
+		data2={'parm':f'ctoken=mdGfR6OXdEc4cii06HYA7-IMNL88s8KxN_Pg9iesJQqjcIyuHXu_nJwJymyL3m-0zXTx7sHwdIDsC9bNh71YM3VJ-NjilJHwuLKxXr2UI2KuZwOpPjMHscy20HTNvXSE_yA9RmguCNM-ZIqMnIJxsYnJUduXWZPkks_aSIeAs9Q&utoken=FobyicMgeV4XKdbUhrvvY0QBhrziMEAsJdkk7KmvNW1_zk6Y5Ux1mL0auEKqjwFCCSbWaLa8laGXziKTbxU-oWCXXLQmoJOjMF-iwlt7gI0FvnGue-KoLM0Nv5kNbGEmzg3r75A6-Aq4axT6obA-jBZuOAEymqI8DKZJZDhaa0nrpyNswEU-gUvQZul1JhUT1mAXKUaol6FH7WnX2AnLHvrgDS7RV3C1P4qd0AtdDFJcxssfzB3M8A134FQOjX-x3NhriP3zfR8Q_Izo9H8kbJVLF3dv61xu&deviceid=$IP$&version=9008000&product=StockWay&plat=Wap&location=&postid={pid}&IsMatch=false&type=0&cutword=true&paytext=true','sumit':'form','type':'post','url':'content/api/Post/ArticleContent'}
 		res2=requests.post('https://emcreative.eastmoney.com/FortuneApi/GuBaApi/common', headers=headers, data=json.dumps(data2)).json()
 		content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1><h3>%s</h3>%s</body></html>' % (
             res2['post']['post_title'], '发布日期：'+res2['post']['post_publish_time']+'   原文链接：https://emcreative.eastmoney.com/app_fortune/article/index.html?postId='+str(i['post_id']),res2['post']['post_content'].replace('\\', ''))
 		# print(res2['post']['post_abstract'])
+		title=trimName(res2['post']['post_title'])
+		if not title:
+			title = str(pid)
 		try:
-			with open('html/'+res2['post']['post_publish_time'][0:10]+'-'+trimName(res2['post']['post_title'])+'.html', 'w', encoding='utf-8') as f:
+			with open('html/'+res2['post']['post_publish_time'][0:10]+'-'+title+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 		except Exception as err:
+			raise Exception(err)
 			with open('html/'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 	down(p)
 down(1)
-url='https://www.cdstm.cn/theme/kkxw/tyt/kxkkm_1/'
-res=requests.get(url).text
-audio=re.search(r'var audioList =\s+(.*?);',res).group(1)
+# url='https://www.cdstm.cn/theme/kkxw/tyt/kxkkm_1/'
+# res=requests.get(url).text
+# audio=re.search(r'var audioList =\s+(.*?);',res).group(1)
 
-json_dict = json.loads(audio.replace("src",'"src"').replace("name",'"name"'))
-print(audio,json_dict)
-for i in json_dict:
-	if not i:
-		continue
-	# hex_string = i.get('name').replace("\\x", "")
-	# # 将十六进制编码的字符串转换为字节序列
-	# byte_sequence = bytes.fromhex(hex_string)
-	# # 将字节序列解码为字符串
-	# result_string = byte_sequence.decode('utf-8')
-	name=re.search(r'(\d+)',i.get('name')).group(1)
-	print(i.get('src'),name,type(i.get('name')))
-	audio_data = requests.get(i.get('src'))
-	with open('audio/'+trimName(f'第{name}集')+'.mp3','wb') as f5:
-		f5.write(audio_data.content)
+# json_dict = json.loads(audio.replace("src",'"src"').replace("name",'"name"'))
+# print(audio,json_dict)
+# for i in json_dict:
+# 	if not i:
+# 		continue
+# 	# hex_string = i.get('name').replace("\\x", "")
+# 	# # 将十六进制编码的字符串转换为字节序列
+# 	# byte_sequence = bytes.fromhex(hex_string)
+# 	# # 将字节序列解码为字符串
+# 	# result_string = byte_sequence.decode('utf-8')
+# 	name=re.search(r'(\d+)',i.get('name')).group(1)
+# 	print(i.get('src'),name,type(i.get('name')))
+# 	audio_data = requests.get(i.get('src'))
+# 	with open('audio/'+trimName(f'第{name}集')+'.mp3','wb') as f5:
+# 		f5.write(audio_data.content)
 

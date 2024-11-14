@@ -1,10 +1,52 @@
-import os,html
+import os,html,random
 import requests
 import json
-import execjs
+# import execjs
 import traceback,urllib3,time,re
 from random import randint
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import pandas as pd
+from tqdm import tqdm
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+cookie = get_cookie()
+headers = {
+    'authority': 'www.toutiao.com',
+    'method': 'GET',
+    'scheme': 'https',
+    'accept': 'application/json, text/plain, */*',
+    # 'accept-encoding': 'gzip, deflate, br',
+    'accept-language': 'zh-CN,zh;q=0.9',
+    'cookie': cookie,
+    'referer': 'https://www.toutiao.com',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
+    'x-csrftoken': 'undefined'
+}
+def get_history():
+    history = []
+    with open('toutiao_history.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
+
+def save_history(url):
+    with open('toutiao_history.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
+def replace_invalid_chars(filename):
+    invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
+    for char in invalid_chars:
+        filename = filename.replace(char, ' ')
+    return filename
+urls_history = get_history()
 # 输入关键字keyword，爬取相关内容的文章信息，并存储（excel） https://github.com/BATFOR/HeadlineCrawer
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，')
@@ -20,7 +62,7 @@ class NewToutiao():
         self.get_ttwebid()
         self.get_MONITOR_WEB_ID()
         self.cookie = self.get_cookie()
-        self.filename = '交易人生'
+        self.filename = ''
         self.down = 1
         headers = {
             'authority': 'www.toutiao.com',
@@ -29,7 +71,7 @@ class NewToutiao():
             'accept': 'application/json, text/plain, */*',
             # 'accept-encoding': 'gzip, deflate, br',
             'accept-language': 'zh-CN,zh;q=0.9',
-            'cookie': 'csrftoken=8339b620af18f71f60ed1325ef0f7bcf',
+            'cookie': '',
             'referer': self.url,
             'sec-fetch-dest': 'empty',
             'sec-fetch-mode': 'cors',
@@ -60,21 +102,23 @@ class NewToutiao():
                         time_search = re.search(r'<span class="time">(.*?)</span>', res.text)
                         if not time_search:
                             time_search = re.search(r'<div class="article-meta"><span class="original-tag">.*</span><span>(.*?)</span>', res.text)
+                        if not time_search:
+                            time_search = re.search(r'<div class="article-meta"><span>(.*?)</span>', res.text)
                         time_str = time_search.group(1);print(time_str)
                         date=time_str[:10]
                         article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{comments_html}</article></div></body></html>'
                         with open('html/'+date+'-'+trimName(i['title'])+'.html', 'w', encoding='utf-8') as f:
                             f.write(article_content)
                     except Exception as err:
-                        print('出错了',err,i['item_id'],'https://www.toutiao.com/article/'+i['item_id'])
-                        # with open('html/'+str(randint(1,100))+'.html', 'w', encoding='utf-8') as f:
-                        #     f.write(article_content)
+                        print('出错了',err,i['item_id'],'https://www.toutiao.com/article/'+i['item_id'])#;raise Exception("抓取失败了："+i['item_id'])
+                        with open('html/'+str(randint(1,10000))+'.html', 'w', encoding='utf-8') as f:
+                            f.write(article_content)
                 image_url = ''
                 if i.get('image_list'):
                     image_url=i['image_list'][0]['url']
                 with open(f'{self.filename}.csv', 'a+', encoding='utf-8-sig') as f2:
                      f2.write(trimName(i['behot_time'])+','+trimName(i['title'])+','+ 'https://www.toutiao.com/article/'+i['item_id']+ ','+trimName(i['abstract'])+ ','+trimName(i['source'])+','+image_url+','+ i['go_detail_count']+ ','+i['comments_count']+ ','+str(fav)+'\n')
-            #下载微头条
+            # 下载微头条
             for i in content['data']:
                 if i.get('cell_type') == 202:
                     continue
@@ -96,8 +140,8 @@ class NewToutiao():
                             f.write(article_content)
                     except Exception as err:
                         print('error:https://www.toutiao.com/w/'+str(i['stream_cell']['id']))
-                        # with open('html/'+str(randint(1,100))+'.html', 'w', encoding='utf-8') as f:
-                        #     f.write(article_content)
+                        with open('html/'+str(randint(1,10000))+'.html', 'w', encoding='utf-8') as f:
+                            f.write(article_content)
                 raw = json.loads(i['stream_cell']['raw_data'])
                 if not 'content' in raw:
                     continue
@@ -234,10 +278,117 @@ class NewToutiao():
         self.max_behot_time = content['next']['max_behot_time']
         return content
 
-if __name__ == '__main__':
-    id = input("请输入头条id：")
-    if not os.path.exists('html'):
-        os.mkdir('html')
-    if not id:
-        id="MS4wLjABAAAAcmkcVKuqKApSy1GlQmhI3my9ZyJEYxPXC_yn52pgbWk"
-    NewToutiao(f'https://www.toutiao.com/c/user/token/{id}/',0)
+# if __name__ == '__main__':
+#     id = input("请输入头条id：")
+#     if not os.path.exists('html'):
+#         os.mkdir('html')
+#     if not id:
+#         id="MS4wLjABAAAA5Ql2rIKZh9MtVuiYwGKN1H6708UDZlVnFwUlCf9Fer1TOwOxPCMlJn20v7c-fO2r"
+#     NewToutiao(f'https://www.toutiao.com/c/user/token/{id}/',1685713202590)
+def down(url):
+    try:
+        if url in urls_history:
+            print('已经下载过：',url)
+            return ''
+        res = requests.get(url, headers=headers)
+        print('开始下载：',url)
+        try:
+            comments_html = html.unescape(re.search(r'<div class="article-content">(.*)</article></div>', res.text).group(1))
+            fav = re.search(r'aria-label="点赞(.*?)"', res.text).group(1)
+            time_search = re.search(r'<span class="time">(.*?)</span>', res.text)
+            title = re.search(r'<h1>(.*?)</h1>', res.text).group(1)
+            if not time_search:
+                time_search = re.search(r'<div class="article-meta"><span class="original-tag">.*</span><span>(.*?)</span>', res.text)
+            if not time_search:
+                time_search = re.search(r'<div class="article-meta"><span>(.*?)</span>', res.text)
+            time_str = time_search.group(1);print(title,time_str)
+            date=time_str[:10]
+            article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{comments_html}</article></div></body></html>'
+            with open('html/'+date+'-'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
+                f.write(article_content)
+        except Exception as err:
+            print('出错了',err,url)#;raise Exception("抓取失败了："+url)
+        save_history(url)
+        return time_str
+    except Exception as e:
+        with open(f'下载失败头条文章列表.txt', 'a+', encoding='utf-8') as f:
+            f.write(url+'\n')
+        print('下载文章失败', url,e)#;raise Exception("抓取失败了："+url)
+        return ''
+def down2(url):
+    try:
+        if url in urls_history:
+            print('已经下载过：',url)
+            return ''
+        res = requests.get(url, headers=headers)
+        print('开始下载：',url)
+        try:
+            comments_html = html.unescape(re.search(r'<div class="wtt-content">(.*)</article></div>', res.text).group(1))
+            # fav = re.search(r'aria-label="点赞(.*?)"', res.text).group(1)
+            time_str = re.search(r'<span class="time">(.*?)</span>', res.text).group(1)
+            title = re.search(r'<div class="weitoutiao-html">(.*?)</div>', res.text).group(1);print(time_str,title)
+            date=time_str[:10]
+            comments_html=re.sub(r'<img class="weitoutiao-img" src="(.*?)"/>',replace,comments_html)
+            article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="wtt-content">{comments_html}</article></div></body></html>'
+            with open('html/'+date+'-'+replace_invalid_chars(title[0:64])+'.html', 'w', encoding='utf-8') as f:
+                f.write(article_content)
+        except Exception as err:
+            print('出错了',err,url)#;raise Exception("抓取失败了："+url)
+        save_history(url)
+        return time_str
+    except Exception as e:
+        with open(f'下载失败微头条列表.txt', 'a+', encoding='utf-8') as f:
+            f.write(url+'\n')
+        print('下载微头条失败', url,e)#;raise Exception("抓取失败了："+url)
+        return ''
+
+if not os.path.exists('html'):
+    os.mkdir('html')
+
+filename = input('请输入头条文章excel文件名：')
+# filename='toutiao.xlsx'
+if not os.path.exists(filename):
+    sys.exit('文件不存在')
+file_name, file_extension = os.path.splitext(filename)
+with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
+    f.write('时间'+','+'标题' + ','+'链接'+ ','+'阅读数'+ ','+'评论数'+'\n')
+# if file_extension == '.xlsx':
+#     df=pd.read_excel(filename)
+#     print('列标题',df.columns)
+#     print('行标题',df.index)
+#     for index, row in df.iterrows():
+#         if not row['文章链接']:
+#             continue
+#         t=down(row['文章链接'])
+#         fav=str(row['文章阅读数'])
+#         comment = str(row['文章评论数'])
+#         time.sleep(random.randint(1, 2))
+#         if comment == 'nan':
+#             comment = '0'
+#         if fav == 'nan':
+#             fav='0'
+#         with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
+#             f.write(t+','+replace_invalid_chars(trimName(row['文章标题'])) + ','+'https:'+row['文章链接']+ ','+fav+ ','+comment+'\n')
+    # for i in tqdm(df['文章链接'].tolist(), desc='下载进度'):
+    #     down(i)
+        # break
+if file_extension == '.xlsx':
+    df=pd.read_excel(filename)
+    print('列标题',df.columns)
+    print('行标题',df.index)
+    for index, row in df.iterrows():
+        if not row['微头条链接']:
+            continue
+        t=down2(row['微头条链接'])
+        fav=''
+        comment = ''
+        time.sleep(random.randint(1, 2))
+        with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
+            f.write(t+','+replace_invalid_chars(trimName(row['微头条标题'])) + ','+'https:'+row['微头条链接']+ ','+fav+ ','+comment+'\n')
+elif file_extension == '.txt':
+    with open(f'{filename}', encoding='utf-8') as f:
+        contents = f.read()
+    urls=contents.split('\n')
+    for item in tqdm(urls, desc='下载进度'):
+        down(item)
+        time.sleep(random.randint(2, 3))
