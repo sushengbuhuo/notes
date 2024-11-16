@@ -22,13 +22,29 @@ headers = {
         'User-Agent': ('Mozilla/5.0'),
         'cookie':cookie
     }
+def get_history():
+    history = []
+    with open('zhihu_history.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
+
+def save_history(url):
+    with open('zhihu_history.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
 def replace_invalid_chars(filename):
     invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
     for char in invalid_chars:
         filename = filename.replace(char, ' ')
     return filename
+urls_history = get_history()
 def down(url):
     try:
+        if url in urls_history:
+            print('已经下载过：',url)
+            return ''
         html = requests.get(url, headers=headers).text
         soup = BeautifulSoup(html, 'lxml')
         content = soup.find(class_='RichContent-inner').prettify()
@@ -49,10 +65,13 @@ def down(url):
             title, url,content)
         with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content)
-        # res = requests.get(url, headers=headers)
-        # contents = re.search(r'<div class="Post-RichText">(.*?)</div>',res.text).group(1)
-        # with open('zzz.html', 'w', encoding='utf-8') as f:
-        # 	f.write(contents)
+        try:
+             with open('知乎回答.txt', 'a+', encoding='utf-8') as f:
+                result_text = [line for line in soup.find(class_='RichContent-inner').get_text().splitlines() if line.strip()]
+                f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
+        except Exception as err:
+            print('下载txt出错了',err,url)
+        save_history(url)
         return answer_date
     except Exception as e:
         with open(f'下载失败知乎回答列表.txt', 'a+', encoding='utf-8') as f:
@@ -75,9 +94,12 @@ if file_extension == '.xlsx':
     print('列标题',df.columns)
     print('行标题',df.index)
     for index, row in df.iterrows():
-        time.sleep(1)
         if not row['知乎问题链接']:
             continue
+        if 'https:'+row['知乎问题链接'] in urls_history:
+            print('已经下载过：','https:'+row['知乎问题链接'])
+            continue
+        time.sleep(1)
         t=down('https:'+row['知乎问题链接'])
         fav=str(row['知乎赞同数'])
         comment = str(row['知乎评论数'])

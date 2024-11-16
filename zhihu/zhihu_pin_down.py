@@ -21,13 +21,29 @@ headers = {
         'User-Agent': ('Mozilla/5.0'),
         'cookie':cookie,
     }
+def get_history():
+    history = []
+    with open('zhihu_history.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
+
+def save_history(url):
+    with open('zhihu_history.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
 def replace_invalid_chars(filename):
     invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','\n','#']
     for char in invalid_chars:
         filename = filename.replace(char, ' ')
     return filename
+urls_history = get_history()
 def down(url):
     try:
+        if url in urls_history:
+            print('已经下载过：',url)
+            return ''
         html = requests.get(url, headers=headers).text
         soup = BeautifulSoup(html, 'lxml')
         content=''
@@ -58,10 +74,13 @@ def down(url):
             url, content)
         with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content)
-        # res = requests.get(url, headers=headers)
-        # contents = re.search(r'<div class="Post-RichText">(.*?)</div>',res.text).group(1)
-        # with open('zzz.html', 'w', encoding='utf-8') as f:
-        # 	f.write(contents)
+        try:
+             with open('知乎想法.txt', 'a+', encoding='utf-8') as f:
+                result_text = [line for line in content2.splitlines() if line.strip()]
+                f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
+        except Exception as err:
+            print('下载txt出错了',err,url)
+        save_history(url)
     except Exception as e:
         with open(f'下载失败知乎想法列表.txt', 'a+', encoding='utf-8') as f:
             f.write(url+'\n')
@@ -100,6 +119,9 @@ if file_extension == '.xlsx':
     print('行标题',df.index)
     for i in tqdm(df['想法链接'].tolist(), desc='下载进度'):
         if not i:
+            continue
+        if 'https:'+i in urls_history:
+            print('已经下载过：','https:'+i)
             continue
         down('https:'+i)
         time.sleep(random.randint(1,2))

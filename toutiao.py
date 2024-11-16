@@ -352,39 +352,39 @@ if not os.path.exists(filename):
 file_name, file_extension = os.path.splitext(filename)
 with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
     f.write('时间'+','+'标题' + ','+'链接'+ ','+'阅读数'+ ','+'评论数'+'\n')
-# if file_extension == '.xlsx':
-#     df=pd.read_excel(filename)
-#     print('列标题',df.columns)
-#     print('行标题',df.index)
-#     for index, row in df.iterrows():
-#         if not row['文章链接']:
-#             continue
-#         t=down(row['文章链接'])
-#         fav=str(row['文章阅读数'])
-#         comment = str(row['文章评论数'])
-#         time.sleep(random.randint(1, 2))
-#         if comment == 'nan':
-#             comment = '0'
-#         if fav == 'nan':
-#             fav='0'
-#         with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
-#             f.write(t+','+replace_invalid_chars(trimName(row['文章标题'])) + ','+'https:'+row['文章链接']+ ','+fav+ ','+comment+'\n')
-    # for i in tqdm(df['文章链接'].tolist(), desc='下载进度'):
-    #     down(i)
-        # break
 if file_extension == '.xlsx':
     df=pd.read_excel(filename)
     print('列标题',df.columns)
     print('行标题',df.index)
     for index, row in df.iterrows():
-        if not row['微头条链接']:
+        if not row['文章链接']:
             continue
-        t=down2(row['微头条链接'])
-        fav=''
-        comment = ''
+        t=down(row['文章链接'])
+        fav=str(row['文章阅读数'])
+        comment = str(row['文章评论数'])
         time.sleep(random.randint(1, 2))
+        if comment == 'nan':
+            comment = '0'
+        if fav == 'nan':
+            fav='0'
         with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
-            f.write(t+','+replace_invalid_chars(trimName(row['微头条标题'])) + ','+'https:'+row['微头条链接']+ ','+fav+ ','+comment+'\n')
+            f.write(t+','+replace_invalid_chars(trimName(row['文章标题'])) + ','+row['文章链接']+ ','+fav+ ','+comment+'\n')
+    # for i in tqdm(df['文章链接'].tolist(), desc='下载进度'):
+    #     down(i)
+        # break
+# if file_extension == '.xlsx':
+#     df=pd.read_excel(filename)
+#     print('列标题',df.columns)
+#     print('行标题',df.index)
+#     for index, row in df.iterrows():
+#         if not row['微头条链接']:
+#             continue
+#         t=down2(row['微头条链接'])
+#         fav=''
+#         comment = ''
+#         time.sleep(random.randint(1, 2))
+#         with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
+#             f.write(t+','+replace_invalid_chars(trimName(row['微头条标题'])) + ','+row['微头条链接']+ ','+fav+ ','+comment+'\n')
 elif file_extension == '.txt':
     with open(f'{filename}', encoding='utf-8') as f:
         contents = f.read()

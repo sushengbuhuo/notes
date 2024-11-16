@@ -479,6 +479,9 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
 for line in csv_reader:
     if line[2] == "文章链接":
         continue
+    if line[2] in urls_history:
+       print('已经下载过：',line[2])
+       continue
     res = down(line[2],line[8],line[7],line[3],line[9])
     time.sleep(random.randint(1, 1))
     if not res:

@@ -62,10 +62,12 @@ def down(url):
             title,url, content)
         with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content)
-        # res = requests.get(url, headers=headers)
-        # contents = re.search(r'<div class="Post-RichText">(.*?)</div>',res.text).group(1)
-        # with open('zzz.html', 'w', encoding='utf-8') as f:
-        # 	f.write(contents)
+        try:
+             with open('知乎文章.txt', 'a+', encoding='utf-8') as f:
+                result_text = [line for line in soup.find(class_='Post-RichText').get_text().splitlines() if line.strip()]
+                f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
+        except Exception as err:
+            print('下载txt出错了',err,url)
         save_history(url)
         return answer_date
     except Exception as e:
@@ -109,6 +111,9 @@ if file_extension == '.xlsx':
     print('行标题',df.index)
     for index, row in df.iterrows():
         if not row['知乎链接']:
+            continue
+        if 'https:'+row['知乎链接'] in urls_history:
+            print('已经下载过：','https:'+row['知乎链接'])
             continue
         t=down('https:'+row['知乎链接'])
         fav=str(row['文章赞同数'])
