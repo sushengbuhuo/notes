@@ -67,7 +67,7 @@ def down(url):
             f.write(content)
         try:
              with open('知乎回答.txt', 'a+', encoding='utf-8') as f:
-                result_text = [line for line in soup.find(class_='RichContent-inner').get_text().splitlines() if line.strip()]
+                result_text = [line for line in soup.find(class_='RichContent-inner').find(class_='RichText').get_text().splitlines() if line.strip()]
                 f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
         except Exception as err:
             print('下载txt出错了',err,url)
