@@ -47,20 +47,29 @@ def down(url):
             date = time.strftime('%Y-%m-%d', time.localtime(int(timestamp) / 1000))
             soup = BeautifulSoup(res.text, 'html.parser')
             titlesoup = soup.find("h1", {"class": "article__bd__title"})
-            title = ''
-            if titlesoup:
-                title = titlesoup.get_text()
-            article_html = re.search(r'<article class="article__bd">(.*)</article>', res.text).group(1)
-            if not title:
-                title = soup.find("article", {"class": "article__bd"}).get_text() 
-                if len(title) > 100:
-                    title = title[0:64]
             article_json = re.findall(r'<script>window\.SNOWMAN_STATUS = (.*?);\n',res.text,flags=re.S)
             data = json.loads(article_json[0])
-            title = re.sub(r'<.*?>', '', data['description'])
+            title = data['title']
+            # if titlesoup:
+            #     title = titlesoup.get_text()
+            article_html = re.search(r'<article class="article__bd">(.*)</article>', res.text).group(1)
+            if not title:
+                # title = soup.find("article", {"class": "article__bd"}).get_text() 
+                title = re.sub(r'<.*?>', '', data['description'])
             if len(title) > 100:
                 title = title[0:64]
-            article_html = '<h4 class="">发布时间：'+date+'</h4>'+article_html
+            retweeted = ''
+            if data['retweeted_status']:
+                user_id = data['retweeted_status']['user_id']
+                user_name = data['retweeted_status']['user']['screen_name']
+                timeBefore = data['retweeted_status']['timeBefore']
+                retweet_count =  data['retweeted_status']['retweet_count']
+                reply_count =  data['retweeted_status']['reply_count']
+                like_count =  data['retweeted_status']['like_count']
+                retweeted = f'<br><div class="timeline__item__forward__hd"><a href="https://xueqiu.com/{user_id}" target="_blank" data-tooltip="{user_id}" analytics-data="&quot;&quot;" class="user-name-link"><span class="user-name">@{user_name}</span><span><h-char unicode="ff1a" class="biaodian cjk bd-end bd-jiya"><h-inner>：</h-inner></h-char></span></a></div><div class="timeline__item__forward__content">'+data['retweeted_status']['text']+f'</div><br><div class="timeline__item__forward__ft"><span class="timestamp">{timeBefore}</span><span class="retweet-count"> <h-char unicode="b7" class="biaodian cjk bd-middle bd-jiya"><h-inner>·</h-inner></h-char> 转发 {retweet_count}</span><a href="/8852934528/312437395#comment" target="_blank" class="replay-count"> <h-char unicode="b7" class="biaodian cjk bd-middle bd-jiya"><h-inner>·</h-inner></h-char> 讨论 {reply_count}</a><span class="like-count"> <h-char unicode="b7" class="biaodian cjk bd-middle bd-jiya"><h-inner>·</h-inner></h-char> 赞 {like_count}</span><!----></div>'
+            if not title:
+                title = re.search(r'https://xueqiu.com/\d+/(\d+)', url).group(1)
+            article_html = '<h4 class="">发布时间：'+date+'</h4>'+article_html+retweeted
             article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{article_html}</article></div></body></html>'
             # article_content=res.text
             print('开始下载',url,title)
@@ -85,7 +94,7 @@ headers = {
     }
 if not os.path.exists('html'):
     os.mkdir('html')
-
+# 正则替换 /1505944393/(\d{9}).* /1505944393/\1
 filename = input('请输入雪球excel文件名：')
 with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
     f.write('时间'+','+'链接' + ','+'转发数'+ ','+'点赞数'+ ','+'评论数'+'\n')
@@ -122,6 +131,11 @@ elif file_extension == '.txt':
         contents = f.read()
     urls=contents.split('\n')
     for item in urls:
+        if 'https://xueqiu.com' not in item:
+            item = 'https://xueqiu.com'+item
+        if item in urls_history:
+            print('已经下载过：',item)
+            continue
         down(item)
         time.sleep(random.randint(1,2))
 

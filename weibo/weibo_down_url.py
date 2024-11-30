@@ -84,12 +84,12 @@ def get_history():
         for line in lines:
             history.append(line.strip())
     return history
-
+uid = input('请输入微博uid:')
 def save_history(url):
     with open('weibo_history.txt', 'a+') as f:
         f.write(url.strip() + '\n')
-def main():
-    f = open(f'2061847537.csv', encoding='UTF8')
+def main(uid):
+    f = open(f'{uid}.csv', encoding='UTF8')
     csv_reader = csv.reader(f)
     # for root, dirs, files in os.walk('.'):
     num = 0
@@ -119,6 +119,9 @@ def main():
             created_at=line[7];day=created_at.replace(':','：').replace(' ','-')
             dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
             date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
+            content = res['text_raw']
+            if res['isLongText']:
+                content = requests.get(f'https://weibo.com/ajax/statuses/longtext?id={mid}',proxies={'http': None,'https': None},verify=False, headers=headers).json()['data']['longTextContent']
             # if not os.path.exists(year):
             #     os.mkdir(year)
             # if not os.path.exists(f'{year}/{date}'):
@@ -128,14 +131,14 @@ def main():
             if not os.path.exists('doc'):
                 os.mkdir('doc')
             # with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
-            #     f2.write(res['text_raw'])
+            #     f2.write(content)
             document = Document()
             document.add_heading(created_at, 0)
-            document.add_paragraph(res['text_raw'])
+            document.add_paragraph(content)
             document.save(f'doc/{day}.docx')
             # document.save(f'{year}/{date}/{minute}/{m}.docx')
             print('开始下载',line[0],created_at)
-            print(res['text_raw'])
+            print(content)
             if res['pic_num'] > 0:
                 # if not os.path.exists(f'{date}/image'):
                 #     os.mkdir(f'{date}/image')
@@ -206,8 +209,8 @@ def main():
 #         # break
 #         # htmls += [name for name in files if name.endswith(".html")]
 #     # print(htmls)
-def main2():
-    f = open(f'李健.csv', encoding='UTF8')
+def main2(uid):
+    f = open(f'{uid}.csv', encoding='UTF8')
     csv_reader = csv.reader(f)
     num = 0
     history = get_history()
@@ -216,8 +219,8 @@ def main2():
             print('已经下载过:'+line[0])
             continue
         # time.sleep(random.randint(1, 3))
-        if num>10:
-            break
+        # if num>10:
+        #     break
         if '微博' in line[0]:
             continue
         num +=1
@@ -239,21 +242,21 @@ def main2():
             document = Document()
             document.add_heading(created_at, 0)
             document.add_paragraph(line[1])
-            if line[2] and line[2] != '无':
-                pics =line[2].split(',')
-                if len(pics) > 0:
-                    if not os.path.exists(f'image'):
-                        os.mkdir(f'image')
-                    for item in pics:
-                        print('图片:',item)
-                        filename = os.path.basename(item).split('.')[0]
-                        # img_data = requests.get(item.replace('/large/','/orj360/'),headers=headers,timeout=5)
-                        img_data = requests.get(item,headers=headers,timeout=5)
-                        with open(f'image/'+mid+'-'+filename+'.jpg','wb') as f3:
-                            f3.write(img_data.content)
-                            picture = document.add_picture(f'image/'+mid+'-'+filename+'.jpg')
-                            picture.width = int(picture.width * 0.08)
-                            picture.height = int(picture.height * 0.08)
+            # if line[2] and line[2] != '无':
+            #     pics =line[2].split(',')
+            #     if len(pics) > 0:
+            #         if not os.path.exists(f'image'):
+            #             os.mkdir(f'image')
+            #         for item in pics:
+            #             print('图片:',item)
+            #             filename = os.path.basename(item).split('.')[0]
+            #             # img_data = requests.get(item.replace('/large/','/orj360/'),headers=headers,timeout=5)
+            #             img_data = requests.get(item,headers=headers,timeout=5)
+            #             with open(f'image/'+mid+'-'+filename+'.jpg','wb') as f3:
+            #                 f3.write(img_data.content)
+            #                 picture = document.add_picture(f'image/'+mid+'-'+filename+'.jpg')
+            #                 picture.width = int(picture.width * 0.08)
+            #                 picture.height = int(picture.height * 0.08)
             document.save(f'doc/{day}-{mid}.docx')
             print('开始下载',line[0],created_at)
             print(line[1])
@@ -263,7 +266,7 @@ def main2():
     # break
     # htmls += [name for name in files if name.endswith(".html")]
     # await browser.close()
-# main2()
+main2(uid)
 def calculate_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
@@ -296,13 +299,13 @@ def fibonacci():
 # with open("file1.txt") as file1, open("file2.txt") as file2: 
 # x, y, z = [4, 5, 6]  a, b, c = (1, 2, 3) copy.deepcopy(original_list)
 # 提取word图片 通过xpath从xlm文档中提取 使用解压软件解压Word文档即可得到xlm文件
-doc = Document("doc/2024-06-01-15：00-OgYOE74vC.docx")
-for p in doc.paragraphs:
-    images = p._element.xpath('.//pic:pic')  # 获取所有图片
-    for image in images:
-        for img_id in image.xpath('.//a:blip/@r:embed'):  # 获取图片id
-            part = doc.part.related_parts[img_id]  # 根据图片id获取对应的图片
-            if isinstance(part, ImagePart):
-                # 保存图片
-                with open(basename(part.partname), "wb") as f:
-                    f.write(part.blob)
+# doc = Document("doc/2024-06-01-15：00-OgYOE74vC.docx")
+# for p in doc.paragraphs:
+#     images = p._element.xpath('.//pic:pic')  # 获取所有图片
+#     for image in images:
+#         for img_id in image.xpath('.//a:blip/@r:embed'):  # 获取图片id
+#             part = doc.part.related_parts[img_id]  # 根据图片id获取对应的图片
+#             if isinstance(part, ImagePart):
+#                 # 保存图片
+#                 with open(basename(part.partname), "wb") as f:
+#                     f.write(part.blob)

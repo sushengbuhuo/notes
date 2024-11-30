@@ -60,18 +60,18 @@ def down(url,position,copyright,digest,is_pay):
     response = requests.get(html.unescape(url), headers=headers)#, params={'key': '', 'uin': 'xx'}
     global nums
     encoding = 'utf-8-sig'
-    is_down_view = 0
+    is_down_view = 1
     is_down = 1
     is_down_video = 0
     is_down_audio = 0
     is_down_img = 0
     is_down_cover=0
     is_down_comment = 1
-    pass_ticket = ""
+    pass_ticket = "/"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
-    appmsg_token = ""
+    appmsg_token = "-ON4OEJ6yIi1r8SQRMtHhMNw-_BCUNWhIy1p1UtcoU0GYdRzPQISYB03Vz8g"
     key=""
-    uin = ""
+    uin = "=="
     biz="=="
     content = response.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com').replace('因网络连接问题，剩余内容暂无法加载。', '')#+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>'
     try:
@@ -84,6 +84,9 @@ def down(url,position,copyright,digest,is_pay):
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
         author = re.search(r'<meta name="author" content="(.*)"\s?/>', content)
         cover = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content).group(1)
+        sn = re.search(r'var sn = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var sn = "(.*)" \|\| "" \|\| "";', content)
+        mid = re.search(r'var mid = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var mid = "(.*)" \|\| "" \|\| "";', content)
+        idx = re.search(r'var idx = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var idx = "(.*)" \|\| "" \|\| "";', content)
         if not title:
            title = re.search(r'window\.msg_title = \'(.*?)\'', content)
         if not ct:
@@ -92,7 +95,7 @@ def down(url,position,copyright,digest,is_pay):
         title = title.group(1)
         ct = ct.group(1)
         author = author.group(1)
-        date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))# %H:%M:%S
+        date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))# %H:%M:%S
         if len(title) > 100:
             title = title[0:64]
         # if int(ct) > 1660321824:
@@ -105,7 +108,7 @@ def down(url,position,copyright,digest,is_pay):
         province_name = country_name = comments_html=''
         read_num,like_num,old_like_num,share_num,comments_num,reward_num,videos,audios='0','0','0','0','0','0','0','0'
         if is_down_view == 1:
-            read_num,like_num,old_like_num,reward_num,share_num = view(url,appmsg_token,uin,key,pass_ticket)
+            read_num,like_num,old_like_num,reward_num,share_num = view(url,appmsg_token,uin,key,pass_ticket,biz,sn.group(1),mid.group(1),idx.group(1))
             if read_num == "error":
             	print('获取阅读数失败',url)
             	return "error"
@@ -164,12 +167,12 @@ def down(url,position,copyright,digest,is_pay):
             #         f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
             # except Exception as err:
             #     print('下载txt出错了',err,url)
-            try:
-                with open(date+'-'+replace_invalid_chars(html.unescape(title))+'.html', 'w', encoding='utf-8') as f:
-                    f.write(content+comments_html)
-            except Exception as err:
-                with open(date+'-'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
-                    f.write(content+comments_html)
+            # try:
+            #     with open('./'+date+'-'+replace_invalid_chars(html.unescape(title))+'.html', 'w', encoding='utf-8') as f:
+            #         f.write(content+comments_html)
+            # except Exception as err:
+            #     with open(date+'-'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
+            #         f.write(content+comments_html)
         with open(f'{fname}.md', 'a+', encoding='utf-8') as f2:
             f2.write('[{}]'.format(date+'_'+html.unescape(title)) + '({})'.format(url)+ '\n\n'+'文章简介:'+html.unescape(digest)+ '\n\n'+ '\n\n')
         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f2:
@@ -184,35 +187,37 @@ def down(url,position,copyright,digest,is_pay):
             f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+',,'+copyright+ ','+position+ ','+is_pay+ ','+''+','+''+',0,0,0,0,0,0,0,0'+'\n')
         # with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
             # f5.write(url+'\n')
-def view(link,appmsg_token,uin,key,pass_ticket):
+def view(link,appmsg_token,uin,key,pass_ticket,__biz,sn,mid,idx):
     # 获得mid,_biz,idx,sn 有些文章没有chksm参数http://mp.weixin.qq.com/s?__biz=MzA3NTcyNzY3OA==&mid=400102856&idx=1&sn=c0dab637c639b52d1d308d609bb270e1#rd
     # mid = link.split("&")[1].split("=")[1]
     # idx = link.split("&")[2].split("=")[1]
     # sn = link.split("&")[3].split("=")[1]
     # _biz = link.split("&")[0].split("_biz=")[1]
-    parsed_url = urlparse(link)
-    query_params = parse_qs(parsed_url.query)
-    if not '__biz' in query_params:
-        return 'error','0','0','0','0'
-    __biz=query_params['__biz'][0]
+    # parsed_url = urlparse(link)
+    # query_params = parse_qs(parsed_url.query)
+    # if not '__biz' in query_params:
+    #     return 'error','0','0','0','0'
+    # __biz=query_params['__biz'][0]
     # 早期文章http://mp.weixin.qq.com/mp/appmsg/show?__biz=MjM5Nzg5OTk5NA==&appmsgid=10014557&itemidx=4&sign=4c61d5477f07877436cd04b18ec2c884#wechat_redirect
-    if 'mid' in query_params:
-        mid=query_params['mid'][0]
-    if 'appmsgid' in query_params:
-        mid=query_params['appmsgid'][0]
-    if 'sn' in query_params:
-        sn=query_params['sn'][0]
-    if 'sign' in query_params:
-        sn=query_params['sign'][0]
-    if 'idx' in query_params:
-        idx=query_params['idx'][0]
-    if 'itemidx' in query_params:
-        idx=query_params['itemidx'][0]
+    # if 'mid' in query_params:
+    #     mid=query_params['mid'][0]
+    # if 'appmsgid' in query_params:
+    #     mid=query_params['appmsgid'][0]
+    # if 'sn' in query_params:
+    #     sn=query_params['sn'][0]
+    # if 'sign' in query_params:
+    #     sn=query_params['sign'][0]
+    # if 'idx' in query_params:
+    #     idx=query_params['idx'][0]
+    # if 'itemidx' in query_params:
+    #     idx=query_params['itemidx'][0]
+    # print(__biz,sn,mid,idx);
     if not mid or not sn or not __biz or not idx:
         return 'error','0','0','0','0'
     url = "http://mp.weixin.qq.com/mp/getappmsgext"#获取详情页
     
-    cookies = """
+    cookies = """rewardsn   
+
     """
     headers = {
         "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
@@ -489,6 +494,9 @@ for line in csv_reader:
     if res == "error":
        break
 for item in urls:
+    if item in urls_history:
+       print('已经下载过：',item)
+       continue
     res = down(item,'1','','','')
     time.sleep(random.randint(1, 1))
     if not res:
