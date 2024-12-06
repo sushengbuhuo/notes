@@ -67,9 +67,9 @@ def down(url,position,copyright,digest,is_pay):
     is_down_img = 0
     is_down_cover=0
     is_down_comment = 1
-    pass_ticket = "/"
+    pass_ticket = "+SXHip6Gfy14VMvLml2f8cNK+iMj2Ep5EdJzq81fVfWZ"
     url_comment = 'https://mp.weixin.qq.com/mp/appmsg_comment'
-    appmsg_token = "-ON4OEJ6yIi1r8SQRMtHhMNw-_BCUNWhIy1p1UtcoU0GYdRzPQISYB03Vz8g"
+    appmsg_token = ""
     key=""
     uin = "=="
     biz="=="
@@ -84,9 +84,10 @@ def down(url,position,copyright,digest,is_pay):
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
         author = re.search(r'<meta name="author" content="(.*)"\s?/>', content)
         cover = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content).group(1)
-        sn = re.search(r'var sn = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var sn = "(.*)" \|\| "" \|\| "";', content)
-        mid = re.search(r'var mid = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var mid = "(.*)" \|\| "" \|\| "";', content)
-        idx = re.search(r'var idx = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var idx = "(.*)" \|\| "" \|\| "";', content)
+        # 小绿书文章 https://mp.weixin.qq.com/s/KjZ9tgaE50Gmxzrb2NzeNQ
+        sn = re.search(r'var sn = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var sn = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.sn = xml \? getXmlValue\('sn\.DATA'\) \|\| getXmlValue\('sn'\) \|\| getXmlValue\('sign'\) : '(.*)' \|\| '' \|\| '';", content)
+        mid = re.search(r'var mid = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var mid = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.mid = xml \? getXmlValue\('mid.DATA'\) \|\| getXmlValue\('mid'\) \|\| getXmlValue\('appmsgid'\) : '(.*)' \|\| '' \|\| '';", content)
+        idx = re.search(r'var idx = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var idx = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.idx = xml \? getXmlValue\('idx.DATA'\) \|\| getXmlValue\('idx'\) \|\| getXmlValue\('itemidx'\) : '(.*)' \|\| '' \|\| '';", content)
         if not title:
            title = re.search(r'window\.msg_title = \'(.*?)\'', content)
         if not ct:
@@ -168,7 +169,7 @@ def down(url,position,copyright,digest,is_pay):
             # except Exception as err:
             #     print('下载txt出错了',err,url)
             # try:
-            #     with open('./'+date+'-'+replace_invalid_chars(html.unescape(title))+'.html', 'w', encoding='utf-8') as f:
+            #     with open('公众号历史文章/'+date+'-'+replace_invalid_chars(html.unescape(title))+'.html', 'w', encoding='utf-8') as f:
             #         f.write(content+comments_html)
             # except Exception as err:
             #     with open(date+'-'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:

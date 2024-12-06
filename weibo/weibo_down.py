@@ -690,7 +690,7 @@ class Weibo(object):
                                                  self.user['id'], page,
                                                  '-' * 30))
         except Exception as e:
-            print('Error: ', e)
+            print('Error: ', e);raise Exception("抓取失败了："+page)
             traceback.print_exc()
 
     def get_filepath(self, type):
