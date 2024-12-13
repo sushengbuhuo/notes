@@ -84,10 +84,10 @@ def down(url,position,copyright,digest,is_pay):
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
         author = re.search(r'<meta name="author" content="(.*)"\s?/>', content)
         cover = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content).group(1)
-        # 小绿书文章 https://mp.weixin.qq.com/s/KjZ9tgaE50Gmxzrb2NzeNQ
-        sn = re.search(r'var sn = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var sn = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.sn = xml \? getXmlValue\('sn\.DATA'\) \|\| getXmlValue\('sn'\) \|\| getXmlValue\('sign'\) : '(.*)' \|\| '' \|\| '';", content)
-        mid = re.search(r'var mid = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var mid = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.mid = xml \? getXmlValue\('mid.DATA'\) \|\| getXmlValue\('mid'\) \|\| getXmlValue\('appmsgid'\) : '(.*)' \|\| '' \|\| '';", content)
-        idx = re.search(r'var idx = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var idx = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.idx = xml \? getXmlValue\('idx.DATA'\) \|\| getXmlValue\('idx'\) \|\| getXmlValue\('itemidx'\) : '(.*)' \|\| '' \|\| '';", content)
+        # 小绿书文章 https://mp.weixin.qq.com/s/KjZ9tgaE50Gmxzrb2NzeNQ https://mp.weixin.qq.com/s?__biz=Mzg5ODc0NDAzMA==&mid=2247536779&idx=4&sn=422a24693192009c7e506c30809b8773&chksm=c05ffb3af728722c64f629733079eccf632254618c427463c1becc9b920558fcf8d8f02868b2&scene=27#wechat_redirect
+        sn = re.search(r'var sn = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var sn = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.sn = xml \? getXmlValue\('sn\.DATA'\) \|\| getXmlValue\('sn'\) \|\| getXmlValue\('sign'\) : '(.*)' \|\| '' \|\| '';", content) or re.search(r"window\.sn = '(.*)' \|\| '' \|\| '';", content)
+        mid = re.search(r'var mid = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var mid = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.mid = xml \? getXmlValue\('mid.DATA'\) \|\| getXmlValue\('mid'\) \|\| getXmlValue\('appmsgid'\) : '(.*)' \|\| '' \|\| '';", content) or re.search(r"window\.mid = '(.*)' \|\| '' \|\| '';", content)
+        idx = re.search(r'var idx = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var idx = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.idx = xml \? getXmlValue\('idx.DATA'\) \|\| getXmlValue\('idx'\) \|\| getXmlValue\('itemidx'\) : '(.*)' \|\| '' \|\| '';", content) or re.search(r"window\.idx = '(.*)' \|\| '' \|\| '';", content)
         if not title:
            title = re.search(r'window\.msg_title = \'(.*?)\'', content)
         if not ct:

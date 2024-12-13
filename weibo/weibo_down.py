@@ -1035,7 +1035,7 @@ class Weibo(object):
                 if is_end:
                     break
 
-                if page % 20 == 0:  # 每爬20页写入一次文件
+                if page % 1 == 0:  # 每爬20页写入一次文件
                     self.write_data(wrote_num)
                     wrote_num = self.got_num
 
@@ -1047,7 +1047,7 @@ class Weibo(object):
                     page1 = page
                     random_pages = random.randint(1, 5)
 
-            self.write_data(wrote_num)  # 将剩余不足20页的微博写入文件
+            # self.write_data(wrote_num)  # 将剩余不足20页的微博写入文件
             if not self.filter:
                 print(u'共爬取' + str(self.got_num) + u'条微博')
             else:

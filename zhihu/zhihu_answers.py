@@ -60,9 +60,9 @@ class zhihu_answer():
                 json_result = json.loads(response.content)
                 return json_result
             except ConnectionError as e:
-                print(f"连接错误，第 {attempt + 1} 次尝试: {e}")
+                print(f"下载失败，第 {attempt + 1} 次尝试: {e}")
                 time.sleep(2)  # 等待一段时间后重试
-        print("无法获取数据")
+        print("下载失败")
         return None
     def get_answer(self, question_id, limit=1,total_num=10):
         now = 0 - limit
@@ -119,11 +119,11 @@ class zhihu_answer():
             json_result = self.fetch_data(url)
             data = json_result["data"]
             time.sleep(2)
-            print('开始抓取',offset)
+            print('开始下载',offset,url)
             if len(data) == 0:
                 break
             offset += 5#;print(data[0]['target']["content"])
-            if offset > 1000:
+            if offset > 20:
                 break
             for i in data:
                 # if i['target']['created_time'] < 1664553600 and i['target']['created_time'] > 1504195200:
@@ -135,6 +135,8 @@ class zhihu_answer():
                 author_url_token_list.append(i['target']['author']['url_token'])
                 created_time_list.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(i['target']['created_time'])))
                 updated_time_list.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(i['target']['updated_time'])))
+                # html
+                
             url=json_result['paging']['next']
         dict["content_list"] = content_list
         dict["author_name_list"] = author_name_list
@@ -177,6 +179,7 @@ class zhihu_answer():
         result_dict = self.get_answer(question_id, 20)
         comments = []
         book_data = {}
+        content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>'
         # self.get_answer(question_id)
         text_list = self.format_content(result_dict['content_list'])
         # print('回答',text_list)
@@ -195,14 +198,20 @@ class zhihu_answer():
                 result = re.findall(r'《(.*?)》', text_list[i])
                 for name in result:
                     book_data[name] = book_data.get(name, 0) + 1
+                answer='https://www.zhihu.com/answer/'+str(result_dict["answer_id_list"][i])
+                created_time=result_dict["created_time"][i]
                 comments.append([
-                    'https://www.zhihu.com/answer/'+str(result_dict["answer_id_list"][i]),
+                    answer,
                     'https://www.zhihu.com/people/'+result_dict["author_url_token_list"][i],
                     result_dict["author_name_list"][i],
                     text_list[i],
-                    result_dict["created_time"][i],
+                    created_time,
                     result_dict["updated_time"][i]]
                     )
+                content+=f'<p><strong>回答链接:<a href="{answer}">{answer}</a>---发布时间:{created_time}</strong></p>'+result_dict["content_list"][i]
+            content+='</body></html>'
+            with open(str(question_id)+'.html', 'w', encoding='utf-8') as f:
+                f.write(content)    
             #统计书名
             if type == 2:
                 self.books(book_data,question_id)
@@ -239,7 +248,7 @@ class zhihu_answer():
                         print('下载失败',e)
                     
 if __name__ == '__main__':
-    print('本工具更新于2023年12月26日，获取最新版本请关注公众号苏生不惑')
+    print('本工具更新于2024年12月12日，获取最新版本请关注公众号苏生不惑')
     qid = input("公众号苏生不惑提示你，请输入知乎问题id：")
     cookie = input("公众号苏生不惑提示你，请输入知乎cookie：")
     # type = input('苏生不惑提示你，请输入抓取类型，1下载图片，2提取关键词：')
