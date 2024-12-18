@@ -283,7 +283,7 @@ def view(link,appmsg_token,uin,key,pass_ticket,__biz,sn,mid,idx):
     readNum2=str(readNum)
     # if readNum > 10000:
     #     tmp=readNum/10000
-    #     readNum2=sprintf(tmp,1)+'万'
+    #     readNum2=str(int(readNum/1000) / 10) + "万"
     # if readNum > 100000:
     #     readNum2='10万+'
     return readNum2, str(likeNum),str(old_like_num),str(reward_num),str(share_num)

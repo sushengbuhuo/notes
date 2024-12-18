@@ -2,7 +2,7 @@ import requests
 import json
 import re
 import time
-import os,csv
+import os,csv,random
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from requests.exceptions import ConnectionError
@@ -118,12 +118,15 @@ class zhihu_answer():
             # response = requests.get(url, headers=self.header, verify=False, timeout=(5, 10))
             json_result = self.fetch_data(url)
             data = json_result["data"]
-            time.sleep(2)
+            time.sleep(random.randint(2, 5))
             print('开始下载',offset,url)
             if len(data) == 0:
                 break
             offset += 5#;print(data[0]['target']["content"])
-            if offset > 20:
+            if offset % 100 == 0:
+                print('等待一会')
+                time.sleep(random.randint(30, 60))
+            if offset > 10000:
                 break
             for i in data:
                 # if i['target']['created_time'] < 1664553600 and i['target']['created_time'] > 1504195200:
@@ -179,7 +182,8 @@ class zhihu_answer():
         result_dict = self.get_answer(question_id, 20)
         comments = []
         book_data = {}
-        content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>'
+        num = 0
+        content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>{question_title}</h1>'
         # self.get_answer(question_id)
         text_list = self.format_content(result_dict['content_list'])
         # print('回答',text_list)
@@ -195,6 +199,7 @@ class zhihu_answer():
             #         f.write("回答的内容：" + text_list[i] + "\n\n")
             # f.close()
             for i in range(0, len(text_list)):
+                num +=1
                 result = re.findall(r'《(.*?)》', text_list[i])
                 for name in result:
                     book_data[name] = book_data.get(name, 0) + 1
@@ -208,7 +213,7 @@ class zhihu_answer():
                     created_time,
                     result_dict["updated_time"][i]]
                     )
-                content+=f'<p><strong>回答链接:<a href="{answer}">{answer}</a>---发布时间:{created_time}</strong></p>'+result_dict["content_list"][i]
+                content+=f'<p>回答{num}、<strong>回答链接:<a href="{answer}">{answer}</a> 发布时间: {created_time}</strong></p>'+result_dict["content_list"][i].replace('src="data:', '').replace('data-actualsrc', 'src')
             content+='</body></html>'
             with open(str(question_id)+'.html', 'w', encoding='utf-8') as f:
                 f.write(content)    
@@ -248,9 +253,9 @@ class zhihu_answer():
                         print('下载失败',e)
                     
 if __name__ == '__main__':
-    print('本工具更新于2024年12月12日，获取最新版本请关注公众号苏生不惑')
-    qid = input("公众号苏生不惑提示你，请输入知乎问题id：")
-    cookie = input("公众号苏生不惑提示你，请输入知乎cookie：")
+    print('本工具更新于2024年12月12日，获取最新版本请关注公众号玩转互联网达人')
+    qid = input("公众号玩转互联网达人提示你，请输入知乎问题id：")
+    cookie = input("公众号玩转互联网达人提示你，请输入知乎cookie：");
     # type = input('苏生不惑提示你，请输入抓取类型，1下载图片，2提取关键词：')
     zhihu = zhihu_answer(qid,qid,20,cookie)
     zhihu.single_answer(qid,1)
