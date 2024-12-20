@@ -6,6 +6,12 @@ import os,csv,random
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from requests.exceptions import ConnectionError
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
 class zhihu_answer():
     question_id = 0
     begin_id = 0
@@ -119,14 +125,14 @@ class zhihu_answer():
             json_result = self.fetch_data(url)
             data = json_result["data"]
             time.sleep(random.randint(2, 5))
-            print('开始下载',offset,url)
+            print('开始下载',offset)
             if len(data) == 0:
                 break
             offset += 5#;print(data[0]['target']["content"])
             if offset % 100 == 0:
                 print('等待一会')
                 time.sleep(random.randint(30, 60))
-            if offset > 10000:
+            if offset > 1000:
                 break
             for i in data:
                 # if i['target']['created_time'] < 1664553600 and i['target']['created_time'] > 1504195200:
@@ -255,7 +261,7 @@ class zhihu_answer():
 if __name__ == '__main__':
     print('本工具更新于2024年12月12日，获取最新版本请关注公众号玩转互联网达人')
     qid = input("公众号玩转互联网达人提示你，请输入知乎问题id：")
-    cookie = input("公众号玩转互联网达人提示你，请输入知乎cookie：");
+    cookie = get_cookie()
     # type = input('苏生不惑提示你，请输入抓取类型，1下载图片，2提取关键词：')
     zhihu = zhihu_answer(qid,qid,20,cookie)
     zhihu.single_answer(qid,1)

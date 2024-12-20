@@ -53,7 +53,7 @@ def down(url):
             title = data['title']
             # if titlesoup:
             #     title = titlesoup.get_text()
-            article_html = re.search(r'<article class="article__bd">(.*)</article>', res.text).group(1) #data['text']
+            article_html = re.search(r'<article class="article__bd">(.*)</article>', res.text).group(1).replace('.png!800.jpg','.png!raw.jpg') #data['text']
             if not title:
                 # title = soup.find("article", {"class": "article__bd"}).get_text() 
                 title = re.sub(r'<.*?>', '', data['description'])
@@ -69,26 +69,28 @@ def down(url):
                 like_count =  data['retweeted_status']['like_count']
                 retweeted = f'<br><div class="timeline__item__forward__hd"><a href="https://xueqiu.com/{user_id}" target="_blank" data-tooltip="{user_id}" analytics-data="&quot;&quot;" class="user-name-link"><span class="user-name">@{user_name}</span><span><h-char unicode="ff1a" class="biaodian cjk bd-end bd-jiya"><h-inner>：</h-inner></h-char></span></a></div><div class="timeline__item__forward__content">'+data['retweeted_status']['text']+f'</div><br><div class="timeline__item__forward__ft"><span class="timestamp">{timeBefore}</span><span class="retweet-count"> <h-char unicode="b7" class="biaodian cjk bd-middle bd-jiya"><h-inner>·</h-inner></h-char> 转发 {retweet_count}</span><a href="/8852934528/312437395#comment" target="_blank" class="replay-count"> <h-char unicode="b7" class="biaodian cjk bd-middle bd-jiya"><h-inner>·</h-inner></h-char> 讨论 {reply_count}</a><span class="like-count"> <h-char unicode="b7" class="biaodian cjk bd-middle bd-jiya"><h-inner>·</h-inner></h-char> 赞 {like_count}</span><!----></div>'
                 image = ''
+                # 转发图片?
                 if data['retweeted_status']['pic']:
                     pics = data['retweeted_status']['pic'].split(',')
                     for pic in pics:
-                        imageUrl = pic.replace('thumb.jpg','800.jpg')
+                        imageUrl = pic.replace('thumb.jpg','raw.jpg')
                         image += f'<br><img data-src="{imageUrl}" src="{imageUrl}" lazy="loaded">'
                 retweeted += image
             if not title:
                 title = re.search(r'https://xueqiu.com/\d+/(\d+)', url).group(1)
             image = ''
+            # 分享图片帖子
             if data['pic'] and not data['title']:
                 pics = data['pic'].split(',')
                 for pic in pics:
-                    imageUrl = pic.replace('thumb.jpg','800.jpg')
+                    imageUrl = pic.replace('thumb.jpg','raw.jpg')
                     image += f'<br><img data-src="{imageUrl}" src="{imageUrl}" lazy="loaded">'
             article_html = '<h4 class="">发布时间：'+date2+'</h4>'+article_html+retweeted+image
             article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="article-content">{article_html}</article></div></body></html>'
             # article_content=res.text
             print('开始下载',url,title)
             save_history(url)
-            with open(f'xueqiu/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
+            with open(f'html/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
                 f.write(article_content.replace('<p style="display:none;">','<p style="">'))
         except Exception as err:
             print('出错了',err,url);raise Exception("抓取失败了："+url)
@@ -108,7 +110,7 @@ headers = {
     }
 if not os.path.exists('html'):
     os.mkdir('html')
-# 正则替换 /1505944393/(\d{9}).* /1505944393/\1
+# 正则替换 /1505944393/(\d{8,9}).* /1505944393/\1
 filename = input('请输入雪球excel文件名：')
 with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
     f.write('时间'+','+'链接' + ','+'转发数'+ ','+'点赞数'+ ','+'评论数'+'\n')
