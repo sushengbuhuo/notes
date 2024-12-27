@@ -214,6 +214,7 @@ def main2(uid):
     csv_reader = csv.reader(f)
     num = 0
     history = get_history()
+    content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>'
     for line in csv_reader:
         if line[0] in history:
             print('已经下载过:'+line[0])
@@ -242,21 +243,25 @@ def main2(uid):
             document = Document()
             document.add_heading(created_at, 0)
             document.add_paragraph(line[1])
-            # if line[2] and line[2] != '无':
-            #     pics =line[2].split(',')
-            #     if len(pics) > 0:
-            #         if not os.path.exists(f'image'):
-            #             os.mkdir(f'image')
-            #         for item in pics:
-            #             print('图片:',item)
-            #             filename = os.path.basename(item).split('.')[0]
-            #             # img_data = requests.get(item.replace('/large/','/orj360/'),headers=headers,timeout=5)
-            #             img_data = requests.get(item,headers=headers,timeout=5)
-            #             with open(f'image/'+mid+'-'+filename+'.jpg','wb') as f3:
-            #                 f3.write(img_data.content)
-            #                 picture = document.add_picture(f'image/'+mid+'-'+filename+'.jpg')
-            #                 picture.width = int(picture.width * 0.08)
-            #                 picture.height = int(picture.height * 0.08)
+            # 配合插件 Header Editor .*\.sinaimg.cn referer https://weibo.com
+            content+=f'<h1>发布时间:{created_at}</h1><h3>微博链接:{line[0]}</h3><p>{line[1]}</p>'
+            if line[2] and line[2] != '无':
+                pics =line[2].split(',')
+                if len(pics) > 0:
+                    # if not os.path.exists(f'image'):
+                    #     os.mkdir(f'image')
+                    for item in pics:
+                        print('图片:',item)
+                        image=item.replace('/large/','/oslarge/').replace('https','http')
+                        content+=f'<img src="{image}" referrerPolicy="no-referrer"><br>'
+                        # filename = os.path.basename(item).split('.')[0]
+                        # # img_data = requests.get(item.replace('/large/','/orj360/'),headers=headers,timeout=5)
+                        # img_data = requests.get(item,headers=headers,timeout=5)
+                        # with open(f'image/'+mid+'-'+filename+'.jpg','wb') as f3:
+                        #     f3.write(img_data.content)
+                        #     picture = document.add_picture(f'image/'+mid+'-'+filename+'.jpg')
+                        #     picture.width = int(picture.width * 0.08)
+                        #     picture.height = int(picture.height * 0.08)
             document.save(f'doc/{day}-{mid}.docx')
             print('开始下载',line[0],created_at)
             print(line[1])
@@ -265,7 +270,9 @@ def main2(uid):
             print(e)
     # break
     # htmls += [name for name in files if name.endswith(".html")]
-    # await browser.close()
+    content+='</body></html>'
+    with open(str(uid)+'.html', 'w', encoding='utf-8') as f:
+        f.write(content) 
 main2(uid)
 def calculate_time(func):
     def wrapper(*args, **kwargs):

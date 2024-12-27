@@ -219,6 +219,7 @@ class zhihu_answer():
                     created_time,
                     result_dict["updated_time"][i]]
                     )
+                # 无水印图片地址 https://pic2.zhimg.com/v2-0cfceaf194e5c70d1e02bb65222a1846.png  替换为源代码里的 data-original-token
                 content+=f'<p>回答{num}、<strong>回答链接:<a href="{answer}">{answer}</a> 发布时间: {created_time}</strong></p>'+result_dict["content_list"][i].replace('src="data:', '').replace('data-actualsrc', 'src')
             content+='</body></html>'
             with open(str(question_id)+'.html', 'w', encoding='utf-8') as f:

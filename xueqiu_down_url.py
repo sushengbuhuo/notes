@@ -53,7 +53,7 @@ def down(url):
             title = data['title']
             # if titlesoup:
             #     title = titlesoup.get_text()
-            article_html = re.search(r'<article class="article__bd">(.*)</article>', res.text).group(1).replace('.png!800.jpg','.png!raw.jpg') #data['text']
+            article_html = re.search(r'<article class="article__bd">(.*)</article>', res.text).group(1)#.replace('.png!800.jpg','.png!raw.jpg') #data['text']
             if not title:
                 # title = soup.find("article", {"class": "article__bd"}).get_text() 
                 title = re.sub(r'<.*?>', '', data['description'])
@@ -110,7 +110,7 @@ headers = {
     }
 if not os.path.exists('html'):
     os.mkdir('html')
-# 正则替换 /1505944393/(\d{8,9}).* /1505944393/\1
+# 正则替换 /1505944393/(\d{8,9}).* /1505944393/\1 document.querySelector('a.pagination__next').click();
 filename = input('请输入雪球excel文件名：')
 with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
     f.write('时间'+','+'链接' + ','+'转发数'+ ','+'点赞数'+ ','+'评论数'+'\n')
