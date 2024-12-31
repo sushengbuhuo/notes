@@ -90,6 +90,8 @@ def down(url):
             # article_content=res.text
             print('开始下载',url,title)
             save_history(url)
+            with open(f'雪球帖子目录.md', 'a+', encoding='utf-8') as f2:
+                f2.write('[{}]'.format(date+'_'+html.unescape(title)) + '({})'.format(url)+ '\n\n')
             with open(f'html/'+date+'_'+trimName(title)+'.html', 'w', encoding='utf-8') as f:
                 f.write(article_content.replace('<p style="display:none;">','<p style="">'))
         except Exception as err:

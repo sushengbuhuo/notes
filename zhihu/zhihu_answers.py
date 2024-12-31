@@ -6,11 +6,11 @@ import os,csv,random
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from requests.exceptions import ConnectionError
-def get_cookie():
+def get_cookie(name):
     cookie = ''
-    if os.path.exists('cookie.txt'):
-        with open('cookie.txt', encoding='utf-8') as f:
-            cookie = f.read().replace('\n','')
+    if os.path.exists(name):
+        with open(name, encoding='utf-8') as f:
+            cookie = f.read()
     return cookie
 class zhihu_answer():
     question_id = 0
@@ -18,11 +18,12 @@ class zhihu_answer():
     similar_question_url_list = []
     copy_list = []
     question_count = 20
-    def __init__(self, begin_id, question_id, question_count=20,cookie=''):
+    def __init__(self, begin_id, question_id, question_count=20,cookie='',ts=5):
         self.cookie = cookie
         self.begin_id = begin_id
         self.question_id = question_id
         self.question_count = question_count
+        self.ts = ts
         self.header = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 FirePHP/0.7.4',
             "cookie": self.cookie,
@@ -124,7 +125,7 @@ class zhihu_answer():
             # response = requests.get(url, headers=self.header, verify=False, timeout=(5, 10))
             json_result = self.fetch_data(url)
             data = json_result["data"]
-            time.sleep(random.randint(2, 5))
+            time.sleep(int(self.ts))
             print('开始下载',offset)
             if len(data) == 0:
                 break
@@ -132,7 +133,7 @@ class zhihu_answer():
             if offset % 100 == 0:
                 print('等待一会')
                 time.sleep(random.randint(30, 60))
-            if offset > 1000:
+            if offset > 5000:
                 break
             for i in data:
                 # if i['target']['created_time'] < 1664553600 and i['target']['created_time'] > 1504195200:
@@ -260,9 +261,19 @@ class zhihu_answer():
                         print('下载失败',e)
                     
 if __name__ == '__main__':
-    print('本工具更新于2024年12月12日，获取最新版本请关注公众号玩转互联网达人')
-    qid = input("公众号玩转互联网达人提示你，请输入知乎问题id：")
-    cookie = get_cookie()
+    print('本工具更新于2024年12月30日，获取最新版本请关注公众号玩转互联网达人')
+    qids = get_cookie('id.txt')
+    ids = qids.split('\n')
+    if not ids[0]:
+        qid = input("公众号玩转互联网达人提示你，请输入知乎问题id：")
+        ids = [qid]
+    cookie = get_cookie('cookie.txt')
+    ts = get_cookie('time.txt')
+    if not ts:
+        ts = 5
     # type = input('苏生不惑提示你，请输入抓取类型，1下载图片，2提取关键词：')
-    zhihu = zhihu_answer(qid,qid,20,cookie)
-    zhihu.single_answer(qid,1)
+    for qid in ids:
+        time.sleep(random.randint(3, 6))
+        zhihu = zhihu_answer(qid,qid,20,cookie,ts)
+        zhihu.single_answer(qid,1)
+    

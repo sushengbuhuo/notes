@@ -215,13 +215,14 @@ def main2(uid):
     num = 0
     history = get_history()
     content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>'
+    document = Document()
     for line in csv_reader:
         if line[0] in history:
             print('已经下载过:'+line[0])
             continue
         # time.sleep(random.randint(1, 3))
-        # if num>10:
-        #     break
+        if num>10:
+            break
         if '微博' in line[0]:
             continue
         num +=1
@@ -240,9 +241,16 @@ def main2(uid):
                 os.mkdir('doc')
             # with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
             #     f2.write(res['text_raw'])
-            document = Document()
+            
             document.add_heading(created_at, 0)
             document.add_paragraph(line[1])
+            title_md=mid
+            if line[1]:
+                title_md = line[1]
+                if len(line[1]) > 50:
+                    title_md = line[1][0:50]
+            with open(f'{uid}.md', 'a+', encoding='utf-8') as f2:
+                f2.write('[{}]'.format(created_at[0:10]+'_'+html.unescape(title_md)) + '({})'.format(line[0])+ '\n\n')
             # 配合插件 Header Editor .*\.sinaimg.cn referer https://weibo.com
             content+=f'<h1>发布时间:{created_at}</h1><h3>微博链接:{line[0]}</h3><p>{line[1]}</p>'
             if line[2] and line[2] != '无':
@@ -262,7 +270,7 @@ def main2(uid):
                         #     picture = document.add_picture(f'image/'+mid+'-'+filename+'.jpg')
                         #     picture.width = int(picture.width * 0.08)
                         #     picture.height = int(picture.height * 0.08)
-            document.save(f'doc/{day}-{mid}.docx')
+            document.save(f'{uid}.docx')
             print('开始下载',line[0],created_at)
             print(line[1])
             save_history(line[0])

@@ -60,6 +60,8 @@ def down(url):
         content = content.replace('data-original', 'src')
         content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1><h3>%s</h3>%s</body></html>' % (
             title,url, content)
+        with open(f'知乎文章目录.md', 'a+', encoding='utf-8') as f2:
+            f2.write('[{}]'.format(answer_date+'_'+title) + '({})'.format(url)+ '\n\n')
         with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content)
         try:
