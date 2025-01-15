@@ -485,7 +485,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
 for line in csv_reader:
     if line[2] == "文章链接":
         continue
-    if line[2] in urls_history:
+    if line[2] in get_history():
        print('已经下载过：',line[2])
        continue
     res = down(line[2],line[8],line[7],line[3],line[9])
@@ -495,7 +495,7 @@ for line in csv_reader:
     if res == "error":
        break
 for item in urls:
-    if item in urls_history:
+    if item in get_history():
        print('已经下载过：',item)
        continue
     res = down(item,'1','','','')

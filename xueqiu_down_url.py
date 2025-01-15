@@ -112,7 +112,7 @@ headers = {
     }
 if not os.path.exists('html'):
     os.mkdir('html')
-# 正则替换 /1505944393/(\d{8,9}).* /1505944393/\1 document.querySelector('a.pagination__next').click();
+# 正则替换 /1505944393/(\d{8,9}).* /1505944393/\1 断网调试：点击network，勾选offline即可断开网络 修改成No throttling无限速模式再刷新恢复网络document.querySelector('a.pagination__next').click();
 filename = input('请输入雪球excel文件名：')
 with open(f'{filename}.csv', 'a+', encoding='utf-8-sig') as f:
     f.write('时间'+','+'链接' + ','+'转发数'+ ','+'点赞数'+ ','+'评论数'+'\n')
@@ -127,7 +127,7 @@ if file_extension == '.xlsx':
     for index, row in df.iterrows():
         if not row['雪球链接']:
             continue
-        if 'https://xueqiu.com'+row['雪球链接'] in urls_history:
+        if 'https://xueqiu.com'+row['雪球链接'] in get_history():
             print('已经下载过：','https://xueqiu.com'+row['雪球链接'])
             continue
         time.sleep(1)
@@ -154,7 +154,7 @@ elif file_extension == '.txt':
     for item in urls:
         if 'https://xueqiu.com' not in item:
             item = 'https://xueqiu.com'+item
-        if item in urls_history:
+        if item in get_history():
             print('已经下载过：',item)
             continue
         down(item)

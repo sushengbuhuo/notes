@@ -54,7 +54,8 @@ def down(url):
         # datetime_obj = datetime.strptime(answer_time, "%Y-%m-%d %H:%M")
         # date_str = datetime_obj.strftime("%Y-%m-%d")
         answer_date = match.group()
-        print('开始下载回答：',url,title,answer_date)
+        aid=re.search(r'answer/(\d+)',url).group(1)
+        print('开始下载回答：',url,title,answer_date,aid)
         # title = re.sub('[\/:*?"<>|]','-',title)
         # content = content.replace('data-actual', '')
         # content = content.replace('h1>', 'h2>')
@@ -65,7 +66,7 @@ def down(url):
             title, url,content)
         with open(f'知乎回答目录.md', 'a+', encoding='utf-8') as f2:
             f2.write('[{}]'.format(answer_date+'_'+title) + '({})'.format(url)+ '\n\n')
-        with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
+        with open('html/'+answer_date+'_'+replace_invalid_chars(title)+'_'+aid+'.html', 'w', encoding='utf-8') as f:
             f.write(content)
         try:
              with open('知乎回答.txt', 'a+', encoding='utf-8') as f:
@@ -98,7 +99,7 @@ if file_extension == '.xlsx':
     for index, row in df.iterrows():
         if not row['知乎问题链接']:
             continue
-        if 'https:'+row['知乎问题链接'] in urls_history:
+        if 'https:'+row['知乎问题链接'] in get_history():
             print('已经下载过：','https:'+row['知乎问题链接'])
             continue
         time.sleep(1)
@@ -119,6 +120,11 @@ elif file_extension == '.txt':
         contents = f.read()
     urls=contents.split('\n')
     for item in urls:
+        if not item:
+            continue
+        if item in get_history():
+            print('已经下载过：',item)
+            continue
         down(item)
         time.sleep(random.randint(1,2))
     # for item in tqdm(urls, desc='下载进度'):

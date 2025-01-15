@@ -122,7 +122,7 @@ if file_extension == '.xlsx':
     for i in tqdm(df['想法链接'].tolist(), desc='下载进度'):
         if not i:
             continue
-        if 'https:'+i in urls_history:
+        if 'https:'+i in get_history():
             print('已经下载过：','https:'+i)
             continue
         down('https:'+i)
@@ -133,5 +133,10 @@ elif file_extension == '.txt':
         contents = f.read()
     urls=contents.split('\n')
     for item in tqdm(urls, desc='下载进度'):
+        if not item:
+            continue
+        if item in get_history():
+            print('已经下载过：',item)
+            continue
         down(item)
         time.sleep(random.randint(1,2))

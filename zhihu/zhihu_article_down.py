@@ -114,7 +114,7 @@ if file_extension == '.xlsx':
     for index, row in df.iterrows():
         if not row['知乎链接']:
             continue
-        if 'https:'+row['知乎链接'] in urls_history:
+        if 'https:'+row['知乎链接'] in get_history():
             print('已经下载过：','https:'+row['知乎链接'])
             continue
         t=down('https:'+row['知乎链接'])
@@ -135,5 +135,10 @@ elif file_extension == '.txt':
         contents = f.read()
     urls=contents.split('\n')
     for item in tqdm(urls, desc='下载进度'):
+        if not item:
+            continue
+        if item in get_history():
+            print('已经下载过：',item)
+            continue
         down(item)
         time.sleep(random.randint(2, 3))
