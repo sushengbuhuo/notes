@@ -82,6 +82,8 @@ class zhihu_answer():
         created_time_list = []
         updated_time_list = []
         answer_id_list = []
+        comments_num=[]
+        votes_num=[]
         dict = {}
         offset = 0
         # for i in range(0, total_num // limit):
@@ -133,7 +135,7 @@ class zhihu_answer():
             if offset % 100 == 0:
                 print('等待一会')
                 time.sleep(random.randint(30, 60))
-            if offset > 5000:
+            if offset > 1000:
                 break
             for i in data:
                 # if i['target']['created_time'] < 1664553600 and i['target']['created_time'] > 1504195200:
@@ -145,6 +147,8 @@ class zhihu_answer():
                 author_url_token_list.append(i['target']['author']['url_token'])
                 created_time_list.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(i['target']['created_time'])))
                 updated_time_list.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(i['target']['updated_time'])))
+                comments_num.append(i['target']["comment_count"])
+                votes_num.append(i['target']["voteup_count"])
                 # html
                 
             url=json_result['paging']['next']
@@ -155,6 +159,8 @@ class zhihu_answer():
         dict["created_time"] = created_time_list
         dict["updated_time"] = updated_time_list
         dict["answer_id_list"] = answer_id_list
+        dict["comments_num"] = comments_num
+        dict["votes_num"] = votes_num
         return dict
 
     def format_content(self, content_list):
@@ -218,8 +224,10 @@ class zhihu_answer():
                     result_dict["author_name_list"][i],
                     text_list[i],
                     created_time,
-                    result_dict["updated_time"][i]]
-                    )
+                    result_dict["updated_time"][i],
+                    result_dict["comments_num"][i],
+                    result_dict["votes_num"][i]
+                    ])
                 # 无水印图片地址 https://pic2.zhimg.com/v2-0cfceaf194e5c70d1e02bb65222a1846.png  替换为源代码里的 data-original-token
                 content+=f'<p>回答{num}、<strong>回答链接:<a href="{answer}">{answer}</a> 发布时间: {created_time}</strong></p>'+result_dict["content_list"][i].replace('src="data:', '').replace('data-actualsrc', 'src')
             content+='</body></html>'
@@ -234,7 +242,7 @@ class zhihu_answer():
                     # self.imgs(i,str(question_id))
             with open(str(question_id)+'_'+question_title+'.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
                  writer = csv.writer(csvfile)
-                 writer.writerow(['回答链接','回答者主页','回答者昵称','回答内容','回答发布时间','回答更新时间'])
+                 writer.writerow(['回答链接','回答者主页','回答者昵称','回答内容','回答发布时间','回答更新时间','评论数','点赞数'])
                  writer.writerows(comments)
         except Exception as err:
             print('错误信息',err)
@@ -270,7 +278,7 @@ if __name__ == '__main__':
     cookie = get_cookie('cookie.txt')
     ts = get_cookie('time.txt')
     if not ts:
-        ts = 5
+        ts = 2
     # type = input('苏生不惑提示你，请输入抓取类型，1下载图片，2提取关键词：')
     for qid in ids:
         time.sleep(random.randint(3, 6))

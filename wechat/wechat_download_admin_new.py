@@ -82,7 +82,6 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
             fans = 0
             msg_fail_reason = ''
             fail = 0
-            delete_status = '否'
             # print('文章信息',publish_info.items())
             if publish_info['type'] == 9:
                 article_type = '群发'
@@ -114,6 +113,7 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                     print('文章链接',link,date)
                     copyright="否"
                     is_pay = '否'
+                    delete_status = '否'
                     author=item['author_name']
                     if item['is_deleted'] or fail == 1:
                         delete_status = "是"
