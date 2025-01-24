@@ -209,6 +209,7 @@ def main(uid):
 #         # break
 #         # htmls += [name for name in files if name.endswith(".html")]
 #     # print(htmls)
+#年度微博 https://weibo.com/ajax/profile/mbloghistory?uid=2049981775
 def main2(uid):
     f = open(f'{uid}.csv', encoding='UTF8')
     csv_reader = csv.reader(f)
@@ -231,6 +232,18 @@ def main2(uid):
             dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
             date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
             mid = line[0].split('/')[-1]
+            # dt_obj = datetime.strptime(res['created_at'], '%a %b %d %H:%M:%S %z %Y')
+            # created_at = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
+            created_at=line[7];day=created_at.replace(':','：').replace(' ','-')
+            dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
+            date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
+            # url=f'https://weibo.com/ajax/statuses/show?id={mid}&locale=zh-CN&isGetLongText=true'#https://www.weibo.com/ajax/statuses/extend?id=5049927780796644
+            # res = requests.get(html.unescape(url),proxies={'http': None,'https': None},verify=False, headers=headers).json()
+            # text = res['text']
+            # text_raw = res['text_raw']
+            # if res['isLongText']:
+            #     text = requests.get(f'https://weibo.com/ajax/statuses/longtext?id={mid}',proxies={'http': None,'https': None},verify=False, headers=headers).json()['data']['longTextContent']
+            text=text_raw=line[1]
             # if not os.path.exists(year):
             #     os.mkdir(year)
             # if not os.path.exists(f'{year}/{date}'):
@@ -243,16 +256,17 @@ def main2(uid):
             #     f2.write(res['text_raw'])
             
             document.add_heading(created_at, 0)
-            document.add_paragraph(line[1])
+            document.add_paragraph(text_raw)
             title_md=mid
-            if line[1]:
-                title_md = line[1]
-                if len(line[1]) > 50:
-                    title_md = line[1][0:50]
+            if text_raw:
+                title_md = text_raw
+                if len(text_raw) > 50:
+                    title_md = text_raw[0:50]
             with open(f'{uid}.md', 'a+', encoding='utf-8') as f2:
                 f2.write('[{}]'.format(created_at[0:10]+'_'+html.unescape(title_md)) + '({})'.format(line[0])+ '\n\n')
             # 配合插件 Header Editor .*\.sinaimg.cn referer https://weibo.com
-            content+=f'<h1>发布时间:{created_at}</h1><h3>微博链接:{line[0]}</h3><p>{line[1]}</p>'
+            # text2 = text.replace('\n','<br>')
+            content+=f"<h1>发布时间:{created_at}</h1><h3>微博链接:{line[0]}</h3><p>{text}</p>"
             if line[2] and line[2] != '无':
                 pics =line[2].split(',')
                 if len(pics) > 0:
@@ -270,9 +284,15 @@ def main2(uid):
                         #     picture = document.add_picture(f'image/'+mid+'-'+filename+'.jpg')
                         #     picture.width = int(picture.width * 0.08)
                         #     picture.height = int(picture.height * 0.08)
+            # if res['retweeted_status']:
+            #     content+=f"<h4>转发微博：</h4><p>{res['retweeted_status']['text']}</p>"
+            #     if res['retweeted_status']['pic_num'] > 0:
+            #         for j,k in res['retweeted_status']['pic_infos'].items():
+            #             image=k['largest']['url'].replace('/large/','/oslarge/').replace('https','http')
+            #             content+=f'<img src="{image}" referrerPolicy="no-referrer"><br>'
             document.save(f'{uid}.docx')
             print('开始下载',line[0],created_at)
-            print(line[1])
+            print(text)
             save_history(line[0])
         except Exception as e:
             print(e)
