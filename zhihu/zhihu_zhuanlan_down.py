@@ -13,6 +13,13 @@ def replace_invalid_chars(filename):
     for char in invalid_chars:
         filename = filename.replace(char, ' ')
     return filename
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+cookie = get_cookie()
 def video(vid,title):
     url = f'https://www.zhihu.com/zvideo/{vid}'
     if not os.path.exists('video'):
@@ -28,20 +35,20 @@ def video(vid,title):
     except Exception as e:
         print(vid,e)
 def answer(content,title,updated_time):
-    if not os.path.exists('html'):
-        os.mkdir('html')
+    if not os.path.exists('zhihu'):
+        os.mkdir('zhihu')
     print('下载回答:',title)
     content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1>%s</body></html>' % (
             title, content)
-    with open(os.path.join("html/", time.strftime('%Y-%m-%d', time.localtime(updated_time))+f"-{title}.html"), 'w', encoding='utf-8') as f:
+    with open(os.path.join("zhihu/", time.strftime('%Y-%m-%d', time.localtime(updated_time))+f"-{title}.html"), 'w', encoding='utf-8') as f:
         f.write(content)
 def articles(content,title,updated_time):
-    if not os.path.exists('html'):
-        os.mkdir('html')
+    if not os.path.exists('zhihu'):
+        os.mkdir('zhihu')
     print('下载文章:',title)
     content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1>%s</body></html>' % (
             title, content)
-    with open(os.path.join("html/", time.strftime('%Y-%m-%d', time.localtime(updated_time))+f"-{title}.html"), 'w', encoding='utf-8') as f:
+    with open(os.path.join("zhihu/", time.strftime('%Y-%m-%d', time.localtime(updated_time))+f"-{title}.html"), 'w', encoding='utf-8') as f:
         f.write(content)
 def get_list():
     # url = 'https://www.zhihu.com/api/v4/columns/%s/articles?include=data[*].topics&limit=10' % author
@@ -164,18 +171,18 @@ def to_pdf():
     print('合成PDF：')
     htmls = []
     # os.system('cd html')
-    for root, dirs, files in os.walk('./html'):
-        htmls += ['html/'+name for name in files if name.endswith(".html")]
+    for root, dirs, files in os.walk('./zhihu'):
+        htmls += ['zhihu/'+name for name in files if name.endswith(".html")]
     htmls.sort(reverse = True)
     print(htmls)
     pdfkit.from_file(htmls, '知乎专栏合集.pdf')
 
 if __name__ == '__main__':
-    print('本工具更新于2024年5月25日，获取最新版本请关注公众号苏生不惑')
+    print('本工具更新于2025年2月20日，获取最新版本请关注公众号苏生不惑')
     url = input('公众号苏生不惑提示你输入知乎专栏链接:')
     if not url:
-        url = 'https://www.zhihu.com/column/c_1721130763582382082'#https://www.zhihu.com/column/c_161945759
-    cookie = input('公众号苏生不惑提示你输入知乎cookie:')
+        url = 'https://www.zhihu.com/column/c_1342131560942960640'#
+    # cookie = input('公众号苏生不惑提示你输入知乎cookie:')
     author = re.search(r'https?://www.zhihu.com/column/(.*)',url).group(1)
     headers = {
         'origin': 'https://zhuanlan.zhihu.com',

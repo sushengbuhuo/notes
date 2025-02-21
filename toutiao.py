@@ -7,6 +7,7 @@ from random import randint
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import pandas as pd
 from tqdm import tqdm
+from bs4 import BeautifulSoup
 def get_cookie():
     cookie = ''
     if os.path.exists('cookie.txt'):
@@ -329,8 +330,12 @@ def down2(url):
             title = re.search(r'<div class="weitoutiao-html">(.*?)</div>', res.text).group(1);print(time_str,title)
             date=time_str[:10]
             comments_html=re.sub(r'<img class="weitoutiao-img" src="(.*?)"/>',replace,comments_html)
+            title2 = BeautifulSoup(title, 'html.parser').get_text()
+            # 匹配 HTML 标签
+            pattern = re.compile(r'<.*?>')
+            filtered_text = re.sub(pattern, '', title)
             article_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div class="wtt-content">{comments_html}</article></div></body></html>'
-            with open('html/'+date+'-'+replace_invalid_chars(title[0:64])+'.html', 'w', encoding='utf-8') as f:
+            with open('html/'+date+'-'+replace_invalid_chars(title2[0:64])+'.html', 'w', encoding='utf-8') as f:
                 f.write(article_content)
         except Exception as err:
             print('出错了',err,url)#;raise Exception("抓取失败了："+url)
@@ -379,7 +384,7 @@ if file_extension == '.xlsx':
 #     for index, row in df.iterrows():
 #         if not row['微头条链接']:
 #             continue
-#         t=down2(row['微头条链接'])
+#         t=down2(row['微头条链接'])#'https://www.toutiao.com'+
 #         fav=''
 #         comment = ''
 #         time.sleep(random.randint(1, 2))

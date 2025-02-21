@@ -13,6 +13,14 @@ def replace_invalid_chars(filename):
     for char in invalid_chars:
         filename = filename.replace(char, ' ')
     return filename
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+cookie = get_cookie()
+
 def video(vid,title):
     url = f'https://www.zhihu.com/zvideo/{vid}'
     if not os.path.exists('video'):
@@ -27,13 +35,13 @@ def video(vid,title):
             f.write(playdata.content)
     except Exception as e:
         print(vid,e)
-def answer(content,title,updated_time):
+def answer(content,title,updated_time,answer_id):
     if not os.path.exists('zhihu'):
         os.mkdir('zhihu')
     print('下载回答:',title)
     content = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><h1>%s</h1>%s</body></html>' % (
             title, content)
-    with open(os.path.join("zhihu/", time.strftime('%Y-%m-%d', time.localtime(updated_time))+f"-{title}.html"), 'w', encoding='utf-8') as f:
+    with open(os.path.join("zhihu/", time.strftime('%Y-%m-%d', time.localtime(updated_time))+f"-{answer_id}-{title}.html"), 'w', encoding='utf-8') as f:
         f.write(content)
 def articles(content,title,updated_time):
     if not os.path.exists('zhihu'):
@@ -77,7 +85,7 @@ def get_list(page):
                with open('知乎收藏夹列表目录.csv', 'a+', encoding=encoding) as f:
                     f.write('视频' + ','+trimName(article['content']['title']) + ','+'https://www.zhihu.com/zvideo/'+str(article['content']['id'])+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['created_at']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['updated_at']))+','+trimName(article['content']['description'])+','+str(article['content']['comment_count'])+ ','+str(article['content']['voteup_count'])+ ','+str(page)+'\n')
             if article['content']['type'] == 'answer':
-               answer(article['content']['content'], replace_invalid_chars(article['content']['question']['title']), article['content']['updated_time'])
+               answer(article['content']['content'], replace_invalid_chars(article['content']['question']['title']), article['content']['updated_time'],article['content']['id'])
                with open('知乎收藏夹列表目录.csv', 'a+', encoding=encoding) as f:
                     f.write('回答' + ','+trimName(article['content']['question']['title']) + ','+'https://www.zhihu.com/question/'+str(article['content']['question']['id'])+'/answer/'+str(article['content']['id'])+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['created_time']))+ ','+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(article['content']['updated_time']))+','+trimName(article['content']['excerpt'])+','+str(article['content']['comment_count'])+ ','+str(article['content']['voteup_count'])+ ','+str(page)+'\n')
             if article['content']['type'] == 'article':
@@ -106,14 +114,14 @@ def to_pdf():
     pdfkit.from_file(htmls, '知乎收藏夹合集.pdf')
 
 if __name__ == '__main__':
-    print('本工具更新于2024年6月6日，获取最新版本请关注公众号苏生不惑')
+    print('本工具更新于2025年2月20日，获取最新版本请关注公众号苏生不惑')
     url = input('公众号苏生不惑提示你输入知乎收藏夹链接:')
     page = input('公众号苏生不惑提示你输入开始下载页数:')
     if not url:
-        url = 'https://www.zhihu.com/collection/40047806'
+        url = 'https://www.zhihu.com/collection/19918379'
     if not page:
         page = 1
-    cookie = input('公众号苏生不惑提示你输入知乎cookie:');
+    # cookie = input('公众号苏生不惑提示你输入知乎cookie:');
     collection_id = re.search(r'https?://www.zhihu.com/collection/(.*)',url).group(1)
     headers = {
         'origin': 'https://zhuanlan.zhihu.com',

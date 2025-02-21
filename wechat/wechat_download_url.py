@@ -3,6 +3,7 @@ import time
 import json,html
 import random,re,os,csv
 from bs4 import BeautifulSoup
+from docx import Document, ImagePart
 from urllib.parse import urlparse, parse_qs
 requests.packages.urllib3.disable_warnings()
 headers = {
@@ -159,6 +160,17 @@ def down(url,position,copyright,digest,is_pay):
                 if comments_num == "error":
                     print('获取评论数失败',url)
                     return "error"
+            # 下载word
+            # try:
+            #     document = Document()
+            #     soup = BeautifulSoup(content, 'html.parser')
+            #     contentSoup = soup.find("div", {"id": "js_content"})
+            #     result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
+            #     document.add_heading(date+'-'+replace_invalid_chars(html.unescape(title)), 0)
+            #     document.add_paragraph(result_text)
+            #     document.save('doc/'+date+'-'+replace_invalid_chars(html.unescape(title))+'.docx')
+            # except Exception as err:
+            #     print("下载word失败",err,url);raise Exception("抓取失败了："+url)
             # try:
             #      with open(date+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
             #         soup = BeautifulSoup(content, 'html.parser')

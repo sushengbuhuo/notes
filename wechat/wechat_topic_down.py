@@ -86,7 +86,7 @@ def video(res, headers,date,title,article_url):
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
 topic_url = ''
-# print('本工具更新于2024年8月16日，获取最新版本请关注公众号苏生不惑')
+print('本工具更新于2025年2月20日，获取最新版本请关注公众号苏生不惑')
 if len(sys.argv) > 1:
    topic_url = sys.argv[1]
 if not topic_url:
@@ -163,11 +163,11 @@ for i,j,k,g in zip(msgids,links,titles,itemidxs):
 		ct = ct.group(1)
 		date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
 		date2 = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))
-		# cover_data = requests.get(cover,headers=headers)
-		# with open('cover/'+date+'_'+replace_invalid_chars(k)+'.jpg','wb') as f:
-			# f.write(cover_data.content)
-		# audio(res,headers,date,title)
-		# video(res,headers,date,title,j)
+		cover_data = requests.get(cover,headers=headers)
+		with open('cover/'+date+'_'+replace_invalid_chars(k)+'.jpg','wb') as f:
+			f.write(cover_data.content)
+		audio(res,headers,date,title)
+		video(res,headers,date,title,j)
 		with open('html/'+mp_name+'_'+date+'_'+replace_invalid_chars(k)+'.html', 'w', encoding='utf-8') as f:
 			f.write(content)
 		with open(fname, 'a+', encoding=encoding) as f2:
@@ -213,17 +213,17 @@ def download(msgid,mp_name,itemidx):
 			title = title.group(1)
 			ct = ct.group(1)
 			date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
-			# cover_data = requests.get(cover,headers=headers)
-			# with open('cover/'+date+'_'+replace_invalid_chars(i['title'])+'.jpg','wb') as f:
-				# f.write(cover_data.content)
-			# audio(res,headers,date,title)
-			# video(res,headers,date,title,i['url'])
+			cover_data = requests.get(cover,headers=headers)
+			with open('cover/'+date+'_'+replace_invalid_chars(i['title'])+'.jpg','wb') as f:
+				f.write(cover_data.content)
+			audio(res,headers,date,title)
+			video(res,headers,date,title,i['url'])
 			with open('html/'+mp_name+'_'+date+'_'+replace_invalid_chars(i['title'])+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
 			save_history(html.unescape(i['url']))
 		except Exception as err:
-			# with open(f'{mp_name}下载失败文章.txt', 'a+', encoding=encoding) as f6:
-			# 	f6.write(html.unescape(i['url'])+'\n');
+			with open(f'{mp_name}下载失败文章.txt', 'a+', encoding=encoding) as f6:
+				f6.write(html.unescape(i['url'])+'\n');
 			print(err,html.unescape(i['url']))
 			# with open('html/'+mp_name+'_'+date+'_'+str(randint(100,100000))+'.html', 'w', encoding='utf-8') as f:
 			# 	f.write(content);print(err,i['url']);raise Exception("抓取失败了："+i['url'])
