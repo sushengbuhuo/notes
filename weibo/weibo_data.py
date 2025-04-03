@@ -3,6 +3,8 @@ from lxml import etree
 from collections import OrderedDict
 from datetime import date, datetime, timedelta
 from bs4 import BeautifulSoup
+from os.path import basename
+from docx import Document, ImagePart
 requests.packages.urllib3.disable_warnings()
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
@@ -150,7 +152,6 @@ def get_cookie():
             cookie = f.read().replace('\n','')
     return cookie
 cookie = get_cookie()
-print('本工具更新于2024年8月1日,获取最新版本关注公众号苏生不惑')
 if not cookie:
     cookie=input('请输入微博cookie:')
 headers = {"User_Agent": user_agent,'cookie':cookie}
@@ -158,13 +159,13 @@ url='https://www.weibo.com/ajax/profile/detail'
 res=requests.get(url, headers=headers, verify=False,timeout=5).json()
 if not res['data']['created_at']:
     sys.exit(1)
-myuid=re.search(r'.*\?uid=(\d+)',res['data']['verified_url']).group(1)
-month = 6
+# myuid=re.search(r'.*\?uid=(\d+)',res['data']['verified_url']).group(1)
+month = 1
 uid=input('请输入微博uid:')
-if uid != "" and uid != myuid:
-    month = 1
-if not uid:
-    uid=myuid
+# if uid != "" and uid != myuid:
+#     month = 1
+# if not uid:
+#     uid=myuid
 
 # print(uid,month)
 def timeAgo(day):
@@ -174,9 +175,10 @@ def timeAgo(day):
     return months_ago_first_day.strftime("%Y-%m-%d %H:%M:%S")
 def data(uid,page,since_id,month):
     url =f'https://www.weibo.com/ajax/statuses/mymblog?uid={uid}&page={page}&feature=0&since_id={since_id}'
-    # print(f'开始第{page}页',url)
+    print(f'开始第{page}页',url)
     res=requests.get(url, headers=headers, verify=False,timeout=5).json()
     if not res["data"]['list']:
+        print(res)
         return False
     try:
         t = int(time.mktime(datetime.strptime(res["data"]['list'][0]['created_at'], "%a %b %d %H:%M:%S %z %Y").timetuple()))
@@ -184,7 +186,10 @@ def data(uid,page,since_id,month):
         date_object = datetime.strptime(months_ago_first_day, "%Y-%m-%d %H:%M:%S")
         # date_object = datetime.fromtimestamp(int(date_object.timestamp()))
         # print(months_ago_first_day,time.strftime('%Y-%m-%d', time.localtime(int(date_object.timestamp()))))
-        if t < int(date_object.timestamp()):
+        top = res["data"]['list'][0].get('isTop',0)
+        start=int(date_object.timestamp());
+        if top == 0 and t < start:
+            print('提前结束',res["data"]['list'][0]['created_at'],start)
             return False
         for v in res["data"]['list']:
             if 'deleted' in v and v['deleted'] == 1:
@@ -192,7 +197,8 @@ def data(uid,page,since_id,month):
             parsed_datetime = datetime.strptime(v['created_at'], "%a %b %d %H:%M:%S %z %Y")
             formatted_datetime = parsed_datetime.strftime("%m月%d日")
             timestamp = int(time.mktime(parsed_datetime.timetuple()))
-            if timestamp < int(date_object.timestamp()):
+            if timestamp < start:
+                print('提前结束2',v['created_at'],start)
                 continue
             print(parsed_datetime.strftime("%Y-%m-%d %H:%M:%S"),v['mid'],v['text_raw'])
             soup = BeautifulSoup(v['source'], 'html.parser')
@@ -209,6 +215,7 @@ def data(uid,page,since_id,month):
                 # f.write('https://m.weibo.cn/detail/'+v['mid']+','+'微博'+','+formatted_datetime +','+trimName(v['text_raw']) +','+str(v['reads_count']) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
                 f.write(f'https://www.weibo.com/{uid}/'+v['mblogid']+','+v['mid']+','+weibo_type+','+trimName(v['text_raw']) +','+pics+','+soup.get_text()+','+v.get('region_name','')+','+parsed_datetime.strftime("%Y-%m-%d %H:%M") +','+str(v.get('reads_count',0)) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
         if res["data"]['since_id'] == 0:
+            print('结束了',res["data"]['since_id'])
             return False
         time.sleep(random.randint(2, 6))
         page+=1

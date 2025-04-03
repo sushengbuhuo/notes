@@ -3,6 +3,7 @@ import random
 import traceback,urllib3
 from os.path import basename
 from docx import Document, ImagePart
+from datetime import datetime
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 def base62_encode(num, alphabet=ALPHABET):
@@ -222,8 +223,8 @@ def main2(uid):
             print('已经下载过:'+line[0])
             continue
         # time.sleep(random.randint(1, 3))
-        if num>10:
-            break
+        # if num>10:
+        #     break
         if '微博' in line[0]:
             continue
         num +=1
@@ -301,7 +302,77 @@ def main2(uid):
     content+='</body></html>'
     with open(str(uid)+'.html', 'w', encoding='utf-8') as f:
         f.write(content) 
-main2(uid)
+def mainData(uid):
+    f = open(f'{uid}.csv', encoding='UTF8')
+    csv_reader = csv.reader(f)
+    num = 0
+    history = get_history()
+    content = f'<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>'
+    document = Document()
+    data=[]
+    for line in csv_reader:
+        if '微博' in line[0]:
+            continue
+        data.append({"url":line[0],"time":line[7],"content":line[3]})
+    sorted_data = sorted(data, key=lambda x: datetime.strptime(x["time"], '%Y-%m-%d %H:%M').timestamp(), reverse=True)
+    # print(sorted_data[:5])
+    for item in sorted_data:
+        if item['url'] in history:
+            print('已经下载过:'+item['url'])
+            continue
+        # time.sleep(random.randint(1, 3))
+        # if num>10:
+        #     break
+        num +=1
+        try:
+            created_at=item['time'];day=created_at.replace(':','：').replace(' ','-')
+            dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
+            date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
+            mid = item['url'].split('/')[-1];url=item['url']
+            # dt_obj = datetime.strptime(res['created_at'], '%a %b %d %H:%M:%S %z %Y')
+            # created_at = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
+            # url=f'https://weibo.com/ajax/statuses/show?id={mid}&locale=zh-CN&isGetLongText=true'#https://www.weibo.com/ajax/statuses/extend?id=5049927780796644
+            # res = requests.get(html.unescape(url),proxies={'http': None,'https': None},verify=False, headers=headers).json()
+            # text = res['text']
+            # text_raw = res['text_raw']
+            # if res['isLongText']:
+            #     text = requests.get(f'https://weibo.com/ajax/statuses/longtext?id={mid}',proxies={'http': None,'https': None},verify=False, headers=headers).json()['data']['longTextContent']
+            text=text_raw=item['content']
+            # if not os.path.exists(year):
+            #     os.mkdir(year)
+            # if not os.path.exists(f'{year}/{date}'):
+            #     os.mkdir(f'{year}/{date}')
+            # if not os.path.exists(f'{year}/{date}/{minute}'):
+            #     os.mkdir(f'{year}/{date}/{minute}')
+            if not os.path.exists('doc'):
+                os.mkdir('doc')
+            # with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
+            #     f2.write(res['text_raw'])
+            
+            document.add_heading(created_at, 0)
+            document.add_paragraph(text_raw)
+            title_md=mid
+            if text_raw:
+                title_md = text_raw
+                if len(text_raw) > 50:
+                    title_md = text_raw[0:50]
+            with open(f'{uid}.md', 'a+', encoding='utf-8') as f2:
+                f2.write('[{}]'.format(created_at[0:10]+'_'+html.unescape(title_md)) + '({})'.format(line[0])+ '\n\n')
+            # 配合插件 Header Editor .*\.sinaimg.cn referer https://weibo.com
+            # text2 = text.replace('\n','<br>')
+            content+=f"<h1>发布时间:{created_at}</h1><h3>微博链接:{url}</h3><p>{text}</p>"
+            document.save(f'{uid}.docx')
+            print('开始下载',item['url'],created_at)
+            print(text)
+            save_history(item['url'])
+        except Exception as e:
+            print(e)
+    # break
+    # htmls += [name for name in files if name.endswith(".html")]
+    content+='</body></html>'
+    with open(str(uid)+'.html', 'w', encoding='utf-8') as f:
+        f.write(content) 
+mainData(uid)
 def calculate_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
