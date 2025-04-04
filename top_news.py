@@ -13,16 +13,21 @@ def remove_html_tags(text):
     return re.sub(clean, '', text)
 # https://www.zhihu.com/people/mt36501/posts  https://xlog.viki.moe/60s?locale=zh https://api.zxki.cn/ https://api.southerly.top/ https://api.vvhan.com
 fname='新闻早报'
-with open(f'{fname}.md', 'w') as file:
+fname2='历史上的今天'
+fname3='今日热搜'
+with open(f'{fname}.txt', 'w') as file:
     file.truncate(0)
 
-with open(f'{fname}.md', 'a+', encoding='utf-8') as file:
+with open(f'{fname}.txt', 'a+', encoding='utf-8') as file:
     file.write('### 新闻早报\n\n')
-fname2='历史上的今天'
-with open(f'{fname2}.md', 'w') as file:
+with open(f'{fname2}.txt', 'w') as file:
     file.truncate(0)
-with open(f'{fname2}.md', 'a+', encoding='utf-8') as file:
+with open(f'{fname3}.txt', 'w') as file:
+    file.truncate(0)
+with open(f'{fname2}.txt', 'a+', encoding='utf-8') as file:
     file.write('### 历史上的今天\n\n')
+# with open(f'{fname3}.txt', 'a+', encoding='utf-8') as file:
+#     file.write('### 今日热搜\n\n')
 def oioweb():
 	url='https://api.oioweb.cn/api/common/today'
 	response = requests.get(url,headers=headers).json()
@@ -136,16 +141,16 @@ def vvhan():
 		with open(f'{fname2}.md', 'a+', encoding='utf-8') as f:
 			f.write(str(num)+'、'+item['year']+'年'+item['title']+ '\n\n'+remove_html_tags(item['desc'])+ '。。。\n\n')
 def zxki():
-	url='https://60s.viki.moe/60s?v2=1' # https://api.southerly.top/api/60s?format=json alapi.cn https://github.com/vikiboss/60s  https://60s.viki.moe/60s?v2=1 https://api.zxki.cn/api/mrzb
-	response = requests.get(url,headers=headers).json()# 早报图片 https://api.03c3.cn/api/zb  https://api.03c3.cn/api/zb?type=jsonText https://github.com/ourongxing/newsnow
+	url='https://api.southerly.top/api/60s?format=json' # https://api.southerly.top/api/60s?format=json alapi.cn https://github.com/vikiboss/60s  https://60s.viki.moe/60s?v2=1 https://api.zxki.cn/api/mrzb
+	response = requests.get(url,headers=headers).json() #早报图片 https://api.03c3.cn/api/zb  https://api.03c3.cn/api/zb?type=jsonText https://github.com/ourongxing/newsnow
 	print('新闻早报',response.get('code'),response.get('status'))
 	num=0
 	for item in response['data']['news']:
 		num+=1
-		with open(f'{fname}.md', 'a+', encoding='utf-8') as f:
-			# f.write(item[:-1]+ '\n\n')
-			f.write(str(num)+'、'+item[:-1]+ '\n\n')
-	with open(f'{fname}.md', 'a+', encoding='utf-8') as file:
+		with open(f'{fname}.txt', 'a+', encoding='utf-8') as f:
+			f.write(item[:-1]+ '\n\n')
+			# f.write(str(num)+'、'+item[:-1]+ '\n\n')
+	with open(f'{fname3}.txt', 'a+', encoding='utf-8') as file:
 	    file.write('### 微博热搜\n\n')
 	url='https://api.zxki.cn/api/jhrs?type=weibo'
 	response = requests.get(url,headers=headers).json()
@@ -156,10 +161,10 @@ def zxki():
 			num+=1
 			if num > 15:
 				continue
-			with open(f'{fname}.md', 'a+', encoding='utf-8') as f:
+			with open(f'{fname3}.txt', 'a+', encoding='utf-8') as f:
 				# f.write(str(num)+'、[{}]'.format(html.unescape(item['title'])) + '({})'.format(item['url'])+ '\n\n')
 				f.write(str(num)+'、'+html.unescape(item['title'])+ '\n\n')
-	with open(f'{fname}.md', 'a+', encoding='utf-8') as file:
+	with open(f'{fname3}.txt', 'a+', encoding='utf-8') as file:
 	    file.write('### 知乎热搜\n\n')
 	url='https://api.zxki.cn/api/jhrs?type=zhihu'
 	response = requests.get(url,headers=headers).json()
@@ -167,30 +172,30 @@ def zxki():
 		num=0
 		for item in response['data']:
 			num+=1
-			with open(f'{fname}.md', 'a+', encoding='utf-8') as f:
+			with open(f'{fname3}.txt', 'a+', encoding='utf-8') as f:
 				f.write(str(num)+'、'+html.unescape(item['title'])+ '   '+item['url']+ '\n\n')
-	# with open(f'{fname}.md', 'a+', encoding='utf-8') as file:
-	#     file.write('### 百度热搜\n\n')
-	# url='https://api.zxki.cn/api/jhrs?type=baidu'
-	# response = requests.get(url,headers=headers).json()
-	# if response['title'] == '百度热点':
-	# 	num=0
-	# 	for item in response['data']:
-	# 		num+=1
-	# 		if num > 15:
-	# 			continue
-	# 		with open(f'{fname}.md', 'a+', encoding='utf-8') as f:
-	# 			f.write(str(num)+'、[{}]'.format(html.unescape(item['title'])) + '({})'.format(item['url'])+ '\n\n')
+	with open(f'{fname3}.txt', 'a+', encoding='utf-8') as file:
+	    file.write('### 抖音热搜\n\n')
+	url='https://api.zxki.cn/api/jhrs?type=douyin'
+	response = requests.get(url,headers=headers).json()
+	if response['title'] == '抖音':
+		num=0
+		for item in response['data']:
+			num+=1
+			if num > 15:
+				continue
+			with open(f'{fname3}.txt', 'a+', encoding='utf-8') as f:
+				f.write(str(num)+'、'+html.unescape(item['title'])+ '   '+item['url']+ '\n\n')
 	url='https://api.southerly.top/api/bing?format=json' # https://api.southerly.top/api/img
 	response = requests.get(url,headers=headers).json()
 	print('今日壁纸',response['success'])
-	with open(f'{fname}.md', 'a+', encoding='utf-8') as f:
+	with open(f'{fname}.txt', 'a+', encoding='utf-8') as f:
 		f.write('### 今日壁纸\n\n')
 		f.write(response['data']['imgUrl']+ '\n\n')
 	url='https://api.zxki.cn/api/djt'
 	response = requests.get(url,headers=headers)
 	print('今日段子')
-	with open(f'{fname}.md', 'a+', encoding='utf-8') as f:
+	with open(f'{fname}.txt', 'a+', encoding='utf-8') as f:
 		f.write('### 今日段子\n\n')
 		# f.write("https://tool.lu/timestamp/"+ '\n\n')
 		f.write(response.text+ '\n\n')
@@ -201,9 +206,9 @@ def zxki():
 	num=0
 	for item in response['data']:
 		num+=1
-		with open(f'{fname2}.md', 'a+', encoding='utf-8') as f:
+		with open(f'{fname2}.txt', 'a+', encoding='utf-8') as f:
 			f.write(str(num)+'、'+item['year']+'年'+item['title']+ '\n\n'+remove_html_tags(item['desc'])+ '。。。\n\n')
 zxki()
-with open(f'{fname}.md', 'a+', encoding='utf-8') as file:
-    file.write('\n\n来源:央视、人民日报、腾讯、新浪、新华网、微博、知乎\n\n')
+# with open(f'{fname}.txt', 'a+', encoding='utf-8') as file:
+#     file.write('\n\n来源:央视、人民日报、腾讯、新浪、新华网、微博、知乎\n\n')
    
