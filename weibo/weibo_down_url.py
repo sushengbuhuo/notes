@@ -85,23 +85,31 @@ def get_history():
         for line in lines:
             history.append(line.strip())
     return history
-uid = input('请输入微博uid:')
+uid = input('请输入微博uid:');
+# uid='5240059460'
 def save_history(url):
     with open('weibo_history.txt', 'a+') as f:
         f.write(url.strip() + '\n')
+if not os.path.exists('doc'):
+    os.mkdir('doc')
+if not os.path.exists('video'):
+    os.mkdir('video')
+if not os.path.exists('image'):
+    os.mkdir('image')
 def main(uid):
     f = open(f'{uid}.csv', encoding='UTF8')
     csv_reader = csv.reader(f)
     # for root, dirs, files in os.walk('.'):
     num = 0
     history = get_history()
+    document = Document()
     # browser = await launch(headless=False)
     # browser = await launch()# {'args': ['--disable-infobars'],'userDataDir': './userdata'} 登录后保存cookie
     for line in csv_reader:
         if line[0] in history:
             print('已经下载过:'+line[0])
             continue
-        time.sleep(random.randint(2, 6))
+        time.sleep(random.randint(2, 5))
         # if num>10:
         #     break
         if '微博' in line[0]:
@@ -109,34 +117,33 @@ def main(uid):
         num +=1
         try:
             m=re.search(r'https://www\.weibo\.com/\d+/(.*)',line[0]).group(1)
-            # mid=reverse_cut_to_length(m, base62_decode, 4, 7)
+            mid=reverse_cut_to_length(m, base62_decode, 4, 7)
             # url2 =f'https://m.weibo.cn/detail/{mid}'
             # page = await browser.newPage() time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()
             # page.setDefaultNavigationTimeout(60000)  # 设置为60秒
-            url=f'https://weibo.com/ajax/statuses/show?id={m}&locale=zh-CN'#https://www.weibo.com/ajax/statuses/extend?id=5049927780796644
+            url=f'https://weibo.com/ajax/statuses/show?id={m}&locale=zh-CN&isGetLongText=true'#https://www.weibo.com/ajax/statuses/extend?id=5049927780796644
             res = requests.get(html.unescape(url),proxies={'http': None,'https': None},verify=False, headers=headers).json()
+            # print(url,mid)
             # dt_obj = datetime.strptime(res['created_at'], '%a %b %d %H:%M:%S %z %Y')
             # created_at = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
             created_at=line[7];day=created_at.replace(':','：').replace(' ','-')
             dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
             date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
             content = res['text_raw']
-            if res['isLongText']:
-                content = requests.get(f'https://weibo.com/ajax/statuses/longtext?id={mid}',proxies={'http': None,'https': None},verify=False, headers=headers).json()['data']['longTextContent']
+            # if res['isLongText']:
+            #     content = requests.get(f'https://www.weibo.com/ajax/statuses/show?id=ODBXRkqG8&locale=zh-CN&isGetLongText=true{mid}',proxies={'http': None,'https': None},verify=False, headers=headers).json()['data']['longTextContent']
             # if not os.path.exists(year):
             #     os.mkdir(year)
             # if not os.path.exists(f'{year}/{date}'):
             #     os.mkdir(f'{year}/{date}')
             # if not os.path.exists(f'{year}/{date}/{minute}'):
             #     os.mkdir(f'{year}/{date}/{minute}')
-            if not os.path.exists('doc'):
-                os.mkdir('doc')
             # with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
             #     f2.write(content)
-            document = Document()
+            # document = Document()
             document.add_heading(created_at, 0)
             document.add_paragraph(content)
-            document.save(f'doc/{day}.docx')
+            document.save(f'doc/{uid}.docx')
             # document.save(f'{year}/{date}/{minute}/{m}.docx')
             print('开始下载',line[0],created_at)
             print(content)
@@ -145,18 +152,19 @@ def main(uid):
                 #     os.mkdir(f'{date}/image')
                 for j,k in res['pic_infos'].items():
                     print('图片:',k['largest']['url'])
-                    # img_data = requests.get(k['largest']['url'].replace('/large/','/oslarge/'),headers=headers,timeout=5)
+                    img_data = requests.get(k['largest']['url'].replace('/large/','/oslarge/'),headers=headers,timeout=5)
                     # with open(f'{year}/{date}/{minute}/'+j+'.jpg','wb') as f3:
-                        # f3.write(img_data.content)
+                    with open('image/'+dt_obj.strftime('%Y-%m-%d')+mid+j+'.jpg','wb') as f3:
+                        f3.write(img_data.content)
             if 'page_info' in res and 'media_info' in res.get('page_info') and 'playback_list' in res.get('page_info').get('media_info'):
                 # if not os.path.exists(f'{date}/video'):
                     # os.mkdir(f'{date}/video')
                 video_url = res.get('page_info').get('media_info').get('playback_list')[0]['play_info']['url']
                 title=res.get('page_info').get('media_info').get('name')+res.get('page_info').get('object_id')
                 print('视频:',video_url)
-                # video_data = requests.get(video_url,headers=headers,verify=False,timeout=10)
-                # with open(f'{year}/{date}/{minute}/'+replace_invalid_chars(title)+'.mp4','wb') as f4:
-                    # f4.write(video_data.content)
+                video_data = requests.get(video_url,headers=headers,verify=False,timeout=10)
+                with open(f'video/'+dt_obj.strftime('%Y-%m-%d')+replace_invalid_chars(title)+'.mp4','wb') as f4:
+                    f4.write(video_data.content)
             save_history(line[0])
             # url = "https://mp.weixin.qq.com/s/S24LAiMtAfdGS9XM0ZMU2A"
             # 查看当前 桌面视图大小 https://miyakogi.github.io/pyppeteer/reference.html
@@ -191,7 +199,7 @@ def main(uid):
             #     os.mkdir('failed')
             # shutil.copy(name, 'failed')
             # Navigation Timeout Exceeded: 30000 ms exceeded
-            # print('下载失败',e,line[0])#;raise Exception("抓取失败了："+line[0])
+            print('下载失败',e,line[0])#;raise Exception("抓取失败了："+line[0])
     # break
     # htmls += [name for name in files if name.endswith(".html")]
     # await browser.close()
@@ -372,7 +380,73 @@ def mainData(uid):
     content+='</body></html>'
     with open(str(uid)+'.html', 'w', encoding='utf-8') as f:
         f.write(content) 
-mainData(uid)
+def main3(uid):
+    f = open(f'{uid}.csv', encoding='UTF8')
+    csv_reader = csv.reader(f)
+    num = 0
+    history = get_history()
+    for line in csv_reader:
+        if line[0] in history:
+            print('已经下载过:'+line[0])
+            continue
+        time.sleep(random.randint(2, 6))
+        if num>10:
+            break
+        if '微博' in line[0]:
+            continue
+        num +=1
+        try:
+            m=re.search(r'https://www\.weibo\.com/\d+/(.*)',line[0]).group(1)
+            # mid=reverse_cut_to_length(m, base62_decode, 4, 7)
+            # url2 =f'https://m.weibo.cn/detail/{mid}'
+            url=f'https://weibo.com/ajax/statuses/show?id={m}&locale=zh-CN'#https://www.weibo.com/ajax/statuses/extend?id=5049927780796644
+            res = requests.get(html.unescape(url),proxies={'http': None,'https': None},verify=False, headers=headers).json()
+            # dt_obj = datetime.strptime(res['created_at'], '%a %b %d %H:%M:%S %z %Y')
+            # created_at = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
+            created_at=line[7];day=created_at.replace(':','：').replace(' ','-')
+            dt_obj = datetime.strptime(created_at, '%Y-%m-%d %H:%M')
+            date =  dt_obj.strftime('%m月%d日');year=created_at[0:4];minute=created_at[11:16].replace(':','：')
+            content = res['text_raw']
+            # if res['isLongText']:
+            #     content = requests.get(f'https://weibo.com/ajax/statuses/longtext?id={mid}',proxies={'http': None,'https': None},verify=False, headers=headers).json()['data']['longTextContent']
+            if not os.path.exists(year):
+                os.mkdir(year)
+            if not os.path.exists(f'{year}/{date}'):
+                os.mkdir(f'{year}/{date}')
+            if not os.path.exists(f'{year}/{date}/{minute}'):
+                os.mkdir(f'{year}/{date}/{minute}')
+            # if not os.path.exists('doc'):
+                # os.mkdir('doc')
+            with open(f'{year}/{date}/{minute}/{m}.txt', 'a+', encoding='utf-8') as f2:
+                f2.write(content)
+            document = Document()
+            document.add_heading(created_at, 0)
+            document.add_paragraph(content)
+            # document.save(f'doc/{day}.docx')
+            document.save(f'{year}/{date}/{minute}/{m}.docx')
+            print('开始下载',line[0],created_at)
+            print(content)
+            if res['pic_num'] > 0:
+                # if not os.path.exists(f'{date}/image'):
+                #     os.mkdir(f'{date}/image')
+                for j,k in res['pic_infos'].items():
+                    print('图片:',k['largest']['url'])
+                    img_data = requests.get(k['largest']['url'].replace('/large/','/oslarge/'),headers=headers,timeout=5)
+                    with open(f'{year}/{date}/{minute}/'+j+'.jpg','wb') as f3:
+                        f3.write(img_data.content)
+            if 'page_info' in res and 'media_info' in res.get('page_info') and 'playback_list' in res.get('page_info').get('media_info'):
+                # if not os.path.exists(f'{date}/video'):
+                    # os.mkdir(f'{date}/video')
+                video_url = res.get('page_info').get('media_info').get('playback_list')[0]['play_info']['url']
+                title=res.get('page_info').get('media_info').get('name')+res.get('page_info').get('object_id')
+                print('视频:',video_url)
+                video_data = requests.get(video_url,headers=headers,verify=False,timeout=10)
+                with open(f'{year}/{date}/{minute}/'+replace_invalid_chars(title)+'.mp4','wb') as f4:
+                    f4.write(video_data.content)
+            save_history(line[0])
+        except Exception as e:
+            pass
+main(uid)
 def calculate_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()

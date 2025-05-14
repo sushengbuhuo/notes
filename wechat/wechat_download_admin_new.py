@@ -96,6 +96,9 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                     fail = 1
             for item in publish_info['appmsgex']:
                 try:
+                    # if item['itemidx'] !=1:
+                    #     print('过滤',item['title'],item['link'])
+                    #     continue
                     # if item['update_time'] > 1645113602:
                     #     continue
                     # if item['update_time'] < 1672329600:

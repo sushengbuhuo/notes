@@ -666,6 +666,10 @@ class Weibo(object):
                         if weibo['id'] in self.weibo_id_list:
                             continue
                         publish_time = self.str_to_time(weibo['publish_time'])
+                        dt = datetime.strptime(weibo['publish_time'], '%Y-%m-%d %H:%M')
+                        # if weibo['publish_time'][8:10] != '01':
+                            # print("时间过滤:",weibo['publish_time'])
+                            # continue
                         since_date = self.str_to_time(
                             self.user_config['since_date'])
                         if publish_time > self.str_to_time(self.user_config['end_date']) :
@@ -1023,7 +1027,7 @@ class Weibo(object):
         """获取微博信息"""
         try:
             url = 'https://weibo.cn/%s' % (self.user_config['user_uri'])
-            selector = self.handle_html(url)
+            selector = self.handle_html(url);print(url,selector)
             self.get_user_info(selector)  # 获取用户昵称、微博数、关注数、粉丝数
             page_num = self.get_page_num(selector)  # 获取微博总页数
             wrote_num = 0
@@ -1043,7 +1047,7 @@ class Weibo(object):
                 # 制会自动解除)，加入随机等待模拟人的操作，可降低被系统限制的风险。默
                 # 认是每爬取1到5页随机等待6到10秒，如果仍然被限，可适当增加sleep时间
                 if (page - page1) % random_pages == 0 and page < page_num:
-                    sleep(random.randint(6, 10))
+                    sleep(random.randint(8, 10))
                     page1 = page
                     random_pages = random.randint(1, 5)
 
@@ -1114,15 +1118,16 @@ def general_eda(csv_fp):
 
 def main():
     try:
-        print('本工具更新于2023年12月28日')
+        print('本工具更新于2023年12月22日')
         uid = input('请输入微博uid：')
         is_filter = int(input('是否只抓取原创微博：'))
         since_date = input('请输入开始时间，比如2020-01-01：')
         end_date = input('请输入结束时间，比如2023-01-01：')
         pic_download = int(input('是否下载图片：'))
-        video_download = int(input('是否下载视频：'))
-        cookie = input('请输入微博cookie：')
-        # cookie=''
+        video_download = int(input('是否下载视频：'));
+        # video_download=0;pic_download=0;end_date='2024-05-01';since_date='2022-02-01';is_filter=0;uid='5044281310'
+        # cookie = input('请输入微博cookie：')
+        cookie='_T_WM=27720379996; XSRF-TOKEN=5cdbad; WEIBOCN_FROM=1110006030; SCF=Agr32oDI4wg5Xuy9gI_9Dse5rePrU7Z7XD3jc0iYQhjz3uGsXaIdEC7U8wkWACDrw0FT1U36ibG33-x_lkBRlWI.; SUB=_2A25FGGxPDeRhGeNG7FoQ9CjKyT6IHXVmVOGHrDV6PUJbktAYLUnakW1NSxKupHdBtNTSV7tReFTDOUGN8kMrLNtL; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WW99FVYO.z1mi3U4juCgVa-5JpX5KMhUgL.Fo-RS0npShqceoz2dJLoI0YLxKqL1KMLBoqLxK-L1h-L1h.LxK-LBozL1h2LxKqL1-eL1hnLxKML1-2L1hBLxK-LBo.LBoBLxKnLB.BLB--t; SSOLoginState=1746672671; ALF=1749264671; MLOGIN=1; mweibo_short_token=a228f672d6; M_WEIBOCN_PARAMS=luicode%3D20000174%26uicode%3D20000174'
         if uid == '':
             print('微博uid为空')
             os._exit(1)

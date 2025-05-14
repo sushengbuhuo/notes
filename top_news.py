@@ -166,14 +166,33 @@ def zxki():
 				f.write(str(num)+'、'+html.unescape(item['title'])+ '\n\n')
 	with open(f'{fname3}.txt', 'a+', encoding='utf-8') as file:
 	    file.write('### 知乎热搜\n\n')
-	url='https://api.zxki.cn/api/jhrs?type=zhihu'
+	url='https://api.vvhan.com/api/hotlist/all'
 	response = requests.get(url,headers=headers).json()
-	if response['title'] == '知乎热榜':
+	# print('微博热搜',response['success'])
+	# if response['data'][0]['name'] == '微博':
+	# 	num=0
+	# 	for item in response['data'][0]['data']:
+	# 		num+=1
+	# 		if num > 15:
+	# 			continue
+	# 		with open(f'{fname}.md', 'a+', encoding='utf-8') as f:
+	# 			f.write(str(num)+'、[{}]'.format(html.unescape(item['title'])) + '({})'.format(item['url'])+ '\n\n')
+	# with open(f'{fname}.md', 'a+', encoding='utf-8') as file:
+	#     file.write('### 知乎热搜\n\n')
+	if response['data'][0]['name'] == '知乎热榜':
 		num=0
-		for item in response['data']:
+		for item in response['data'][0]['data']:
 			num+=1
 			with open(f'{fname3}.txt', 'a+', encoding='utf-8') as f:
-				f.write(str(num)+'、'+html.unescape(item['title'])+ '   '+item['url']+ '\n\n')
+				f.write(str(num)+'、'+html.unescape(item['title'])+ ' '+item['url']+ '\n\n')
+	# url='https://api.zxki.cn/api/jhrs?type=zhihu'
+	# response = requests.get(url,headers=headers).json()
+	# if response['title'] == '知乎热榜':
+	# 	num=0
+	# 	for item in response['data']:
+	# 		num+=1
+	# 		with open(f'{fname3}.txt', 'a+', encoding='utf-8') as f:
+	# 			f.write(str(num)+'、'+html.unescape(item['title'])+ '   '+item['url']+ '\n\n')
 	with open(f'{fname3}.txt', 'a+', encoding='utf-8') as file:
 	    file.write('### 抖音热搜\n\n')
 	url='https://api.zxki.cn/api/jhrs?type=douyin'
@@ -185,7 +204,8 @@ def zxki():
 			if num > 15:
 				continue
 			with open(f'{fname3}.txt', 'a+', encoding='utf-8') as f:
-				f.write(str(num)+'、'+html.unescape(item['title'])+ '   '+item['url']+ '\n\n')
+				# f.write(str(num)+'、'+html.unescape(item['title'])+ '   '+item['url']+ '\n\n')
+				f.write(str(num)+'、'+html.unescape(item['title'])+ '\n\n')
 	url='https://api.southerly.top/api/bing?format=json' # https://api.southerly.top/api/img
 	response = requests.get(url,headers=headers).json()
 	print('今日壁纸',response['success'])
