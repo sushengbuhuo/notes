@@ -141,7 +141,7 @@ def vvhan():
 		with open(f'{fname2}.md', 'a+', encoding='utf-8') as f:
 			f.write(str(num)+'、'+item['year']+'年'+item['title']+ '\n\n'+remove_html_tags(item['desc'])+ '。。。\n\n')
 def zxki():
-	url='https://api.southerly.top/api/60s?format=json' # https://api.southerly.top/api/60s?format=json alapi.cn https://github.com/vikiboss/60s  https://60s.viki.moe/60s?v2=1 https://api.zxki.cn/api/mrzb
+	url='https://api.zxki.cn/api/mrzb' # https://api.southerly.top/api/60s?format=json alapi.cn https://github.com/vikiboss/60s  https://60s.viki.moe/60s?v2=1 https://api.zxki.cn/api/mrzb
 	response = requests.get(url,headers=headers).json() #早报图片 https://api.03c3.cn/api/zb  https://api.03c3.cn/api/zb?type=jsonText https://github.com/ourongxing/newsnow
 	print('新闻早报',response.get('code'),response.get('status'))
 	num=0
