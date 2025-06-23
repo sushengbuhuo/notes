@@ -7,7 +7,7 @@ from os.path import basename
 from docx import Document, ImagePart
 requests.packages.urllib3.disable_warnings()
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
 def base62_encode(num, alphabet=ALPHABET):
     num = int(num)
     if num == 0:
@@ -142,7 +142,7 @@ def down():
     with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerows(res)
-with open('微博.csv', 'a+', encoding='utf-8-sig', newline='') as f:
+with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
     # f.write('链接'+','+'平台' +','+'日期' + ','+'标题'+ ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
     f.write('微博链接'+','+'mid'+','+'微博类型' +','+'微博内容'+ ','+'图片链接'+ ','+'发布来源'+ ','+'发布地区'+ ','+'发布时间' + ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
 def get_cookie():
@@ -154,7 +154,24 @@ def get_cookie():
 cookie = get_cookie()
 if not cookie:
     cookie=input('请输入微博cookie:')
-headers = {"User_Agent": user_agent,'cookie':cookie}
+headers = {
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'accept-language': 'zh-CN,zh;q=0.9',
+    'cache-control': 'max-age=0',
+    'priority': 'u=0, i',
+    'sec-ch-ua': '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'none',
+    'sec-fetch-user': '?1',
+    'upgrade-insecure-requests': '1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 FirePHP/0.7.4',
+    'cookie':cookie
+}
+
+# headers = {"User_Agent": user_agent,'cookie':cookie,'referer':'https://passport.weibo.com/'}
 url='https://www.weibo.com/ajax/profile/detail'
 res=requests.get(url, headers=headers, verify=False,timeout=5).json()
 if not res['data']['created_at']:
@@ -175,7 +192,7 @@ def timeAgo(day):
     return months_ago_first_day.strftime("%Y-%m-%d %H:%M:%S")
 def data(uid,page,since_id,month):
     url =f'https://www.weibo.com/ajax/statuses/mymblog?uid={uid}&page={page}&feature=0&since_id={since_id}'
-    print(f'开始第{page}页',url)
+    # print(f'开始第{page}页',url)
     res=requests.get(url, headers=headers, verify=False,timeout=5).json()
     if not res["data"]['list']:
         print(res)
@@ -189,7 +206,7 @@ def data(uid,page,since_id,month):
         top = res["data"]['list'][0].get('isTop',0)
         start=int(date_object.timestamp());
         if top == 0 and t < start:
-            print('提前结束',res["data"]['list'][0]['created_at'],start)
+            # print('提前结束',res["data"]['list'][0]['created_at'],start)
             return False
         for v in res["data"]['list']:
             if 'deleted' in v and v['deleted'] == 1:
@@ -198,7 +215,7 @@ def data(uid,page,since_id,month):
             formatted_datetime = parsed_datetime.strftime("%m月%d日")
             timestamp = int(time.mktime(parsed_datetime.timetuple()))
             if timestamp < start:
-                print('提前结束2',v['created_at'],start)
+                # print('提前结束2',v['created_at'],start)
                 continue
             print(parsed_datetime.strftime("%Y-%m-%d %H:%M:%S"),v['mid'],v['text_raw'])
             soup = BeautifulSoup(v['source'], 'html.parser')
@@ -211,7 +228,7 @@ def data(uid,page,since_id,month):
                 weibo_type='转发'
             if v['user']['idstr'] != uid:
                 weibo_type='快转'
-            with open('微博.csv', 'a+', encoding='utf-8-sig', newline='') as f:
+            with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
                 # f.write('https://m.weibo.cn/detail/'+v['mid']+','+'微博'+','+formatted_datetime +','+trimName(v['text_raw']) +','+str(v['reads_count']) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
                 f.write(f'https://www.weibo.com/{uid}/'+v['mblogid']+','+v['mid']+','+weibo_type+','+trimName(v['text_raw']) +','+pics+','+soup.get_text()+','+v.get('region_name','')+','+parsed_datetime.strftime("%Y-%m-%d %H:%M") +','+str(v.get('reads_count',0)) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
         if res["data"]['since_id'] == 0:
