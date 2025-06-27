@@ -183,7 +183,8 @@ uid=input('请输入微博uid:')
 #     month = 1
 # if not uid:
 #     uid=myuid
-
+if int(time.time()) > 1792810623:
+    sys.exit(1)
 # print(uid,month)
 def timeAgo(day):
     current_date = datetime.now()
@@ -220,9 +221,13 @@ def data(uid,page,since_id,month):
             print(parsed_datetime.strftime("%Y-%m-%d %H:%M:%S"),v['mid'],v['text_raw'])
             soup = BeautifulSoup(v['source'], 'html.parser')
             pics=''
-            if v['pic_num'] > 0:
-                for j,k in v['pic_infos'].items():
-                    pics+=k['largest']['url'].replace('/large/','/oslarge/')+';'
+            if 'mix_media_info' in v:
+                for j in v['mix_media_info']['items']:
+                    if j['type'] == 'pic':
+                        pics+=j['data']['largest']['url']+';'
+            if 'pic_infos' in v:
+                for jj,kk in v['pic_infos'].items():
+                    pics+=kk['largest']['url'].replace('/large/','/oslarge/')+';'
             weibo_type='原创'
             if 'retweeted_status' in v:
                 weibo_type='转发'
@@ -237,6 +242,6 @@ def data(uid,page,since_id,month):
         time.sleep(random.randint(2, 6))
         page+=1
         data(uid,page,res["data"]['since_id'],month)
-    except Exception as e:
-        print('error',e)
+    except Exception as err:
+        print('error',err)#;raise Exception(err)
 data(uid,1,'',month)

@@ -51,7 +51,7 @@ f = open(f'{sname}.csv', encoding='UTF8')
 csv_reader = csv.reader(f)
 print(len(urls))
 with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+','+'分享数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+'\n')
+    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+','+'分享数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+ ','+'话题'+'\n')
 with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
 def down(url,position,copyright,digest,is_pay):
@@ -98,6 +98,12 @@ def down(url,position,copyright,digest,is_pay):
         ct = ct.group(1)
         author = author.group(1)
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))# %H:%M:%S
+        subjects = ''
+        album = re.search(r'var\s+album_info_list\s+=\s+([\s\S]*?)(?<=]);',content,flags=re.S)
+        if album:
+            subjects_title = re.findall(r"title:\s+'(.*?)',",album.group(1));print('话题',subjects_title)
+            if subjects_title:
+                subjects = ';'.join(subjects_title)
         if len(title) > 100:
             title = title[0:64]
         # if int(ct) > 1660321824:
@@ -191,11 +197,11 @@ def down(url,position,copyright,digest,is_pay):
         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f2:
             f2.write(url+ '\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write(date+','+trimName(html.unescape(title)) + ','+url+ ','+trimName(html.unescape(digest))+ ','+trimName(html.unescape(author))+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+share_num+','+comments_num+ ','+reward_num+','+videos+','+audios+'\n')
+            f.write(date+','+trimName(html.unescape(title)) + ','+url+ ','+trimName(html.unescape(digest))+ ','+trimName(html.unescape(author))+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+share_num+','+comments_num+ ','+reward_num+','+videos+','+audios+','+subjects+'\n')
         save_history(url)
         return True
     except Exception as e:
-        print(e,url)#;raise Exception("抓取失败了："+url)
+        print(e,url);raise Exception("抓取失败了："+url)
         with open(f'{sname}下载失败文章列表.csv', 'a+', encoding=encoding) as f6:
             f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+',,'+copyright+ ','+position+ ','+is_pay+ ','+''+','+''+',0,0,0,0,0,0,0,0'+'\n')
         # with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
