@@ -278,14 +278,21 @@ def main2(uid):
             content+=f"<h1>发布时间:{created_at}</h1><h3>微博链接:{line[0]}</h3><p>{text}</p>"
             if line[2] and line[2] != '无':
                 pics =line[2].split(',')
+                if ';' in line[2]:
+                    pics =line[2].split(';')
                 if len(pics) > 0:
-                    # if not os.path.exists(f'image'):
-                    #     os.mkdir(f'image')
+                    if not os.path.exists(f'image'):
+                        os.mkdir(f'image')
                     for item in pics:
                         print('图片:',item)
+                        if not item:
+                            continue
+                        filename = os.path.basename(item).split('.')[0]
                         image=item.replace('/large/','/oslarge/').replace('https','http')
+                        # img_data = requests.get(image,headers=headers,timeout=5)
+                        # with open('image/'+dt_obj.strftime('%Y-%m-%d')+'-'+mid+'-'+filename+'.jpg','wb') as f3:
+                            # f3.write(img_data.content)
                         content+=f'<img src="{image}" referrerPolicy="no-referrer"><br>'
-                        # filename = os.path.basename(item).split('.')[0]
                         # # img_data = requests.get(item.replace('/large/','/orj360/'),headers=headers,timeout=5)
                         # img_data = requests.get(item,headers=headers,timeout=5)
                         # with open(f'image/'+mid+'-'+filename+'.jpg','wb') as f3:
@@ -304,7 +311,7 @@ def main2(uid):
             print(text)
             save_history(line[0])
         except Exception as e:
-            print(e)
+            print(e);raise Exception(e)
     # break
     # htmls += [name for name in files if name.endswith(".html")]
     content+='</body></html>'
@@ -446,7 +453,7 @@ def main3(uid):
             save_history(line[0])
         except Exception as e:
             pass
-main(uid)
+main2(uid)
 def calculate_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()

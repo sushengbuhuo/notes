@@ -142,9 +142,7 @@ def down():
     with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerows(res)
-with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
-    # f.write('链接'+','+'平台' +','+'日期' + ','+'标题'+ ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
-    f.write('微博链接'+','+'mid'+','+'微博类型' +','+'微博内容'+ ','+'图片链接'+ ','+'发布来源'+ ','+'发布地区'+ ','+'发布时间' + ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
+
 def get_cookie():
     cookie = ''
     if os.path.exists('cookie.txt'):
@@ -179,10 +177,14 @@ if not res['data']['created_at']:
 # myuid=re.search(r'.*\?uid=(\d+)',res['data']['verified_url']).group(1)
 month = 1
 uid=input('请输入微博uid:')
+print('本工具更新于2025年7月1日')
 # if uid != "" and uid != myuid:
 #     month = 1
 # if not uid:
 #     uid=myuid
+with open(f'{uid}微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
+    # f.write('链接'+','+'平台' +','+'日期' + ','+'标题'+ ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
+    f.write('微博链接'+','+'微博内容'+','+'图片链接' +','+'mid'+ ','+'微博类型'+ ','+'发布来源'+ ','+'发布地区'+ ','+'发布时间' + ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
 if int(time.time()) > 1792810623:
     sys.exit(1)
 # print(uid,month)
@@ -207,8 +209,8 @@ def data(uid,page,since_id,month):
         top = res["data"]['list'][0].get('isTop',0)
         start=int(date_object.timestamp());
         if top == 0 and t < start:
-            # print('提前结束',res["data"]['list'][0]['created_at'],start)
-            return False
+            print('提前结束',res["data"]['list'][0]['created_at'],start)
+            # return False
         for v in res["data"]['list']:
             if 'deleted' in v and v['deleted'] == 1:
                 continue
@@ -216,8 +218,8 @@ def data(uid,page,since_id,month):
             formatted_datetime = parsed_datetime.strftime("%m月%d日")
             timestamp = int(time.mktime(parsed_datetime.timetuple()))
             if timestamp < start:
-                # print('提前结束2',v['created_at'],start)
-                continue
+                print('提前结束2',v['created_at'],start)
+                # continue
             print(parsed_datetime.strftime("%Y-%m-%d %H:%M:%S"),v['mid'],v['text_raw'])
             soup = BeautifulSoup(v['source'], 'html.parser')
             pics=''
@@ -233,9 +235,9 @@ def data(uid,page,since_id,month):
                 weibo_type='转发'
             if v['user']['idstr'] != uid:
                 weibo_type='快转'
-            with open('微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
+            with open(f'{uid}微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
                 # f.write('https://m.weibo.cn/detail/'+v['mid']+','+'微博'+','+formatted_datetime +','+trimName(v['text_raw']) +','+str(v['reads_count']) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
-                f.write(f'https://www.weibo.com/{uid}/'+v['mblogid']+','+v['mid']+','+weibo_type+','+trimName(v['text_raw']) +','+pics+','+soup.get_text()+','+v.get('region_name','')+','+parsed_datetime.strftime("%Y-%m-%d %H:%M") +','+str(v.get('reads_count',0)) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
+                f.write(f'https://www.weibo.com/{uid}/'+v['mblogid']+','+trimName(v['text_raw'])+','+pics+','+v['mid'] +','+weibo_type+','+soup.get_text()+','+v.get('region_name','')+','+parsed_datetime.strftime("%Y-%m-%d %H:%M") +','+str(v.get('reads_count',0)) + ','+str(v['reposts_count'])+ ','+str(v['comments_count'])+ ','+str(v['attitudes_count'])+'\n')
         if res["data"]['since_id'] == 0:
             print('结束了',res["data"]['since_id'])
             return False
