@@ -121,9 +121,11 @@ def video(res, headers,date,title,article_url,duration):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('本工具更新于2025年2月20日，获取最新版本请关注公众号苏生不惑')
+print('本工具更新于2025年7月5日，获取最新版本请关注公众号 苏生不惑')
 # 视频 https://mp.weixin.qq.com/s/goqAKIypCsI4vVLjdhmXSg
 # 音频 https://mp.weixin.qq.com/s/uzRSOhiH3XbS3Vwr7jGLWg
+if int(time.time()) > 1767196800:
+    sys.exit(1)
 url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
@@ -146,7 +148,7 @@ urls = [x for x in urls if x != '']
 print('文章数量：',len(urls))
 encoding = 'utf-8-sig'
 with open(f'文章列表.csv', 'a+', encoding=encoding) as f:
-    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+'\n')
+    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+','+'文章封面'+'\n')
 num=0
 if not os.path.exists('html'):
     os.mkdir('html')
@@ -166,11 +168,14 @@ for mp_url in urls:
     try:
         title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
+        cover_url = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content)
         if not title:
            title = re.search(r'window\.msg_title = \'(.*?)\'', content)
         if not ct:
            ct = re.search(r'window\.ct = \'(.*?)\'', content)
         # print(cover,title,ct)
+        if cover_url:
+            cover_url = cover_url.group(1)
         title = title.group(1)
         if len(title) > 100:
             title = title[0:64]
@@ -183,7 +188,7 @@ for mp_url in urls:
         images(res,headers,date,title)
         save_history(html.unescape(mp_url))
         with open(f'文章列表.csv', 'a+', encoding=encoding) as f:
-            f.write(date+','+trimName(html.unescape(title)) + ','+mp_url+'\n')
+            f.write(date+','+trimName(html.unescape(title)) + ','+mp_url+ ','+cover_url+'\n')
         with open('html/'+date+'_'+replace_invalid_chars(title)+'.html', 'w', encoding='utf-8') as f:
             f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
