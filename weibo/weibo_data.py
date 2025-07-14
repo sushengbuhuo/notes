@@ -217,6 +217,8 @@ def data(uid,page,since_id,month):
             parsed_datetime = datetime.strptime(v['created_at'], "%a %b %d %H:%M:%S %z %Y")
             formatted_datetime = parsed_datetime.strftime("%m月%d日")
             timestamp = int(time.mktime(parsed_datetime.timetuple()))
+            if timestamp > 1743438168 or timestamp < 1740759768:
+                continue
             if timestamp < start:
                 print('提前结束2',v['created_at'],start)
                 # continue

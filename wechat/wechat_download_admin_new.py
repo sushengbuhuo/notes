@@ -10,6 +10,19 @@ def replace_invalid_chars(filename):
     return filename
 def trimName(name):
     return name.replace(',', '，').replace('\u200b', ' ').replace('\u355b', ' ').replace('\u0488', ' ').replace('\u0488', ' ').replace('\n', ' ').replace('\r', ' ').replace('\r\n', ' ').replace('"', '“').replace('\t', ' ')
+def get_history():
+    history = []
+    with open('wechat_list.txt', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        for line in lines:
+            history.append(line.strip())
+    return history
+
+def save_history(url):
+    with open('wechat_list.txt', 'a+') as f:
+        f.write(url.strip() + '\n')
+urls_history = get_history()
 msg_url = "https://mp.weixin.qq.com/cgi-bin/appmsgpublish"
 Cookie = ""
 headers = {
@@ -109,6 +122,9 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                     date = time.strftime('%Y-%m-%d', time.localtime(item['update_time'])) # %H:%M:%S
                     title = item['title']
                     link = html.unescape(item['link'])
+                    if link in urls_history:
+                       print('已经下载过：',link)
+                       continue
                     nums = nums+1
                     if is_down_copyright == 1 and item['copyright_type'] != 1:
                        print('过滤链接',link,date)
@@ -187,6 +203,7 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                         f2.write('[{}]'.format(date+'_'+html.unescape(item['title'])) + '({})'.format(link)+ '\n\n'+'文章简介:'+html.unescape(item['digest'])+ '\n\n'+'文章作者:'+author+ '\n\n')
                     with open(f'{fname}.txt', 'a+', encoding='utf-8') as f3:
                         f3.write(link+'\n')
+                    save_history(link)
                 except Exception as e:
                     print('publish_info错误信息',e);raise Exception(e)
         except Exception as err:
