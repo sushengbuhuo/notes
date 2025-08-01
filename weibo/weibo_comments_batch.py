@@ -1,4 +1,4 @@
-import requests,re,csv,time,random,urllib3
+import requests,re,csv,time,random,urllib3,os
 from bs4 import BeautifulSoup
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from datetime import datetime
@@ -30,7 +30,7 @@ def comments(m,mid,count,headers,max_id):
 			# source = soup.text#删除HTML标签
 			source = v.get('source','')
 			total_number = v.get('total_number',0)
-			# print(v['text_raw'])
+			print(v['text_raw'])
 			with open(f'comments/{m}.csv', 'a+', encoding='utf-8-sig') as f:
 				f.write(trimName(v['user']['screen_name'])+','+trimName(v['user']['idstr']) + ','+formatted_datetime+ ','+trimName(v['text_raw'])+ ','+source+ ','+str(total_number)+ ','+str(v['like_counts'])+'\n')
 			if total_number > 0:
@@ -58,7 +58,7 @@ def commentsChild(m,mid,midChild,count,headers,max_id):
 			# source = soup.text#删除HTML标签
 			source = v.get('source','')
 			total_number = v.get('total_number',0)
-			# print(v['text_raw'])
+			print(v['text_raw'])
 			with open(f'comments/{m}.csv', 'a+', encoding='utf-8-sig') as f:
 				f.write(trimName(v['user']['screen_name'])+','+trimName(v['user']['idstr']) + ','+formatted_datetime+ ','+trimName(v['text_raw'])+ ','+source+ ','+str(total_number)+ ','+str(v['like_counts'])+'\n')
 		except Exception as e:
@@ -70,17 +70,36 @@ def commentsChild(m,mid,midChild,count,headers,max_id):
 	commentsChild(m,mid,midChild,count,headers,res['max_id'])		
 	return True
 count = 20
+url=input('请输入微博连接：')
 # mid=input('请输入微博mid：')
 # if not mid:
 # 	sys.exit('mid为空')
-cookie=input('请输入微博cookie：')
+# cookie=input('请输入微博cookie：')
+def get_cookie():
+    cookie = ''
+    if os.path.exists('cookie.txt'):
+        with open('cookie.txt', encoding='utf-8') as f:
+            cookie = f.read().replace('\n','')
+    return cookie
+cookie = get_cookie()
 if not cookie:
 	sys.exit('cookie为空')
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 FirePHP/0.7.4',
-        'Cookie': cookie
-               # 'Referer': 'https://m.weibo.cn/detail/4497103885505673',
-               # 'Sec-Fetch-Mode': 'navigate'
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'zh-CN,zh;q=0.9',
+    'client-version': 'v2.47.95',
+    'priority': 'u=1, i',
+    'referer': 'https://weibo.com/7737396735/PlhC3g0As?pagetype=detail',
+    'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'server-version': 'v2025.08.01.1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    'x-requested-with': 'XMLHttpRequest',
+    'cookie':cookie
     }
 if not os.path.exists('comments'):
     os.mkdir('comments')
@@ -120,19 +139,22 @@ def reverse_cut_to_length(content, code_func, cut_num=4, fill_num=7):
             s = (fill_num - len(s)) * '0' + s
         result.append(s)
     return ''.join(result)
+m=re.search(r'https://www\.weibo\.com/\d+/(.*)',url).group(1)
+mid=reverse_cut_to_length(m, base62_decode, 4, 7)
+comments(m,mid,count,headers,0)
 # reverse_cut_to_length('5002742349956958', base62_encode, 7, 4)
 # print(reverse_cut_to_length('O19l8FMg6', base62_decode, 4, 7))
-f = open(f'1744395855.csv', encoding='utf-8-sig')
-csv_reader = csv.reader(f)
-num=0
-for line in csv_reader:
-    if line[0] == "微博链接":
-        continue
-    num+=1
-    print(f'第{num}条微博链接:',line[0])
-    m=re.search(r'https://www\.weibo\.com/\d+/(.*)',line[0]).group(1)
-    mid=reverse_cut_to_length(m, base62_decode, 4, 7)
-    comments(m,mid,count,headers,0)
-    time.sleep(random.randint(1, 2))
+# f = open(f'5652018762.csv', encoding='utf-8-sig')
+# csv_reader = csv.reader(f)
+# num=0
+# for line in csv_reader:
+#     if line[0] == "微博链接":
+#         continue
+#     num+=1
+#     print(f'第{num}条微博链接:',line[0])
+#     m=re.search(r'https://www\.weibo\.com/\d+/(.*)',line[0]).group(1)
+#     mid=reverse_cut_to_length(m, base62_decode, 4, 7)
+#     comments(m,mid,count,headers,0)
+#     time.sleep(random.randint(1, 2))
     # break
 print('抓取结束')

@@ -153,19 +153,20 @@ cookie = get_cookie()
 if not cookie:
     cookie=input('请输入微博cookie:')
 headers = {
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'cache-control': 'max-age=0',
-    'priority': 'u=0, i',
-    'sec-ch-ua': '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
+    'client-version': 'v2.47.95',
+    'priority': 'u=1, i',
+    'referer': 'https://weibo.com/7737396735/PlhC3g0As?pagetype=detail',
+    'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
     'sec-ch-ua-mobile': '?0',
     'sec-ch-ua-platform': '"Windows"',
-    'sec-fetch-dest': 'document',
-    'sec-fetch-mode': 'navigate',
-    'sec-fetch-site': 'none',
-    'sec-fetch-user': '?1',
-    'upgrade-insecure-requests': '1',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 FirePHP/0.7.4',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'server-version': 'v2025.08.01.1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    'x-requested-with': 'XMLHttpRequest',
     'cookie':cookie
 }
 
@@ -176,8 +177,8 @@ if not res['data']['created_at']:
     sys.exit(1)
 # myuid=re.search(r'.*\?uid=(\d+)',res['data']['verified_url']).group(1)
 month = 1
-uid=input('请输入微博uid:')
-print('本工具更新于2025年7月1日')
+uid=input('公众号 苏生不惑 提示你，请输入微博uid:')
+print('本工具更新于2025年8月1日')
 # if uid != "" and uid != myuid:
 #     month = 1
 # if not uid:
@@ -209,19 +210,19 @@ def data(uid,page,since_id,month):
         top = res["data"]['list'][0].get('isTop',0)
         start=int(date_object.timestamp());
         if top == 0 and t < start:
-            print('提前结束',res["data"]['list'][0]['created_at'],start)
-            # return False
+            # print('提前结束',res["data"]['list'][0]['created_at'],start)
+            return False
         for v in res["data"]['list']:
             if 'deleted' in v and v['deleted'] == 1:
                 continue
             parsed_datetime = datetime.strptime(v['created_at'], "%a %b %d %H:%M:%S %z %Y")
             formatted_datetime = parsed_datetime.strftime("%m月%d日")
             timestamp = int(time.mktime(parsed_datetime.timetuple()))
-            if timestamp > 1743438168 or timestamp < 1740759768:
-                continue
+            # if timestamp > 1735660800 or timestamp < 1740759768:
+            #     continue
             if timestamp < start:
-                print('提前结束2',v['created_at'],start)
-                # continue
+                # print('提前结束2',v['created_at'],start)
+                continue
             print(parsed_datetime.strftime("%Y-%m-%d %H:%M:%S"),v['mid'],v['text_raw'])
             soup = BeautifulSoup(v['source'], 'html.parser')
             pics=''
