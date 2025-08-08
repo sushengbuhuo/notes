@@ -137,8 +137,8 @@ links = re.findall('data-link="(.*)"',response.text)
 titles = re.findall('data-title="(.*)"',response.text)
 itemidxs = re.findall('data-itemidx="(.*)"',response.text)
 # print(msgids,links,titles)
-# if not os.path.exists('cover'):
-# 	os.mkdir('cover')
+if not os.path.exists('cover'):
+	os.mkdir('cover')
 if not os.path.exists('html'):
 	os.mkdir('html')
 for i,j,k,g in zip(msgids,links,titles,itemidxs):

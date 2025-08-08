@@ -229,10 +229,10 @@ def data(uid,page,since_id,month):
             if 'mix_media_info' in v:
                 for j in v['mix_media_info']['items']:
                     if j['type'] == 'pic':
-                        pics+=j['data']['largest']['url']+';'
+                        pics+=j['data']['largest']['url'].replace(',','，')+';' #https://www.weibo.com/5737304133/LEzxk4GbI
             if 'pic_infos' in v:
                 for jj,kk in v['pic_infos'].items():
-                    pics+=kk['largest']['url'].replace('/large/','/oslarge/')+';'
+                    pics+=kk['largest']['url'].replace('/large/','/oslarge/').replace(',','，')+';'
             weibo_type='原创'
             if 'retweeted_status' in v:
                 weibo_type='转发'

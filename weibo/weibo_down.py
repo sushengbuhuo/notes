@@ -57,6 +57,7 @@ class Weibo(object):
         self.got_num = 0  # 存储爬取到的微博数
         self.weibo = []  # 存储爬取到的所有微博信息
         self.weibo_id_list = []  # 存储爬取到的所有微博id
+        self.header=config['header']
 
     def validate_config(self, config):
         """验证配置是否正确"""
@@ -116,7 +117,7 @@ class Weibo(object):
     def handle_html(self, url):
         """处理html"""
         try:
-            html = requests.get(url, cookies=self.cookie).content
+            html = requests.get(url, cookies=self.cookie, headers=self.header).content
             selector = etree.HTML(html)
             return selector
         except Exception as e:
@@ -508,7 +509,7 @@ class Weibo(object):
                     video_link = video_link.replace(
                         'm.weibo.cn/s/video/show', 'm.weibo.cn/s/video/object')
                     wb_info = requests.get(video_link,
-                                           cookies=self.cookie).json()
+                                           cookies=self.cookie, headers=self.header).json()
                     video_url = wb_info['data']['object']['stream'].get(
                         'hd_url')
                     if not video_url:
@@ -1151,6 +1152,23 @@ def main():
             "pic_download": pic_download,
             "video_download": video_download,
             "cookie": cookie,
+            'header':{
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'zh-CN,zh;q=0.9',
+    'client-version': 'v2.47.95',
+    'priority': 'u=1, i',
+    'referer': 'https://weibo.com/7737396735/PlhC3g0As?pagetype=detail',
+    'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'server-version': 'v2025.08.01.1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    'x-requested-with': 'XMLHttpRequest',
+    'cookie':cookie
+    }
         }
         wb = Weibo(config)
         wb.start()  # 爬取微博信息
