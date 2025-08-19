@@ -7,24 +7,55 @@ requests.packages.urllib3.disable_warnings()
 def trimName(name):
     return name.replace(' ', '').replace('|', '，').replace('\\', '，').replace('/', '，').replace(':', '，').replace('*', '，').replace('?', '，').replace('<', '，').replace('>', '，').replace('"', '，').replace('\n', '，').replace('\r', '，').replace(',', '，').replace('\u200b', '，').replace('\u355b', '，').replace('\u0488', '，').replace('•','')
 msg_url = "https://emcreative.eastmoney.com/FortuneApi/GuBaApi/common"
+msg_url = "https://gbapi.eastmoney.com/userpostlist/api/UserPost/CenterList"
 Cookie = ""
 headers = {
     "Cookie": Cookie,
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.44",
-    "Content-type":"application/json",
-    'Origin':'https://emcreative.eastmoney.com',
-    'Referer':'https://emcreative.eastmoney.com/app_fortune/article/index.html?postId=1401446226',
-    'Sec-Fetch-Dest':'empty',
-    'Sec-Fetch-Mode':'cors',
-    'Sec-Fetch-Site':"same-origin",
-    "sec-ch-ua":'"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
-    'sec-ch-ua-mobile':"?0",
-    'sec-ch-ua-platform':'"Windows"',
-    'Accept':'*/*',
-    'Accept-Language':'zh-CN,zh;q=0.9',
-    'Connection':'keep-alive',
+    'Accept': '*/*',
+    'Accept-Language': 'zh-CN,zh;q=0.9',
+    'Connection': 'keep-alive',
+    'Referer': 'https://emcreative.eastmoney.com/',
+    'Sec-Fetch-Dest': 'script',
+    'Sec-Fetch-Mode': 'no-cors',
+    'Sec-Fetch-Site': 'same-site',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 FirePHP/0.7.4',
+    'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
 }
-def down(page):
+def down(page,callback_param):
+	p=page+1
+	print(f'第{page}页')
+	params = {
+    'uid': '3825336190592976',
+    'onlyYt': '0',
+    'ctoken': '',
+    'utoken': '',
+    'deviceid': '172.30.66.125',
+    'version': '9001',
+    'product': 'Guba',
+    'plat': 'Wap',
+    'gtoken': '',
+    'type': '1',
+    'filterType': '0',
+    'noinlist': '0',
+    'p': str(page),
+    'ps': '10',
+    'callback_param': callback_param,
+	}
+	time.sleep(2)
+	# print(data)
+	res=requests.get(msg_url, headers=headers, params=params).json()
+	data=res.get('re','')
+	callback_param=res.get('callback_param','')
+	if not data:
+		return True
+	for i in data:
+		print(i['post_title'],i['post_publish_time'],i['post_id'])
+		with open(f'eastmoney.txt', 'a+', encoding='utf-8') as f3:
+			f3.write('https://caifuhao.eastmoney.com/news/'+str(i['post_id'])+'\n')
+	down(p,callback_param)
+def down2(page):
 	data1={'parm':f'ctoken=mdGfR6OXdEc4cii06HYA7-IMNL88s8KxN_Pg9iesJQqjcIyuHXu_nJwJymyL3m-0zXTx7sHwdIDsC9bNh71YM3VJ-NjilJHwuLKxXr2UI2KuZwOpPjMHscy20HTNvXSE_yA9RmguCNM-ZIqMnIJxsYnJUduXWZPkks_aSIeAs9Q&utoken=FobyicMgeV4XKdbUhrvvY0QBhrziMEAsJdkk7KmvNW1_zk6Y5Ux1mL0auEKqjwFCCSbWaLa8laGXziKTbxU-oWCXXLQmoJOjMF-iwlt7gI0FvnGue-KoLM0Nv5kNbGEmzg3r75A6-Aq4axT6obA-jBZuOAEymqI8DKZJZDhaa0nrpyNswEU-gUvQZul1JhUT1mAXKUaol6FH7WnX2AnLHvrgDS7RV3C1P4qd0AtdDFJcxssfzB3M8A134FQOjX-x3NhriP3zfR8Q_Izo9H8kbJVLF3dv61xu&deviceid=172.30.66.125&version=9001&product=Guba&plat=Wap&gtoken=&uid=2717094178652400&type=1&ps=10&p={page}','sumit':'form','type':'Post','url':'userpostlist/api/article/UserDynamicListV2'}
 	p=page+1
 	time.sleep(2)
@@ -51,8 +82,8 @@ def down(page):
 			raise Exception(err)
 			with open('html/'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
 				f.write(content)
-	down(p)
-down(1)
+	down2(p)
+down(1,'')
 # url='https://www.cdstm.cn/theme/kkxw/tyt/kxkkm_1/'
 # res=requests.get(url).text
 # audio=re.search(r'var audioList =\s+(.*?);',res).group(1)

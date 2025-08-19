@@ -68,9 +68,9 @@ def data(url):
 			print(data['note']['noteDetailMap'][note_id]['note'])
 			for key, value in data['note']['noteDetailMap'][note_id]['note']['video']['media']['stream'].items():
 				if len(value) > 0:
-					# video_data = requests.get(value[0]['masterUrl'],headers=headers)
-					# with open('video/'+ctime[0:10]+'_'+replace_invalid_chars(trimName(data['note']['noteDetailMap'][note_id]['note']['title']))+'.mp4','wb') as ff:
-						# ff.write(video_data.content)
+					video_data = requests.get(value[0]['masterUrl'],headers=headers)
+					with open('video/'+ctime[0:10]+'_'+replace_invalid_chars(trimName(data['note']['noteDetailMap'][note_id]['note']['title']))+'.mp4','wb') as ff:
+						ff.write(video_data.content)
 					break
 		images = ''
 		if len(data['note']['noteDetailMap'][note_id]['note']['imageList']) > 0:
@@ -79,10 +79,10 @@ def data(url):
 				# picUrl = f"https://sns-img-qc.xhscdn.com/{img['traceId']}"
 				images+=trimName(img['urlDefault'].replace('\u002F','/'))+"，"
 				num+=1
-				# img_data = requests.get(img['urlDefault'].replace('\u002F','/'),headers=headers)
-				# print('正在下载图片：'+img['urlDefault'].replace('\u002F','/'))
-				# with open('image/'+ctime[0:10]+'_'+replace_invalid_chars(trimName(data['note']['noteDetailMap'][note_id]['note']['title']))+'_'+str(num)+'.jpg','wb') as f6:
-					# f6.write(img_data.content)
+				img_data = requests.get(img['urlDefault'].replace('\u002F','/'),headers=headers)
+				print('正在下载图片：'+img['urlDefault'].replace('\u002F','/'))
+				with open('image/'+ctime[0:10]+'_'+replace_invalid_chars(trimName(data['note']['noteDetailMap'][note_id]['note']['title']))+'_'+str(num)+'.jpg','wb') as f6:
+					f6.write(img_data.content)
 		tags = ''
 		if len(data['note']['noteDetailMap'][note_id]['note']['tagList']) > 0:
 			for tag in data['note']['noteDetailMap'][note_id]['note']['tagList']:
