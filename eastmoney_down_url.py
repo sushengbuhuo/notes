@@ -40,7 +40,16 @@ def get_history():
         for line in lines:
             history.append(line.strip())
     return history
-
+def remove_html_tags(text):
+    # 匹配所有HTML标签的正则表达式
+    clean = re.compile('<.*?>')
+    # 替换匹配到的标签为空字符串
+    return re.sub(clean, '', text)
+def remove_html_tags2(text):
+    # 创建BeautifulSoup对象
+    soup = BeautifulSoup(text, "html.parser")
+    # 获取纯文本
+    return soup.get_text()
 def save_history(url):
     with open('eastmoney_history.txt', 'a+') as f:
         f.write(url.strip() + '\n')
@@ -55,15 +64,30 @@ def down(url):
         if url in urls_history:
             print('已经下载过：',url)
             return ''
-
+        cookies = {
+            'qgqp_b_id': '41a43a50e371d4c17faa9f2f2c044c04',
+            'fullscreengg': '1',
+            'fullscreengg2': '1',
+            'st_si': '13604433675777',
+            'st_asi': 'delete',
+            'cdcfh': '3825336190592976',
+            'st_pvi': '28039354014226',
+            'st_sp': '2024-02-26%2009%3A44%3A58',
+            'st_inirUrl': 'https%3A%2F%2Femcreative.eastmoney.com%2Fapp_fortune%2Fperson%2Findex.html',
+            'st_sn': '12',
+            'st_psi': '20250616182459833-119101302791-4917162286',
+        }
         html = requests.get(url, headers=headers,timeout=10).text;print(html)
         soup = BeautifulSoup(html, 'lxml')
         if 'guba.eastmoney.com' in url:
             content = re.search(r'<script>var post_article=(.*?)</script>',html).group(1)
             data=json.loads(content.replace('undefined','""'))
             content = data['post_content']
+            date=data['post_publish_time'][0:10]
             content = re.sub(r'alt', 'height="500"', content)
             title = data['post_title']
+            if not title:
+                title=remove_html_tags(data['post_content'])[:20]
         else:
             match=re.search(r'<span class="txt">.*?(\d{4})年(\d{2})月(\d{2})日.*?</span>',html,re.DOTALL)## 使用re.DOTALL让.匹配包括换行符在内的所有字符
             year, month, day = match.groups()
