@@ -30,9 +30,9 @@ class DownloadThread(QThread):
         
     def run(self):
         try:
-            self.update_status.emit("本工具由微信公众号 苏生不惑 开发，更新于2025年7月25日，获取所有微博数据微信联系sushengbuhuo")
-            # if int(time.time()) > 1755237426:
-            #     self.update_status.emit(f"未知错误，获取最新可用版本关注公众号 苏生不惑")
+            self.update_status.emit("本工具由微信公众号 苏生不惑 开发，更新于2025年9月25日，获取所有微博数据微信联系sushengbuhuo")
+            # if int(time.time()) > 1761373182:
+            #     self.update_status.emit(f"未知错误，获取最新可用版本关注公众号 苏生不惑 ，回复 微博")
             #     return
             self.update_status.emit("正在解析微博链接...")
             headers = {
@@ -70,7 +70,7 @@ class DownloadThread(QThread):
                     os.makedirs(dir_path)
                     self.update_status.emit(f"创建目录: {dir_path}")
             
-            # 下载图片
+            # 下载图片 https://weibo.com/1660925262/Q5KRBjkKR
             total_items = 0
             completed_items = 0
             
@@ -82,10 +82,43 @@ class DownloadThread(QThread):
                 for i, (j, k) in enumerate(pic_infos.items()):
                     img_url = k['largest']['url'].replace('/large/', '/oslarge/')
                     self.update_status.emit(f"正在下载图片 {i+1}/{len(pic_infos)}: {k['largest']['url']}")
-                    
+                    if k['type'] == 'livephoto':#https://weibo.com/6386087847/Q1uZVtDpf
+                        try:
+                            img_data = requests.get(k['video'], headers=headers, timeout=10)
+                            img_path = os.path.join(video_dir, self.replace_invalid_chars(f"{dt_obj.strftime('%Y-%m-%d')}-{mid}-{k['fid']}.mp4"))
+                            
+                            with open(img_path, 'wb') as f:
+                                f.write(img_data.content)
+                                
+                            completed_items += 1
+                            progress = int(completed_items / total_items * 100)
+                            self.update_total_progress.emit(progress)
+                            self.update_status.emit(f"livephoto下载完成")
+                            
+                        except Exception as e:
+                            self.update_status.emit(f"下载livephoto失败: {str(e)}")
+                            traceback.print_exc()
+                    ext='.jpg'
+                    if k['type'] == 'gif':
+                        ext='.gif'
+                        try:
+                            v_data = requests.get(k['video'], headers=headers, timeout=10)
+                            v_path = os.path.join(video_dir, self.replace_invalid_chars(f"{dt_obj.strftime('%Y-%m-%d')}-{mid}-{k['video_object_id']}.mp4"))
+                            self.update_status.emit(f"正在下载视频 {v_path}: {k['video']}")
+                            with open(v_path, 'wb') as f:
+                                f.write(v_data.content)
+                                
+                            completed_items += 1
+                            progress = int(completed_items / total_items * 100)
+                            self.update_total_progress.emit(progress)
+                            self.update_status.emit(f"视频下载完成")
+                            
+                        except Exception as e:
+                            self.update_status.emit(f"下载视频失败: {str(e)}")
+                            traceback.print_exc()
                     try:
                         img_data = requests.get(img_url, headers=headers, timeout=10)
-                        img_path = os.path.join(image_dir, f"{dt_obj.strftime('%Y-%m-%d')}{mid}{j}.jpg")
+                        img_path = os.path.join(image_dir, f"{dt_obj.strftime('%Y-%m-%d')}-{mid}-{j}{ext}")
                         
                         with open(img_path, 'wb') as f:
                             f.write(img_data.content)
@@ -98,7 +131,7 @@ class DownloadThread(QThread):
                     except Exception as e:
                         self.update_status.emit(f"下载图片失败: {str(e)}")
                         traceback.print_exc()
-            
+
             # 下载视频
             if 'page_info' in res and 'media_info' in res.get('page_info', {}) and \
                'playback_list' in res.get('page_info', {}).get('media_info', {}):
@@ -117,7 +150,7 @@ class DownloadThread(QThread):
                         self.update_status.emit(f"正在下载视频: {video_url}")
                         
                         try:
-                            video_path = os.path.join(video_dir, f"{dt_obj.strftime('%Y-%m-%d')}{title}.mp4")
+                            video_path = os.path.join(video_dir, f"{dt_obj.strftime('%Y-%m-%d')}-{title}.mp4")
                             
                             # 流式下载视频
                             response = requests.get(video_url, headers=headers, verify=False, stream=True, timeout=30)
@@ -143,7 +176,101 @@ class DownloadThread(QThread):
                         except Exception as e:
                             self.update_status.emit(f"下载视频失败: {str(e)}")
                             traceback.print_exc()
-            
+            # 图片和视频 https://weibo.com/1742566624/Q6bhCD1mR https://weibo.com/1727858283/Q69VVw1hu
+            if 'mix_media_info' in res and 'items' in res.get('mix_media_info', {}):
+                items_info = res['mix_media_info']['items']
+                for item in items_info:
+                    total_items += 1
+                    if item['type'] == 'pic':
+                        img_url = item['data']['largest']['url'].replace('/large/', '/oslarge/')
+                        self.update_status.emit(f"正在下载图片 : {item['data']['largest']['url']}")
+                        ext='.jpg'
+                        if item['data']['type'] == 'gif':#https://weibo.com/6554180184/Meqja1JiZ
+                            ext='.gif'
+                            try:
+                                v_data = requests.get(item['data']['video'], headers=headers, timeout=10)
+                                v_path = os.path.join(video_dir, self.replace_invalid_chars(f"{dt_obj.strftime('%Y-%m-%d')}-{mid}-{item['data']['video_object_id']}.mp4"))
+                                
+                                with open(v_data, 'wb') as f:
+                                    f.write(v_path.content)
+                                    
+                                completed_items += 1
+                                progress = int(completed_items / total_items * 100)
+                                self.update_total_progress.emit(progress)
+                                self.update_status.emit(f"视频下载完成")
+                                
+                            except Exception as e:
+                                self.update_status.emit(f"下载视频失败: {str(e)}")
+                                traceback.print_exc()
+                        try:
+                            img_data = requests.get(img_url, headers=headers, timeout=10)
+                            img_path = os.path.join(image_dir, f"{dt_obj.strftime('%Y-%m-%d')}-{mid}-{item['id']}{ext}")
+                            
+                            with open(img_path, 'wb') as f:
+                                f.write(img_data.content)
+                                
+                            completed_items += 1
+                            progress = int(completed_items / total_items * 100)
+                            self.update_total_progress.emit(progress)
+                            self.update_status.emit(f"图片下载完成")
+                            
+                        except Exception as e:
+                            self.update_status.emit(f"下载图片失败: {str(e)}")
+                            traceback.print_exc()
+                        if item['data']['type'] == 'livephoto':
+                            try:
+                                img_data = requests.get(item['data']['video'], headers=headers, timeout=10)
+                                img_path = os.path.join(video_dir, self.replace_invalid_chars(f"{dt_obj.strftime('%Y-%m-%d')}-{mid}-{item['data']['fid']}.mp4"))
+                                
+                                with open(img_path, 'wb') as f:
+                                    f.write(img_data.content)
+                                    
+                                completed_items += 1
+                                progress = int(completed_items / total_items * 100)
+                                self.update_total_progress.emit(progress)
+                                self.update_status.emit(f"livephoto下载完成")
+                                
+                            except Exception as e:
+                                self.update_status.emit(f"下载livephoto失败: {str(e)}")
+                                traceback.print_exc()
+                    if item['type'] == 'video':
+                        media_info = item['data']['media_info']
+                        playback_list = media_info.get('playback_list', [])
+                        video_info = playback_list[0].get('play_info', {})
+                        video_url = video_info.get('url')
+                        
+                        if video_url:
+                            title = f"{media_info.get('name', 'video')}{item['data'].get('object_id')}"
+                            title = self.replace_invalid_chars(title)
+                            self.update_status.emit(f"正在下载视频: {video_url}")
+                            
+                            try:
+                                video_path = os.path.join(video_dir, f"{dt_obj.strftime('%Y-%m-%d')}-{title}.mp4")
+                                
+                                # 流式下载视频
+                                response = requests.get(video_url, headers=headers, verify=False, stream=True, timeout=30)
+                                total_size = int(response.headers.get('content-length', 0))
+                                block_size = 1024
+                                self.update_progress.emit(0)
+                                
+                                with open(video_path, 'wb') as f:
+                                    for data in response.iter_content(block_size):
+                                        if not self.isRunning():
+                                            self.update_status.emit("下载已取消")
+                                            return
+                                            
+                                        f.write(data)
+                                        if total_size > 0:
+                                            progress = int(len(data) / total_size * 100)
+                                            self.update_progress.emit(progress)
+                                
+                                completed_items += 1
+                                progress = int(completed_items / total_items * 100)
+                                self.update_total_progress.emit(progress)
+                                self.update_status.emit("视频下载完成")
+                            except Exception as e:
+                                self.update_status.emit(f"下载视频失败: {str(e)}")
+                                traceback.print_exc()
             if total_items == 0:
                 self.update_status.emit("未找到可下载的内容")
             else:
