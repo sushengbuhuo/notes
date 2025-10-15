@@ -186,8 +186,8 @@ print('本工具更新于2025年8月1日')
 with open(f'{uid}微博数据.csv', 'a+', encoding='utf-8-sig', newline='') as f:
     # f.write('链接'+','+'平台' +','+'日期' + ','+'标题'+ ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
     f.write('微博链接'+','+'微博内容'+','+'图片链接' +','+'mid'+ ','+'微博类型'+ ','+'发布来源'+ ','+'发布地区'+ ','+'发布时间' + ','+'阅读数'+ ','+'转发数'+','+'评论数'+','+'点赞数'+'\n')
-if int(time.time()) > 1792810623:
-    sys.exit(1)
+# if int(time.time()) > 1792810623:
+#     sys.exit(1)
 # print(uid,month)
 def timeAgo(day):
     current_date = datetime.now()
@@ -210,19 +210,20 @@ def data(uid,page,since_id,month):
         top = res["data"]['list'][0].get('isTop',0)
         start=int(date_object.timestamp());
         if top == 0 and t < start:
-            # print('提前结束',res["data"]['list'][0]['created_at'],start)
-            return False
+            print('提前结束',res["data"]['list'][0]['created_at'],start)
+            # return False
         for v in res["data"]['list']:
             if 'deleted' in v and v['deleted'] == 1:
                 continue
             parsed_datetime = datetime.strptime(v['created_at'], "%a %b %d %H:%M:%S %z %Y")
             formatted_datetime = parsed_datetime.strftime("%m月%d日")
             timestamp = int(time.mktime(parsed_datetime.timetuple()))
-            # if timestamp > 1735660800 or timestamp < 1740759768:
-            #     continue
+            if timestamp > 1758698097 or timestamp < 1755674097:
+                print('过滤时间',formatted_datetime)
+                # continue
             if timestamp < start:
-                # print('提前结束2',v['created_at'],start)
-                continue
+                print('提前结束2',v['created_at'],start)
+                # continue
             print(parsed_datetime.strftime("%Y-%m-%d %H:%M:%S"),v['mid'],v['text_raw'])
             soup = BeautifulSoup(v['source'], 'html.parser')
             pics=''
