@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from docx import Document, ImagePart
 from urllib.parse import urlparse, parse_qs
 requests.packages.urllib3.disable_warnings()
+cookies=""
 headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36 QBCore/4.0.1301.400 QQBrowser/9.0.2524.400 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2875.116 Safari/537.36 NetType/WIFI MicroMessenger/7.0.5 WindowsWechat",
         'referer': 'https://mp.weixin.qq.com',
@@ -105,7 +106,7 @@ def down(url,position,copyright,digest,is_pay):
             if subjects_title:
                 subjects = ';'.join(subjects_title)
         if len(title) > 100:
-            title = title[0:64]
+            title = title[0:100]
         # if int(ct) > 1660321824:
         #     return False
         print('文章数量：',nums)
@@ -177,17 +178,20 @@ def down(url,position,copyright,digest,is_pay):
             #     document.save('doc/'+date+'-'+replace_invalid_chars(html.unescape(title))+'.docx')
             # except Exception as err:
             #     print("下载word失败",err,url);raise Exception("抓取失败了："+url)
+            try:
+                 with open(date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
+                    soup = BeautifulSoup(content, 'html.parser')
+                    contentSoup = soup.find("div", {"id": "js_content"})
+                    result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
+                    # result_text = re.sub(r'\n+', '\n', soup.get_text())
+                    f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
+            except Exception as err:
+                print('下载txt出错了',err,url)# 小绿书 https://mp.weixin.qq.com/s/Q-pUYKkSaq9i0rNAAXbE8g
+                with open('txt/'+date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
+                 # with open('公众号历史文章文字.txt', 'a+', encoding='utf-8') as f:
+                    f.write(digest+ '\n\n'+ '\n\n')
             # try:
-            #      with open(date+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
-            #         soup = BeautifulSoup(content, 'html.parser')
-            #         contentSoup = soup.find("div", {"id": "js_content"})
-            #         result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
-            #         # result_text = re.sub(r'\n+', '\n', soup.get_text())
-            #         f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
-            # except Exception as err:
-            #     print('下载txt出错了',err,url)
-            # try:
-            #     with open('公众号历史文章/'+date+'-'+replace_invalid_chars(html.unescape(title))+'.html', 'w', encoding='utf-8') as f:
+            #     with open('公众号历史文章/'+date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.html', 'w', encoding='utf-8') as f:
             #         f.write(content+comments_html)
             # except Exception as err:
             #     with open(date+'-'+str(random.randint(100,10000))+'.html', 'w', encoding='utf-8') as f:
@@ -201,7 +205,7 @@ def down(url,position,copyright,digest,is_pay):
         save_history(url)
         return True
     except Exception as e:
-        print(e,url);raise Exception("抓取失败了："+url)
+        print(e,url)#;raise Exception("抓取失败了："+url)
         with open(f'{sname}下载失败文章列表.csv', 'a+', encoding=encoding) as f6:
             f6.write(''+','+'' + ','+url+ ','+digest+ ','+''+','+''+',,'+copyright+ ','+position+ ','+is_pay+ ','+''+','+''+',0,0,0,0,0,0,0,0'+'\n')
         # with open(f'{sname}下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
@@ -506,6 +510,9 @@ for line in csv_reader:
     if line[2] in get_history():
        print('已经下载过：',line[2])
        continue
+    if line[0][8:10] not in ['05','15','25']:
+        print('过滤日期',line[0],line[2])
+        continue
     res = down(line[2],line[8],line[7],line[3],line[9])
     time.sleep(random.randint(1, 1))
     if not res:
