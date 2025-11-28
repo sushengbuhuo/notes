@@ -39,7 +39,20 @@ cookie=input('请输入微博cookie：')
 if not cookie:
 	sys.exit('cookie为空')
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 FirePHP/0.7.4',
+            'accept': 'application/json, text/plain, */*',
+    'accept-language': 'zh-CN,zh;q=0.9',
+    'client-version': 'v2.47.95',
+    'priority': 'u=1, i',
+    'referer': 'https://weibo.com/7737396735/PlhC3g0As?pagetype=detail',
+    'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'server-version': 'v2025.08.01.1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    'x-requested-with': 'XMLHttpRequest',
         'Cookie': cookie
                # 'Referer': 'https://m.weibo.cn/detail/4497103885505673',
                # 'Sec-Fetch-Mode': 'navigate'

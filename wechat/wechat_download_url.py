@@ -82,10 +82,13 @@ def down(url,position,copyright,digest,is_pay):
         # if div_to_delete:
         #     div_to_delete.extract()
         # content = soup.prettify()
-        title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
+        title = re.search(r'<meta property="og:title" content="(.*)"\s?/>', content) or re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content) or re.search(r"window.title = '(.*?)'", content)
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
         author = re.search(r'<meta name="author" content="(.*)"\s?/>', content)
         cover = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content).group(1)
+        description = re.search(r'<meta property="og:description" content="(.*)"\s?/>', content).group(1)
+        if not digest:
+            digest = html.unescape(html.unescape(description))
         # 小绿书文章 https://mp.weixin.qq.com/s/KjZ9tgaE50Gmxzrb2NzeNQ https://mp.weixin.qq.com/s?__biz=Mzg5ODc0NDAzMA==&mid=2247536779&idx=4&sn=422a24693192009c7e506c30809b8773&chksm=c05ffb3af728722c64f629733079eccf632254618c427463c1becc9b920558fcf8d8f02868b2&scene=27#wechat_redirect
         sn = re.search(r'var sn = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var sn = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.sn = xml \? getXmlValue\('sn\.DATA'\) \|\| getXmlValue\('sn'\) \|\| getXmlValue\('sign'\) : '(.*)' \|\| '' \|\| '';", content) or re.search(r"window\.sn = '(.*)' \|\| '' \|\| '';", content)
         mid = re.search(r'var mid = "" \|\| "(.*)" \|\| "";', content) or re.search(r'var mid = "(.*)" \|\| "" \|\| "";', content) or re.search(r"d\.mid = xml \? getXmlValue\('mid.DATA'\) \|\| getXmlValue\('mid'\) \|\| getXmlValue\('appmsgid'\) : '(.*)' \|\| '' \|\| '';", content) or re.search(r"window\.mid = '(.*)' \|\| '' \|\| '';", content)
@@ -179,7 +182,8 @@ def down(url,position,copyright,digest,is_pay):
             # except Exception as err:
             #     print("下载word失败",err,url);raise Exception("抓取失败了："+url)
             try:
-                 with open(date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
+                 with open('txt/'+date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
+                 # with open('公众号文章文字.txt', 'a+', encoding='utf-8') as f:
                     soup = BeautifulSoup(content, 'html.parser')
                     contentSoup = soup.find("div", {"id": "js_content"})
                     result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
@@ -187,8 +191,10 @@ def down(url,position,copyright,digest,is_pay):
                     f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
             except Exception as err:
                 print('下载txt出错了',err,url)# 小绿书 https://mp.weixin.qq.com/s/Q-pUYKkSaq9i0rNAAXbE8g
+                soup = BeautifulSoup(digest, 'html.parser')
+                digest = soup.get_text(strip=True, separator=' ')
                 with open('txt/'+date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
-                 # with open('公众号历史文章文字.txt', 'a+', encoding='utf-8') as f:
+                # with open('公众号文章文字.txt', 'a+', encoding='utf-8') as f:
                     f.write(digest+ '\n\n'+ '\n\n')
             # try:
             #     with open('公众号历史文章/'+date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.html', 'w', encoding='utf-8') as f:
@@ -422,7 +428,7 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
     str_comment = re.search(r"var comment_id = '(.*)' \|\| '0';", content) or re.search(r'var comment_id = "(.*)" \|\| "(.*)" \* 1;', content) or re.search(r"d\.comment_id = xml \? getXmlValue\('comment_id\.DATA'\) : '(.*)';", content)
     str_msg = re.search(r"var appmsgid = \"\" \|\| '' \|\| '(.*)'", content) or re.search(r"window.appmsgid = '(.*?)' \|\| '' \|\| '';", content)   or re.search(r"window.appmsgid = '' \|\| '(.*?)' \|\| '';", content)   or re.search(r"window.appmsgid = '' \|\| '' \|\| '(.*?)';", content)  or re.search(r"var appmsgid = \"(.*)\" \|\| '' \|\| '';",content)  or re.search(r"var appmsgid = \"\" \|\| '(.*)' \|\| '';",content)
     str_token = re.search(r'window\.appmsg_token = "(.*)";', content) or re.search(r'var appmsg_token = "(.*)";', content)
-    str_title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r"window\.msg_title = '(.*)' \|\| '';", content)
+    str_title = re.search(r'<meta property="og:title" content="(.*)"\s?/>', content) or re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content) or re.search(r"window.title = '(.*?)'", content)
     # print(str_comment,str_msg,str_token)
     comments_html = """
     <link rel="stylesheet" href="https://lovecn.github.io/wxMessage.css"><div class="discuss_container" id="js_cmt_main" style="display: block;">

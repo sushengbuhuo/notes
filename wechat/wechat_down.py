@@ -26,7 +26,7 @@ def save_history(url):
         f.write(url.strip() + '\n')
 def images(response,headers,date,title):
     imgs=re.findall('data-src="(.*?)"',response.text)
-    imgs2= re.findall("cdn_url: '(.*?)',",response.text)
+    imgs2= re.findall("cdn_url: '(.*?)',",response.text) #默认会下载无水印图片 watermark_info
     imgs.extend(imgs2)
     time.sleep(1)
     num = 0;title=date+'_'+replace_invalid_chars(html.unescape(title.replace('.','')))
@@ -121,11 +121,11 @@ def video(res, headers,date,title,article_url,duration):
     #     print('正在下载视频：'+trimName(data['title'])+'.mp4')
     #     with open('video/'+date+'_'+trimName(data['title'])+'.mp4','wb') as f:
     #         f.write(video_data.content)
-print('本工具更新于2025年7月5日，获取最新版本请关注公众号 苏生不惑')
+print('本工具更新于2025年11月25日，获取最新版本请关注公众号 苏生不惑')
 # 视频 https://mp.weixin.qq.com/s/goqAKIypCsI4vVLjdhmXSg
 # 音频 https://mp.weixin.qq.com/s/uzRSOhiH3XbS3Vwr7jGLWg
-if int(time.time()) > 1767196800:
-    sys.exit(1)
+# if int(time.time()) > 1767196800:
+#     sys.exit(1)
 url = ''
 if len(sys.argv) > 1:
    url = sys.argv[1]
@@ -144,7 +144,7 @@ else:
     response = requests.get(url, headers=headers)
     urls = re.findall('<a.*?href="(https?://mp.weixin.qq.com/s\?.*?)"',response.text)
     urls.insert(0,url)
-urls = [x for x in urls if x != '']
+urls = [html.unescape(x) for x in urls if x != '']
 print('文章数量：',len(urls))
 encoding = 'utf-8-sig'
 with open(f'文章列表.csv', 'a+', encoding=encoding) as f:
@@ -159,14 +159,14 @@ for mp_url in urls:
     if html.unescape(mp_url) in urls_history:
         print('已经下载过文章:'+html.unescape(mp_url))
         continue
-    res = requests.get(html.unescape(mp_url),proxies={'http': None,'https': None},verify=False, headers=headers)
-    content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')
+    res = requests.get(mp_url,proxies={'http': None,'https': None},verify=False, headers=headers)#;print(res.status_code,res.headers)
+    content = res.text.replace('data-src', 'src').replace('//res.wx.qq.com', 'https://res.wx.qq.com')#;print(content)
     num+=1
     time.sleep(randint(1, 2))
     # with open('html/'+str(num)+'.html', 'w', encoding='utf-8') as f:
     #     f.write(content)
     try:
-        title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
+        title = re.search(r'<meta property="og:title" content="(.*)"\s?/>', content) or re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content) or re.search(r"window.title = '(.*?)'", content)
         ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'",content)
         cover_url = re.search(r'<meta property="og:image" content="(.*)"\s?/>', content)
         if not title:
@@ -178,7 +178,7 @@ for mp_url in urls:
             cover_url = cover_url.group(1)
         title = title.group(1)
         if len(title) > 100:
-            title = title[0:64]
+            title = title[0:100]
         ct = ct.group(1)
         date = time.strftime('%Y-%m-%d', time.localtime(int(ct)))
         print(f'开始下载第{num}篇：',date,title,html.unescape(mp_url))
@@ -193,6 +193,7 @@ for mp_url in urls:
             f.write(content+'<p style="display:none">下载作者：公众号苏生不惑 微信：sushengbuhuo</p>')
     except Exception as err:
         # with open('html/'+str(randint(1000,100000))+'.html', 'w', encoding='utf-8') as f2:
-        #     f2.write(content);print(err,mp_url);raise Exception("出错了"+mp_url)
+        #     f2.write(content);print(err,mp_url);
+        # raise Exception("出错了"+mp_url)
         with open(f'下载失败文章列表.txt', 'a+', encoding='utf-8') as f5:
             f5.write(html.unescape(mp_url)+'\n')

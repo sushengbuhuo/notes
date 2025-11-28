@@ -32,7 +32,7 @@ class DownloadThread(QThread):
     def run(self):
         """线程执行函数"""
         try:
-            self.log_signal.emit(f"本工具由微信公众号 苏生不惑 开发，更新于2025年7月25日，获取所有文章阅读数留言数据微信联系sushengbuhuo")
+            self.log_signal.emit(f"本工具由微信公众号 苏生不惑 开发，更新于2025年11月24日，导出所有文章word/pdf/阅读数留言等数据excel微信联系sushengbuhuo")
             self.status_signal.emit("正在分析文章...")
             self.log_signal.emit(f"开始处理链接：{self.url}")
             
@@ -68,14 +68,13 @@ class DownloadThread(QThread):
                     time.sleep(delay)
                     
                     # 提取文章标题和时间
-                    title = re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content)
+                    title = re.search(r'<meta property="og:title" content="(.*)"\s?/>', content) or re.search(r'var msg_title = \'(.*)\'', content) or re.search(r'window.title = "(.*)"', content) or re.search(r"window.title = '(.*?)'", content)
                     ct = re.search(r'var ct = "(.*)";', content) or re.search(r"d\.ct = xml \? getXmlValue\('ori_create_time\.DATA'\) \: '(.*)'", content)
-                    
+
                     if not title:
                         title = re.search(r'window\.msg_title = \'(.*?)\'', content)
                     if not ct:
                         ct = re.search(r'window\.ct = \'(.*?)\'', content)
-                    
                     if title and ct:
                         title = title.group(1)
                         ct = ct.group(1)
@@ -252,7 +251,7 @@ class WeChatVideoDownloader(QMainWindow):
     def init_ui(self):
         """初始化用户界面"""
         # 设置窗口标题和大小
-        self.setWindowTitle("微信公众号图片视频音频下载器 by微信公众号 苏生不惑，获取所有文章阅读数留言数据微信联系sushengbuhuo")
+        self.setWindowTitle("微信公众号图片封面视频音频下载器 by微信公众号 苏生不惑，导出所有文章word/pdf/阅读数留言等数据excel微信联系sushengbuhuo")
         self.setGeometry(300, 300, 800, 600)
         
         # 创建中心部件
