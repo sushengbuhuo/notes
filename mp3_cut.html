@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>音频剪切助手</title>
+  <!-- 引入外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 引入lamejs库用于MP3编码 -->
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+   
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5', // 主色调：深紫色https://www.52pojie.cn/thread-2071240-1-1.html
+            secondary: '#10B981', // 辅助色：绿色
+            danger: '#EF4444', // 危险色：红色
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+   
+  <!-- 自定义样式 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .scrollbar-hide {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .audio-wave {
+        height: 60px;
+        background: linear-gradient(90deg, rgba(79,70,229,0.1) 1px, transparent 1px);
+        background-size: 10px 100%;
+      }
+      .timeline-marker {
+        width: 2px;
+        height: 100%;
+        background-color: #4F46E5;
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
+        z-index: 10;
+      }
+      .timeline-selection {
+        position: absolute;
+        height: 100%;
+        background-color: rgba(79,70,229,0.2);
+        z-index: 5;
+      }
+      .timeline-handle {
+        width: 8px;
+        height: 20px;
+        background-color: #4F46E5;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        cursor: ew-resize;
+        z-index: 15;
+      }
+      .smart-clip-btn {
+        @apply px-3 py-1.5 rounded-md text-sm transition-all duration-200 hover:shadow-md;
+      }
+      .export-progress-container {
+        @apply fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden;
+      }
+      .export-progress-card {
+        @apply bg-white rounded-xl shadow-xl max-w-md w-full m-4 p-6;
+      }
+    }
+  </style>
+</head>
+ 
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 transition-all duration-300">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-music text-primary text-2xl"></i>
+        <h1 class="text-xl md:text-2xl font-bold text-primary">音频剪切助手</h1>
+      </div>
+      <div class="hidden md:flex items-center space-x-6">
+        <button id="helpBtn" class="text-gray-600 hover:text-primary transition-colors">
+          <i class="fa fa-question-circle mr-1"></i>帮助
+        </button>
+        <button id="aboutBtn" class="text-gray-600 hover:text-primary transition-colors">
+          <i class="fa fa-info-circle mr-1"></i>关于
+        </button>
+      </div>
+    </div>
+  </header>
+ 
+  <!-- 主要内容区 -->
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <!-- 上传区域 -->
+    <section id="uploadSection" class="mb-10">
+      <div class="bg-white rounded-xl shadow-md p-6 md:p-8 transition-all duration-300 hover:shadow-lg">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+          <i class="fa fa-upload text-primary mr-2"></i>上传音频文件
+        </h2>
+         
+        <div id="dropArea" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-all duration-300 hover:border-primary">
+          <i class="fa fa-file-audio-o text-5xl text-gray-400 mb-4"></i>
+          <p class="text-gray-600 mb-4">拖放音频文件到此处，或点击选择文件</p>
+          <p class="text-sm text-gray-500 mb-6">支持格式：MP3, WAV, OGG, WebM</p>
+          <label class="inline-block bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg cursor-pointer transition-all duration-300 transform hover:scale-105">
+            <i class="fa fa-folder-open mr-2"></i>选择音频文件
+            <input type="file" id="audioInput" accept="audio/*" class="hidden">
+          </label>
+        </div>
+         
+        <!-- 上传进度条 (默认隐藏) -->
+        <div id="progressContainer" class="hidden mt-6">
+          <div class="flex justify-between text-sm mb-1">
+            <span id="fileName" class="text-gray-600"></span>
+            <span id="progressPercent" class="text-primary font-medium">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div id="progressBar" class="bg-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+     
+    <!-- 音频处理区域 (默认隐藏) -->
+    <section id="audioProcessingSection" class="hidden">
+      <!-- 音频信息和播放器 -->
+      <div class="bg-white rounded-xl shadow-md p-6 md:p-8 mb-8 transition-all duration-300">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+          <i class="fa fa-headphones text-primary mr-2"></i>音频预览
+        </h2>
+         
+        <div class="flex flex-col md:flex-row gap-6">
+          <!-- 音频播放器 -->
+          <div class="w-full md:w-2/3">
+            <audio id="audioPlayer" controls class="w-full mb-6"></audio>
+             
+            <!-- 音频时长信息 -->
+            <div class="flex flex-wrap gap-4 mb-6">
+              <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
+                <i class="fa fa-clock-o text-primary mr-2"></i>
+                <span>总时长: <span id="totalDuration" class="font-medium">00:00</span></span>
+              </div>
+              <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
+                <i class="fa fa-file-size text-primary mr-2"></i>
+                <span>文件大小: <span id="fileSize" class="font-medium">0 MB</span></span>
+              </div>
+              <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
+                <i class="fa fa-music text-primary mr-2"></i>
+                <span>格式: <span id="fileFormat" class="font-medium">未知</span></span>
+              </div>
+            </div>
+             
+            <!-- 智能裁剪选项 -->
+            <div class="bg-primary/5 rounded-lg p-4 mb-6">
+              <h3 class="font-medium mb-3 flex items-center">
+                <i class="fa fa-magic text-primary mr-2"></i>智能裁剪
+              </h3>
+              <div class="flex flex-wrap gap-2 mb-3">
+                <button class="smart-clip-btn bg-white border border-primary text-primary hover:bg-primary/10" data-duration="30">
+                  30秒片段
+                </button>
+                <button class="smart-clip-btn bg-white border border-primary text-primary hover:bg-primary/10" data-duration="60">
+                  60秒片段
+                </button>
+                <button class="smart-clip-btn bg-white border border-primary text-primary hover:bg-primary/10" data-duration="120">
+                  120秒片段
+                </button>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-gray-700">等分为:</label>
+                <select id="segmentCount" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+                  <option value="2">2段</option>
+                  <option value="3">3段</option>
+                  <option value="4">4段</option>
+                  <option value="5">5段</option>
+                  <option value="10">10段</option>
+                </select>
+                <button id="splitEquallyBtn" class="smart-clip-btn bg-primary text-white hover:bg-primary/90">
+                  均等分割
+                </button>
+              </div>
+            </div>
+             
+            <!-- 时间线和剪切控制 -->
+            <div class="mb-6">
+              <div class="flex justify-between mb-2 text-sm text-gray-600">
+                <span id="startTimeDisplay">00:00</span>
+                <span id="endTimeDisplay">00:00</span>
+              </div>
+               
+              <!-- 音频时间轴 -->
+              <div id="timelineContainer" class="relative h-16 bg-gray-100 rounded-lg overflow-hidden cursor-pointer mb-4">
+                <div class="audio-wave absolute inset-0 w-full"></div>
+                <div id="timelineSelection" class="timeline-selection hidden"></div>
+                <div id="startHandle" class="timeline-handle hidden"></div>
+                <div id="endHandle" class="timeline-handle hidden"></div>
+                <div id="playhead" class="timeline-marker" style="left: 0%"></div>
+              </div>
+               
+              <!-- 时间输入控制 -->
+              <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex items-center gap-2">
+                  <label for="startTime" class="text-gray-700">开始时间:</label>
+                  <input type="time" id="startTime" step="0.001" class="border border-gray-300 rounded-md px-3 py-2 text-sm" value="00:00:00.000">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label for="endTime" class="text-gray-700">结束时间:</label>
+                  <input type="time" id="endTime" step="0.001" class="border border-gray-300 rounded-md px-3 py-2 text-sm" value="00:00:00.000">
+                </div>
+                <button id="addClipBtn" class="bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 ml-auto">
+                  <i class="fa fa-plus mr-1"></i>添加剪切片段
+                </button>
+              </div>
+            </div>
+          </div>
+           
+          <!-- 剪切片段列表 -->
+          <div class="w-full md:w-1/3 bg-gray-50 rounded-lg p-4">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-semibold text-lg">剪切片段</h3>
+              <span id="clipCount" class="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm">0 段</span>
+            </div>
+             
+            <!-- 导出设置 -->
+            <div class="bg-white rounded-lg p-3 mb-4 shadow-sm">
+              <h4 class="font-medium mb-2 text-sm">导出设置</h4>
+              <div class="flex items-center gap-2 mb-2">
+                <label for="exportPrefix" class="text-gray-700 text-sm">文件名前缀:</label>
+                <input type="text" id="exportPrefix" value="clip" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm flex-grow">
+              </div>
+              <div class="flex items-center gap-2">
+                <label for="exportFormat" class="text-gray-700 text-sm">导出格式:</label>
+                <select id="exportFormat" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+                  <option value="wav">WAV (无损)</option>
+                  <option value="mp3">MP3 (压缩)</option>
+                </select>
+              </div>
+            </div>
+             
+            <div id="clipsList" class="space-y-3 max-h-48 overflow-y-auto scrollbar-hide">
+              <div class="text-center text-gray-500 py-8">
+                <i class="fa fa-film text-2xl mb-2"></i>
+                <p>还没有添加剪切片段</p>
+              </div>
+            </div>
+             
+            <div class="mt-4 pt-4 border-t border-gray-200">
+              <button id="clearClipsBtn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300 mb-3">
+                <i class="fa fa-trash mr-2"></i>清空片段
+              </button>
+              <button id="exportBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fa fa-download mr-2"></i>导出所有片段
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+ 
+  <!-- 导出进度弹窗 -->
+  <div id="exportProgressContainer" class="export-progress-container">
+    <div class="export-progress-card">
+      <div class="text-center mb-4">
+        <i class="fa fa-download text-primary text-3xl mb-2"></i>
+        <h3 class="text-xl font-bold">正在导出</h3>
+        <p id="exportStatus" class="text-gray-600 mt-1">准备导出片段...</p>
+      </div>
+       
+      <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+        <div id="exportProgressBar" class="bg-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+       
+      <div class="flex justify-between text-sm">
+        <span id="exportCurrentClip">片段 1/5</span>
+        <span id="exportPercentage">0%</span>
+      </div>
+       
+      <button id="cancelExportBtn" class="mt-6 w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300">
+        取消导出
+      </button>
+    </div>
+  </div>
+ 
+  <!-- 帮助模态框 -->
+  <div id="helpModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto m-4">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold">使用帮助</h3>
+          <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-700">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="space-y-4">
+          <div>
+            <h4 class="font-semibold text-lg mb-2">1. 上传音频</h4>
+            <p>点击"选择音频文件"按钮或直接拖放音频文件到上传区域。支持MP3、WAV、OGG和WebM格式。</p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-lg mb-2">2. 智能裁剪功能</h4>
+            <p>快速创建标准时长片段或均等分割音频：</p>
+            <ul class="list-disc list-inside ml-2 mt-1 space-y-1">
+              <li>点击30秒、60秒或120秒按钮创建固定时长片段</li>
+              <li>选择段数后点击"均等分割"将音频平均分成多段</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-lg mb-2">3. 手动创建剪切片段</h4>
+            <p>使用时间轴或时间输入框设置剪切的开始和结束时间，然后点击"添加剪切片段"按钮。</p>
+            <p class="mt-1">在时间轴上，您可以：</p>
+            <ul class="list-disc list-inside ml-2 mt-1 space-y-1">
+              <li>拖动开始和结束手柄调整选择区域</li>
+              <li>点击时间轴任意位置移动播放头</li>
+              <li>播放音频时，播放头会随时间移动</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-lg mb-2">4. 管理剪切片段</h4>
+            <p>在右侧的剪切片段列表中，您可以：</p>
+            <ul class="list-disc list-inside ml-2 mt-1 space-y-1">
+              <li>点击片段播放该片段</li>
+              <li>删除不需要的片段</li>
+              <li>使用"清空片段"按钮移除所有片段</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-lg mb-2">5. 导出片段</h4>
+            <p>设置完所有需要的剪切片段后，可选择导出格式（WAV无损或MP3压缩），点击"导出所有片段"按钮下载所有片段。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 关于模态框 -->
+  <div id="aboutModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full m-4">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold">关于音频剪切助手</h3>
+          <button id="closeAboutBtn" class="text-gray-500 hover:text-gray-700">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="flex flex-col items-center text-center space-y-4">
+          <i class="fa fa-music text-5xl text-primary"></i>
+          <h4 class="text-xl font-bold">音频剪切助手 v1.2</h4>
+          <p class="text-gray-600">一款简单易用的在线音频处理工具，支持音频上传、时长检索和多段剪切功能。</p>
+          <p class="text-gray-500 text-sm">支持WAV无损格式和MP3压缩格式导出，所有处理均在浏览器中进行，保护您的隐私。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 底部信息 -->
+  <footer class="bg-white border-t border-gray-200 py-6">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+      <p>&#169; 2023 音频剪切助手 - 所有音频处理均在本地完成，保护您的隐私</p>
+    </div>
+  </footer>
+ 
+  <!-- 主脚本 -->
+  <script>
+    // DOM 元素
+    const dropArea = document.getElementById('dropArea');
+    const audioInput = document.getElementById('audioInput');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const uploadSection = document.getElementById('uploadSection');
+    const audioProcessingSection = document.getElementById('audioProcessingSection');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
+    const fileName = document.getElementById('fileName');
+    const totalDuration = document.getElementById('totalDuration');
+    const fileSize = document.getElementById('fileSize');
+    const fileFormat = document.getElementById('fileFormat');
+    const startTime = document.getElementById('startTime');
+    const endTime = document.getElementById('endTime');
+    const startTimeDisplay = document.getElementById('startTimeDisplay');
+    const endTimeDisplay = document.getElementById('endTimeDisplay');
+    const timelineContainer = document.getElementById('timelineContainer');
+    const playhead = document.getElementById('playhead');
+    const timelineSelection = document.getElementById('timelineSelection');
+    const startHandle = document.getElementById('startHandle');
+    const endHandle = document.getElementById('endHandle');
+    const addClipBtn = document.getElementById('addClipBtn');
+    const clipsList = document.getElementById('clipsList');
+    const clipCount = document.getElementById('clipCount');
+    const exportBtn = document.getElementById('exportBtn');
+    const clearClipsBtn = document.getElementById('clearClipsBtn');
+    const helpBtn = document.getElementById('helpBtn');
+    const aboutBtn = document.getElementById('aboutBtn');
+    const helpModal = document.getElementById('helpModal');
+    const aboutModal = document.getElementById('aboutModal');
+    const closeHelpBtn = document.getElementById('closeHelpBtn');
+    const closeAboutBtn = document.getElementById('closeAboutBtn');
+    const segmentCount = document.getElementById('segmentCount');
+    const splitEquallyBtn = document.getElementById('splitEquallyBtn');
+     
+    // 导出相关元素
+    const exportPrefix = document.getElementById('exportPrefix');
+    const exportFormat = document.getElementById('exportFormat');
+    const exportProgressContainer = document.getElementById('exportProgressContainer');
+    const exportProgressBar = document.getElementById('exportProgressBar');
+    const exportStatus = document.getElementById('exportStatus');
+    const exportCurrentClip = document.getElementById('exportCurrentClip');
+    const exportPercentage = document.getElementById('exportPercentage');
+    const cancelExportBtn = document.getElementById('cancelExportBtn');
+ 
+    // 全局变量
+    let audioContext;
+    let audioBuffer;
+    let totalSeconds = 0;
+    let isDraggingStart = false;
+    let isDraggingEnd = false;
+    let clips = [];
+    let clipIdCounter = 1;
+    let exportAbortController = null;
+ 
+    // 初始化事件监听
+    function initEventListeners() {
+      // 拖放上传事件
+      dropArea.addEventListener('dragover', handleDragOver);
+      dropArea.addEventListener('dragleave', handleDragLeave);
+      dropArea.addEventListener('drop', handleDrop);
+       
+      // 文件选择事件
+      audioInput.addEventListener('change', handleFileSelect);
+       
+      // 音频播放事件
+      audioPlayer.addEventListener('loadedmetadata', handleLoadedMetadata);
+      audioPlayer.addEventListener('timeupdate', updatePlayhead);
+       
+      // 时间轴交互事件
+      timelineContainer.addEventListener('click', handleTimelineClick);
+      startHandle.addEventListener('mousedown', startDragStart);
+      endHandle.addEventListener('mousedown', startDragEnd);
+      document.addEventListener('mousemove', handleDrag);
+      document.addEventListener('mouseup', stopDrag);
+       
+      // 时间输入框事件
+      startTime.addEventListener('change', updateTimelineFromInputs);
+      endTime.addEventListener('change', updateTimelineFromInputs);
+       
+      // 按钮事件
+      addClipBtn.addEventListener('click', addClip);
+      exportBtn.addEventListener('click', exportClips);
+      clearClipsBtn.addEventListener('click', clearAllClips);
+       
+      // 智能裁剪事件
+      document.querySelectorAll('[data-duration]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const duration = parseInt(e.currentTarget.dataset.duration);
+          createFixedLengthClips(duration);
+        });
+      });
+       
+      splitEquallyBtn.addEventListener('click', splitIntoEqualSegments);
+       
+      // 模态框事件
+      helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+      aboutBtn.addEventListener('click', () => aboutModal.classList.remove('hidden'));
+      closeHelpBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+      closeAboutBtn.addEventListener('click', () => aboutModal.classList.add('hidden'));
+       
+      // 点击模态框外部关闭
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) helpModal.classList.add('hidden');
+      });
+      aboutModal.addEventListener('click', (e) => {
+        if (e.target === aboutModal) aboutModal.classList.add('hidden');
+      });
+       
+      // 导出相关事件
+      cancelExportBtn.addEventListener('click', cancelExport);
+    }
+ 
+    // 拖放事件处理
+    function handleDragOver(e) {
+      e.preventDefault();
+      dropArea.classList.add('border-primary', 'bg-primary/5');
+    }
+ 
+    function handleDragLeave() {
+      dropArea.classList.remove('border-primary', 'bg-primary/5');
+    }
+ 
+    function handleDrop(e) {
+      e.preventDefault();
+      dropArea.classList.remove('border-primary', 'bg-primary/5');
+       
+      if (e.dataTransfer.files.length) {
+        const file = e.dataTransfer.files[0];
+        handleAudioFile(file);
+      }
+    }
+ 
+    // 文件选择处理
+    function handleFileSelect(e) {
+      if (e.target.files.length) {
+        const file = e.target.files[0];
+        handleAudioFile(file);
+      }
+    }
+ 
+    // 处理音频文件
+    function handleAudioFile(file) {
+      // 显示进度条
+      progressContainer.classList.remove('hidden');
+      fileName.textContent = file.name;
+      progressBar.style.width = '0%';
+      progressPercent.textContent = '0%';
+       
+      // 检查文件类型
+      if (!file.type.startsWith('audio/')) {
+        alert('请上传音频文件');
+        progressContainer.classList.add('hidden');
+        return;
+      }
+       
+      // 读取文件
+      const reader = new FileReader();
+       
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = `${percent}%`;
+          progressPercent.textContent = `${percent}%`;
+        }
+      };
+       
+      reader.onload = (e) => {
+        // 设置音频源
+        audioPlayer.src = URL.createObjectURL(file);
+         
+        // 显示文件信息
+        fileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        fileFormat.textContent = file.type.split('/')[1].toUpperCase();
+         
+        // 解码音频获取详细信息
+        initAudioContext(e.target.result);
+         
+        // 显示处理区域
+        audioProcessingSection.classList.remove('hidden');
+        uploadSection.classList.add('mb-2');
+         
+        // 滚动到处理区域
+        audioProcessingSection.scrollIntoView({ behavior: 'smooth' });
+      };
+       
+      reader.readAsArrayBuffer(file);
+    }
+ 
+    // 初始化音频上下文
+    function initAudioContext(audioData) {
+      if (audioContext) {
+        audioContext.close();
+      }
+       
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+       
+      audioContext.decodeAudioData(audioData, (buffer) => {
+        audioBuffer = buffer;
+        totalSeconds = buffer.duration;
+         
+        // 初始化时间轴选择
+        startTime.value = formatTimeForInput(0);
+        endTime.value = formatTimeForInput(Math.min(10, totalSeconds)); // 默认选择前10秒或整个音频
+        updateTimelineFromInputs();
+         
+        // 隐藏进度条
+        setTimeout(() => {
+          progressContainer.classList.add('hidden');
+        }, 500);
+      });
+    }
+ 
+    // 音频元数据加载完成
+    function handleLoadedMetadata() {
+      totalSeconds = audioPlayer.duration;
+      totalDuration.textContent = formatTime(totalSeconds);
+    }
+ 
+    // 更新播放头位置
+    function updatePlayhead() {
+      const currentTime = audioPlayer.currentTime;
+      const percent = (currentTime / totalSeconds) * 100;
+      playhead.style.left = `${percent}%`;
+    }
+ 
+    // 时间轴点击事件
+    function handleTimelineClick(e) {
+      if (isDraggingStart || isDraggingEnd) return;
+       
+      const rect = timelineContainer.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      const time = (percent / 100) * totalSeconds;
+       
+      audioPlayer.currentTime = time;
+      updatePlayhead();
+    }
+ 
+    // 拖动开始处理
+    function startDragStart(e) {
+      e.preventDefault();
+      isDraggingStart = true;
+      startHandle.classList.add('scale-150');
+    }
+ 
+    function startDragEnd(e) {
+      e.preventDefault();
+      isDraggingEnd = true;
+      endHandle.classList.add('scale-150');
+    }
+ 
+    // 拖动处理
+    function handleDrag(e) {
+      if (!isDraggingStart && !isDraggingEnd) return;
+       
+      const rect = timelineContainer.getBoundingClientRect();
+      let percent = ((e.clientX - rect.left) / rect.width) * 100;
+      percent = Math.max(0, Math.min(100, percent));
+       
+      const startPercent = parseFloat(startHandle.style.left) || 0;
+      const endPercent = parseFloat(endHandle.style.left) || 0;
+       
+      if (isDraggingStart) {
+        // 确保开始点不超过结束点
+        percent = Math.min(percent, endPercent - 1);
+        startHandle.style.left = `${percent}%`;
+      } else if (isDraggingEnd) {
+        // 确保结束点不早于开始点
+        percent = Math.max(percent, startPercent + 1);
+        endHandle.style.left = `${percent}%`;
+      }
+       
+      updateSelection();
+      updateInputsFromTimeline();
+    }
+ 
+    // 停止拖动
+    function stopDrag() {
+      if (isDraggingStart) {
+        isDraggingStart = false;
+        startHandle.classList.remove('scale-150');
+      }
+       
+      if (isDraggingEnd) {
+        isDraggingEnd = false;
+        endHandle.classList.remove('scale-150');
+      }
+    }
+ 
+    // 更新选择区域
+    function updateSelection() {
+      const startPercent = parseFloat(startHandle.style.left) || 0;
+      const endPercent = parseFloat(endHandle.style.left) || 0;
+       
+      timelineSelection.style.left = `${startPercent}%`;
+      timelineSelection.style.width = `${endPercent - startPercent}%`;
+      timelineSelection.classList.remove('hidden');
+      startHandle.classList.remove('hidden');
+      endHandle.classList.remove('hidden');
+    }
+ 
+    // 从时间轴更新输入框
+    function updateInputsFromTimeline() {
+      const startPercent = parseFloat(startHandle.style.left) || 0;
+      const endPercent = parseFloat(endHandle.style.left) || 0;
+       
+      const startTimeVal = (startPercent / 100) * totalSeconds;
+      const endTimeVal = (endPercent / 100) * totalSeconds;
+       
+      startTime.value = formatTimeForInput(startTimeVal);
+      endTime.value = formatTimeForInput(endTimeVal);
+       
+      startTimeDisplay.textContent = formatTime(startTimeVal);
+      endTimeDisplay.textContent = formatTime(endTimeVal);
+    }
+ 
+    // 从输入框更新时间轴
+    function updateTimelineFromInputs() {
+      const startTimeVal = parseTimeFromInput(startTime.value);
+      const endTimeVal = parseTimeFromInput(endTime.value);
+       
+      // 验证时间
+      const validStartTime = Math.max(0, Math.min(totalSeconds, startTimeVal));
+      const validEndTime = Math.max(validStartTime + 0.1, Math.min(totalSeconds, endTimeVal));
+       
+      // 更新输入框为有效值
+      if (startTimeVal !== validStartTime) {
+        startTime.value = formatTimeForInput(validStartTime);
+      }
+      if (endTimeVal !== validEndTime) {
+        endTime.value = formatTimeForInput(validEndTime);
+      }
+       
+      // 计算百分比
+      const startPercent = (validStartTime / totalSeconds) * 100;
+      const endPercent = (validEndTime / totalSeconds) * 100;
+       
+      // 更新时间轴
+      startHandle.style.left = `${startPercent}%`;
+      endHandle.style.left = `${endPercent}%`;
+       
+      updateSelection();
+      updateInputsFromTimeline(); // 更新显示
+    }
+ 
+    // 添加剪切片段
+    function addClip() {
+      const startTimeVal = parseTimeFromInput(startTime.value);
+      const endTimeVal = parseTimeFromInput(endTime.value);
+       
+      // 验证时间
+      if (startTimeVal >= endTimeVal || startTimeVal >= totalSeconds) {
+        alert('请设置有效的开始和结束时间');
+        return;
+      }
+       
+      // 创建新片段
+      const clip = {
+        id: clipIdCounter++,
+        start: startTimeVal,
+        end: endTimeVal,
+        duration: endTimeVal - startTimeVal
+      };
+       
+      clips.push(clip);
+      renderClipsList();
+       
+      // 更新按钮状态
+      exportBtn.disabled = false;
+       
+      // 视觉反馈
+      const clipElement = document.getElementById(`clip-${clip.id}`);
+      if (clipElement) {
+        clipElement.classList.add('ring-2', 'ring-primary');
+        setTimeout(() => {
+          clipElement.classList.remove('ring-2', 'ring-primary');
+        }, 500);
+      }
+    }
+ 
+    // 创建固定时长的片段
+    function createFixedLengthClips(duration) {
+      if (totalSeconds <= 0) return;
+       
+      // 清空现有片段
+      clips = [];
+       
+      // 计算可以创建多少个完整片段
+      const clipCount = Math.floor(totalSeconds / duration);
+       
+      // 如果剩余时间超过2秒，也作为一个片段
+      const hasRemaining = (totalSeconds % duration) > 2;
+      const totalClips = hasRemaining ? clipCount + 1 : clipCount;
+       
+      // 创建片段
+      for (let i = 0; i < totalClips; i++) {
+        const start = i * duration;
+        let end = start + duration;
+         
+        // 最后一个片段可能需要调整
+        if (i === totalClips - 1 && end > totalSeconds) {
+          end = totalSeconds;
+        }
+         
+        clips.push({
+          id: clipIdCounter++,
+          start,
+          end,
+          duration: end - start
+        });
+      }
+       
+      // 更新UI
+      renderClipsList();
+      exportBtn.disabled = false;
+       
+      // 显示提示
+      showToast(`已创建 ${clips.length} 个${duration}秒片段`);
+    }
+ 
+    // 均等分割音频
+    function splitIntoEqualSegments() {
+      if (totalSeconds <= 0) return;
+       
+      const segments = parseInt(segmentCount.value);
+      if (segments < 2) return;
+       
+      // 清空现有片段
+      clips = [];
+       
+      // 计算每个片段的时长
+      const segmentDuration = totalSeconds / segments;
+       
+      // 创建片段
+      for (let i = 0; i < segments; i++) {
+        const start = i * segmentDuration;
+        const end = (i + 1) * segmentDuration;
+         
+        clips.push({
+          id: clipIdCounter++,
+          start,
+          end: Math.min(end, totalSeconds), // 确保不超过总时长
+          duration: Math.min(end, totalSeconds) - start
+        });
+      }
+       
+      // 更新UI
+      renderClipsList();
+      exportBtn.disabled = false;
+       
+      // 显示提示
+      showToast(`已将音频均等分割为 ${segments} 段`);
+    }
+ 
+    // 清空所有片段
+    function clearAllClips() {
+      if (clips.length === 0) return;
+       
+      if (confirm(`确定要清空所有 ${clips.length} 个片段吗？`)) {
+        clips = [];
+        renderClipsList();
+        exportBtn.disabled = true;
+      }
+    }
+ 
+    // 渲染剪切片段列表
+    function renderClipsList() {
+      if (clips.length === 0) {
+        clipsList.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            <i class="fa fa-film text-2xl mb-2"></i>
+            <p>还没有添加剪切片段</p>
+          </div>
+        `;
+        clipCount.textContent = '0 段';
+        return;
+      }
+       
+      clipCount.textContent = `${clips.length} 段`;
+      clipsList.innerHTML = '';
+       
+      clips.forEach((clip, index) => {
+        const clipElement = document.createElement('div');
+        clipElement.id = `clip-${clip.id}`;
+        clipElement.className = 'bg-white rounded-lg p-3 shadow-sm hover:shadow transition-all duration-200 flex justify-between items-center';
+         
+        clipElement.innerHTML = `
+          <div>
+            <div class="font-medium">片段 ${index + 1}</div>
+            <div class="text-sm text-gray-600">
+              ${formatTime(clip.start)} - ${formatTime(clip.end)} 
+              <span class="text-gray-500">(${formatTime(clip.duration)})</span>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button class="play-clip text-primary hover:text-primary/80 p-1" data-id="${clip.id}">
+              <i class="fa fa-play"></i>
+            </button>
+            <button class="delete-clip text-danger hover:text-danger/80 p-1" data-id="${clip.id}">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        `;
+         
+        clipsList.appendChild(clipElement);
+      });
+       
+      // 添加事件监听
+      document.querySelectorAll('.play-clip').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const clipId = parseInt(e.currentTarget.dataset.id);
+          playClip(clipId);
+        });
+      });
+       
+      document.querySelectorAll('.delete-clip').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const clipId = parseInt(e.currentTarget.dataset.id);
+          deleteClip(clipId);
+        });
+      });
+    }
+ 
+    // 播放指定片段
+    function playClip(clipId) {
+      const clip = clips.find(c => c.id === clipId);
+      if (!clip) return;
+       
+      audioPlayer.currentTime = clip.start;
+      audioPlayer.play();
+       
+      // 自动暂停在片段结束
+      const pauseAtEnd = () => {
+        if (audioPlayer.currentTime >= clip.end) {
+          audioPlayer.pause();
+          audioPlayer.removeEventListener('timeupdate', pauseAtEnd);
+        }
+      };
+       
+      audioPlayer.addEventListener('timeupdate', pauseAtEnd);
+       
+      // 高亮当前播放的片段
+      document.querySelectorAll('#clipsList > div').forEach(el => {
+        el.classList.remove('bg-primary/5');
+      });
+      document.getElementById(`clip-${clipId}`).classList.add('bg-primary/5');
+    }
+ 
+    // 删除指定片段
+    function deleteClip(clipId) {
+      const clipElement = document.getElementById(`clip-${clipId}`);
+      clipElement.classList.add('scale-95', 'opacity-0');
+       
+      setTimeout(() => {
+        clips = clips.filter(c => c.id !== clipId);
+        renderClipsList();
+         
+        // 更新按钮状态
+        exportBtn.disabled = clips.length === 0;
+      }, 200);
+    }
+ 
+    // 导出所有片段
+    function exportClips() {
+      if (!audioBuffer || clips.length === 0) return;
+       
+      // 显示导出进度弹窗
+      exportProgressContainer.classList.remove('hidden');
+      exportProgressBar.style.width = '0%';
+      exportStatus.textContent = '正在准备导出...';
+      exportCurrentClip.textContent = `片段 1/${clips.length}`;
+      exportPercentage.textContent = '0%';
+       
+      // 创建中止控制器
+      exportAbortController = new AbortController();
+      const signal = exportAbortController.signal;
+       
+      // 处理每个片段
+      const exportPromises = clips.map((clip, index) => {
+        return new Promise((resolve, reject) => {
+          if (signal.aborted) {
+            reject(new Error('导出已取消'));
+            return;
+          }
+           
+          // 更新进度信息
+          const progressPercent = Math.round((index / clips.length) * 100);
+          updateExportProgress(progressPercent, index + 1, `正在处理片段 ${index + 1}...`);
+           
+          // 创建新的音频缓冲区（截取片段）
+          const startSample = Math.floor(clip.start * audioBuffer.sampleRate);
+          const endSample = Math.floor(clip.end * audioBuffer.sampleRate);
+          const length = endSample - startSample;
+           
+          // 处理多声道（转为单声道）
+          let channelData = [];
+          if (audioBuffer.numberOfChannels === 1) {
+            // 单声道直接使用
+            const data = audioBuffer.getChannelData(0);
+            channelData.push(new Float32Array(data.subarray(startSample, endSample)));
+          } else {
+            // 双声道合并为单声道
+            const left = audioBuffer.getChannelData(0);
+            const right = audioBuffer.getChannelData(1);
+            const merged = new Float32Array(length);
+            for (let i = 0; i < length; i++) {
+              merged[i] = (left[startSample + i] + right[startSample + i]) / 2;
+            }
+            channelData.push(merged);
+          }
+           
+          // 根据选择的格式编码
+          const format = exportFormat.value;
+          if (format === 'wav') {
+            // WAV 编码
+            encodeToWav(channelData[0], audioBuffer.sampleRate)
+              .then(blob => {
+                saveExportedFile(blob, clip, index);
+                resolve();
+              })
+              .catch(reject);
+          } else if (format === 'mp3') {
+            // MP3 编码（使用 lamejs）
+            encodeToMp3(channelData[0], audioBuffer.sampleRate)
+              .then(blob => {
+                saveExportedFile(blob, clip, index);
+                resolve();
+              })
+              .catch(reject);
+          }
+        });
+      });
+       
+      // 处理所有导出
+      Promise.all(exportPromises)
+        .then(() => {
+          updateExportProgress(100, clips.length, '导出完成！');
+          setTimeout(() => {
+            exportProgressContainer.classList.add('hidden');
+            showToast(`成功导出 ${clips.length} 个音频片段`);
+          }, 1000);
+        })
+        .catch((error) => {
+          if (error.message !== '导出已取消') {
+            console.error('导出失败:', error);
+            exportStatus.textContent = `导出失败: ${error.message}`;
+            setTimeout(() => {
+              exportProgressContainer.classList.add('hidden');
+            }, 2000);
+          }
+        })
+        .finally(() => {
+          exportAbortController = null;
+        });
+    }
+ 
+    // 将音频数据编码为 WAV 格式
+    function encodeToWav(audioData, sampleRate) {
+      return new Promise((resolve) => {
+        const buffer = new ArrayBuffer(44 + audioData.length * 2);
+        const view = new DataView(buffer);
+         
+        // 写入 WAV 文件头
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 32 + audioData.length * 2, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true); // 单声道
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, audioData.length * 2, true);
+         
+        // 写入音频数据
+        let offset = 44;
+        for (let i = 0; i < audioData.length; i++) {
+          view.setInt16(offset, audioData[i] * 0x7FFF, true);
+          offset += 2;
+        }
+         
+        const blob = new Blob([view], { type: 'audio/wav' });
+        resolve(blob);
+      });
+    }
+ 
+    // 将音频数据编码为 MP3 格式（使用 lamejs）
+    function encodeToMp3(audioData, sampleRate) {
+      return new Promise((resolve) => {
+        // 初始化 lamejs 编码器（单声道，采样率，比特率128kbps）
+        const mp3Encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
+         
+        // 转换音频数据格式：Float32(-1到1) → Int16(-32768到32767)
+        const int16Array = new Int16Array(audioData.length);
+        for (let i = 0; i < audioData.length; i++) {
+          const val = audioData[i];
+          int16Array[i] = val < 0 ? val * 32768 : val * 32767;
+        }
+         
+        // 分块编码（lamejs 对单次处理的数据大小有限制）
+        const mp3Data = [];
+        const blockSize = 1152; // 单声道推荐块大小
+        for (let i = 0; i < int16Array.length; i += blockSize) {
+          const block = int16Array.subarray(i, i + blockSize);
+          const mp3Buffer = mp3Encoder.encodeBuffer(block);
+          if (mp3Buffer.length > 0) {
+            mp3Data.push(mp3Buffer);
+          }
+        }
+         
+        // 完成编码，获取剩余数据
+        const remainingBuffer = mp3Encoder.flush();
+        if (remainingBuffer.length > 0) {
+          mp3Data.push(remainingBuffer);
+        }
+         
+        // 合并所有 MP3 数据并创建 Blob
+        const blob = new Blob(mp3Data, { type: 'audio/mpeg' });
+        resolve(blob);
+      });
+    }
+ 
+    // 保存导出的文件
+    function saveExportedFile(blob, clip, index) {
+      const prefix = exportPrefix.value.trim() || 'clip';
+      const format = exportFormat.value;
+      const fileName = `${prefix}-${index + 1}_${formatTimeForFilename(clip.start)}-${formatTimeForFilename(clip.end)}.${format}`;
+       
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+       
+      // 模拟点击下载
+      document.body.appendChild(a);
+      a.click();
+       
+      // 清理
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    }
+ 
+    // 更新导出进度
+    function updateExportProgress(percent, current, status) {
+      exportProgressBar.style.width = `${percent}%`;
+      exportStatus.textContent = status;
+      exportCurrentClip.textContent = `片段 ${current}/${clips.length}`;
+      exportPercentage.textContent = `${percent}%`;
+    }
+ 
+    // 取消导出
+    function cancelExport() {
+      if (exportAbortController) {
+        exportAbortController.abort();
+        exportStatus.textContent = '导出已取消';
+         
+        setTimeout(() => {
+          exportProgressContainer.classList.add('hidden');
+        }, 1000);
+      }
+    }
+ 
+    // 辅助函数：写入字符串到 DataView
+    function writeString(view, offset, string) {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    }
+ 
+    // 显示提示消息
+    function showToast(message) {
+      // 检查是否已有toast
+      let toast = document.querySelector('.toast-notification');
+       
+      if (!toast) {
+        // 创建toast元素
+        toast = document.createElement('div');
+        toast.className = 'toast-notification fixed bottom-4 right-4 bg-dark text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-y-20 opacity-0 transition-all duration-300';
+        document.body.appendChild(toast);
+      }
+       
+      // 设置消息并显示
+      toast.textContent = message;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+       
+      // 3秒后隐藏
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+ 
+    // 格式化时间 (用于显示)
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      const milliseconds = Math.floor((seconds % 1) * 1000);
+       
+      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+    }
+ 
+    // 格式化时间 (用于输入框)
+    function formatTimeForInput(seconds) {
+      const date = new Date(seconds * 1000);
+      return date.toISOString().slice(11, 23); // 提取 HH:MM:SS.sss 部分
+    }
+ 
+    // 从输入框解析时间
+    function parseTimeFromInput(timeStr) {
+      if (!timeStr) return 0;
+       
+      const parts = timeStr.split(':');
+      if (parts.length !== 3) return 0;
+       
+      const [hours, minutes, secondsStr] = parts;
+      const [seconds, milliseconds] = secondsStr.split('.').concat([0]);
+       
+      return (
+        parseInt(hours, 10) * 3600 +
+        parseInt(minutes, 10) * 60 +
+        parseInt(seconds, 10) +
+        parseInt(milliseconds, 10) / 1000
+      );
+    }
+ 
+    // 格式化时间 (用于文件名)
+    function formatTimeForFilename(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      const milliseconds = Math.floor((seconds % 1) * 1000);
+       
+      return `${minutes.toString().padStart(2, '0')}m${remainingSeconds.toString().padStart(2, '0')}s${milliseconds.toString().padStart(3, '0')}ms`;
+    }
+ 
+    // 初始化应用
+    function initApp() {
+      initEventListeners();
+    }
+ 
+    // 启动应用
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

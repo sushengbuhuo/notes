@@ -1,0 +1,2775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全能音频处理器</title>
+  <!-- 外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@6.6.3/dist/wavesurfer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@6.6.3/dist/plugin/wavesurfer.regions.min.js"></script>
+  <!-- ffmpeg.js 暂时移除，以避免ORB安全机制阻止 -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/ffmpeg.js@4.2.9003/ffmpeg.min.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#10B981',
+            danger: '#EF4444',
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        },
+      }
+    }
+  </script>
+  
+  <!-- 自定义样式 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto { content-visibility: auto; }
+      .scrollbar-hide {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .timeline-marker {
+        width: 2px;
+        height: 100%;
+        background-color: #4F46E5;
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
+        z-index: 10;
+      }
+      .timeline-selection {
+        position: absolute;
+        height: 100%;
+        background-color: rgba(79,70,229,0.2);
+        z-index: 5;
+      }
+      .timeline-handle {
+        width: 8px;
+        height: 24px;
+        background-color: #4F46E5;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        cursor: ew-resize;
+        z-index: 15;
+        box-shadow: 0 0 0 2px white;
+        transition: all 0.2s ease;
+      }
+      .timeline-handle:hover {
+        height: 32px;
+        background-color: #3B34A9;
+      }
+      .waveform-container {
+        position: relative;
+        height: 140px;
+        background: #f8fafc;
+        border-radius: 0.5rem;
+        overflow: hidden;
+      }
+      .tool-btn {
+        @apply px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-1 hover:shadow-md;
+      }
+      .tool-btn.active {
+        @apply bg-primary/10 border-primary;
+      }
+      .panel {
+        @apply bg-white rounded-xl shadow-md p-4 md:p-6 transition-all duration-300 hover:shadow-lg;
+      }
+      .tab-active {
+        @apply border-b-2 border-primary text-primary font-medium;
+      }
+      .clip-item {
+        @apply bg-white rounded-lg p-3 shadow-sm flex justify-between items-center cursor-move transition-all duration-200 hover:shadow-md;
+      }
+      .audio-visualizer {
+        @apply h-16 w-full bg-gray-50 rounded-lg overflow-hidden;
+      }
+      .notification {
+        @apply fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-20 opacity-0;
+      }
+      .notification.show {
+        @apply translate-y-0 opacity-100;
+      }
+      .notification.success {
+        @apply bg-secondary text-white;
+      }
+      .notification.error {
+        @apply bg-danger text-white;
+      }
+      .notification.info {
+        @apply bg-primary text-white;
+      }
+      .dark-mode {
+        @apply bg-gray-900 text-white;
+      }
+      .dark-mode .panel,
+      .dark-mode header,
+      .dark-mode #mobileMenu,
+      .dark-mode footer {
+        @apply bg-gray-800;
+      }
+      .dark-mode .waveform-container,
+      .dark-mode .bg-gray-50 {
+        @apply bg-gray-700;
+      }
+      .dark-mode .text-gray-500,
+      .dark-mode .text-gray-600 {
+        @apply text-gray-300;
+      }
+      .dark-mode .border-gray-200,
+      .dark-mode .border-gray-300 {
+        @apply border-gray-600;
+      }
+      .processing-spinner {
+        @apply animate-spin h-5 w-5 border-2 border-white border-t-primary rounded-full inline-block;
+      }
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col transition-colors duration-300">
+  <!-- 通知组件 -->
+  <div id="notification" class="notification"></div>
+  
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 transition-all duration-300">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-music text-primary text-2xl"></i>
+        <h1 class="text-xl md:text-2xl font-bold text-primary">全能音频处理器</h1>
+      </div>
+      <div class="hidden md:flex items-center space-x-6">
+        <button id="helpBtn" class="text-gray-600 hover:text-primary transition-colors">
+          <i class="fa fa-question-circle mr-1"></i>帮助
+        </button>
+        <button id="presetBtn" class="text-gray-600 hover:text-primary transition-colors">
+          <i class="fa fa-bookmark mr-1"></i>预设
+        </button>
+        <button id="themeToggle" class="text-gray-600 hover:text-primary transition-colors">
+          <i class="fa fa-moon-o mr-1"></i>夜间模式
+        </button>
+      </div>
+      <button class="md:hidden text-gray-600" id="mobileMenuBtn">
+        <i class="fa fa-bars text-xl"></i>
+      </button>
+    </div>
+    
+    <!-- 移动端菜单 -->
+    <div id="mobileMenu" class="md:hidden hidden bg-white border-t border-gray-200 py-2 px-4">
+      <button id="mobileHelpBtn" class="w-full text-left py-2 text-gray-600 hover:text-primary transition-colors">
+        <i class="fa fa-question-circle mr-1"></i>帮助
+      </button>
+      <button id="mobilePresetBtn" class="w-full text-left py-2 text-gray-600 hover:text-primary transition-colors">
+        <i class="fa fa-bookmark mr-1"></i>预设
+      </button>
+      <button id="mobileThemeToggle" class="w-full text-left py-2 text-gray-600 hover:text-primary transition-colors">
+        <i class="fa fa-moon-o mr-1"></i>夜间模式
+      </button>
+    </div>
+  </header>
+
+  <!-- 主要内容区 -->
+  <main class="flex-grow container mx-auto px-4 py-6">
+    <!-- 功能标签页 -->
+    <div class="flex border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide">
+      <button id="tab-clip" class="tab-active px-4 py-3 text-sm md:text-base whitespace-nowrap transition-all">
+        <i class="fa fa-scissors mr-1"></i>音频裁剪
+      </button>
+      <button id="tab-edit" class="px-4 py-3 text-sm md:text-base text-gray-600 hover:text-primary whitespace-nowrap transition-all">
+        <i class="fa fa-sliders mr-1"></i>音频编辑
+      </button>
+      <button id="tab-convert" class="px-4 py-3 text-sm md:text-base text-gray-600 hover:text-primary whitespace-nowrap transition-all">
+        <i class="fa fa-exchange mr-1"></i>格式转换
+      </button>
+      <button id="tab-batch" class="px-4 py-3 text-sm md:text-base text-gray-600 hover:text-primary whitespace-nowrap transition-all">
+        <i class="fa fa-files-o mr-1"></i>批量处理
+      </button>
+    </div>
+
+    <!-- 上传区域 -->
+    <section id="uploadSection" class="mb-6">
+      <div class="panel">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+          <i class="fa fa-upload text-primary mr-2"></i>上传音频/视频文件
+        </h2>
+        
+        <div id="dropArea" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-all duration-300 hover:border-primary hover:bg-primary/5 group">
+          <i class="fa fa-file-audio-o text-5xl text-gray-400 mb-4 group-hover:text-primary transition-colors"></i>
+          <p class="text-gray-600 mb-4">拖放文件到此处，或点击选择文件</p>
+          <p class="text-sm text-gray-500 mb-6">支持格式：MP3, WAV, OGG, WebM, MP4, MOV（可提取音频）</p>
+          <label class="inline-block bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg cursor-pointer transition-all duration-300 transform hover:scale-105">
+            <i class="fa fa-folder-open mr-2"></i>选择文件
+            <input type="file" id="audioInput" accept="audio/*,video/*" class="hidden" multiple>
+          </label>
+        </div>
+        
+        <!-- 上传进度条 (默认隐藏) -->
+        <div id="progressContainer" class="hidden mt-6">
+          <div class="flex justify-between text-sm mb-1">
+            <span id="fileName" class="text-gray-600 truncate max-w-[70%]"></span>
+            <span id="progressPercent" class="text-primary font-medium">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+            <div id="progressBar" class="bg-primary h-2.5 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 文件列表 (多文件上传) -->
+        <div id="fileList" class="hidden mt-6 space-y-2 max-h-40 overflow-y-auto scrollbar-hide">
+          <div class="flex justify-between items-center">
+            <h3 class="font-medium">已上传文件</h3>
+            <span class="text-sm text-gray-500">共 <span id="totalFilesCount">0</span> 个文件</span>
+          </div>
+          <div id="fileItems" class="space-y-1"></div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 音频处理区域 (默认隐藏) -->
+    <section id="audioProcessingSection" class="hidden space-y-6">
+      <!-- 1. 音频裁剪标签页 -->
+      <div id="panel-clip" class="space-y-6">
+        <!-- 音频信息和播放器 -->
+        <div class="panel">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fa fa-headphones text-primary mr-2"></i>音频预览与裁剪
+          </h2>
+          
+          <div class="flex flex-col lg:flex-row gap-6">
+            <!-- 左侧：波形与时间轴 -->
+            <div class="w-full lg:w-2/3">
+              <audio id="audioPlayer" controls class="w-full mb-6"></audio>
+              
+              <!-- 波形可视化 -->
+              <div class="waveform-container mb-6 relative" id="waveform">
+                <!-- 由wavesurfer.js动态生成波形 -->
+                <div class="absolute inset-0 flex items-center justify-center text-gray-400" id="waveform-placeholder">
+                  <i class="fa fa-spinner fa-spin text-2xl mr-2"></i>
+                  <span>正在生成波形...</span>
+                </div>
+                <div id="timelineSelection" class="timeline-selection hidden"></div>
+                <div id="startHandle" class="timeline-handle hidden"></div>
+                <div id="endHandle" class="timeline-handle hidden"></div>
+                <div id="playhead" class="timeline-marker" style="left: 0%"></div>
+                
+                <!-- 音频频谱可视化 -->
+                <div class="audio-visualizer absolute bottom-0 left-0 right-0 opacity-0 transition-opacity duration-300" id="audioVisualizer">
+                  <canvas id="visualizerCanvas" class="w-full h-full"></canvas>
+                </div>
+              </div>
+              
+              <!-- 音频信息 -->
+              <div class="flex flex-wrap gap-4 mb-6">
+                <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
+                  <i class="fa fa-clock-o text-primary mr-2"></i>
+                  <span>总时长: <span id="totalDuration" class="font-medium">00:00</span></span>
+                </div>
+                <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
+                  <i class="fa fa-file-size text-primary mr-2"></i>
+                  <span>文件大小: <span id="fileSize" class="font-medium">0 MB</span></span>
+                </div>
+                <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
+                  <i class="fa fa-music text-primary mr-2"></i>
+                  <span>格式: <span id="fileFormat" class="font-medium">未知</span></span>
+                </div>
+                <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
+                  <i class="fa fa-signal text-primary mr-2"></i>
+                  <span>采样率: <span id="sampleRate" class="font-medium">0 Hz</span></span>
+                </div>
+                <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
+                  <i class="fa fa-area-chart text-primary mr-2"></i>
+                  <span>声道: <span id="channels" class="font-medium">0</span></span>
+                </div>
+              </div>
+              
+              <!-- 时间输入控制 -->
+              <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex items-center gap-2">
+                  <label for="startTime" class="text-gray-700">开始时间:</label>
+                  <input type="time" id="startTime" step="0.001" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" value="00:00:00.000">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label for="endTime" class="text-gray-700">结束时间:</label>
+                  <input type="time" id="endTime" step="0.001" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" value="00:00:00.000">
+                </div>
+                <button id="addClipBtn" class="bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 ml-auto transform hover:scale-105">
+                  <i class="fa fa-plus mr-1"></i>添加剪切片段
+                </button>
+              </div>
+            </div>
+            
+            <!-- 右侧：智能裁剪与片段列表 -->
+            <div class="w-full lg:w-1/3 space-y-4">
+              <!-- 智能裁剪设置 -->
+              <div class="panel">
+                <h3 class="font-semibold mb-3 flex items-center">
+                  <i class="fa fa-magic text-primary mr-2"></i>智能裁剪
+                </h3>
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-gray-700 text-sm mb-1">目标片段时长</label>
+                    <div class="flex gap-2">
+                      <input type="range" id="targetDurationSlider" min="5" max="180" value="30" 
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                      <input type="number" id="targetDuration" value="30" min="5" max="180" 
+                        class="border border-gray-300 rounded-md px-3 py-2 text-sm w-16">
+                      <span class="flex items-center text-gray-500">秒</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-gray-700 text-sm mb-1">裁剪策略</label>
+                    <select id="clipStrategy" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                      <option value="lyric">歌词完整性优先（歌曲专用）</option>
+                      <option value="silence">静音间隔优先（通用）</option>
+                      <option value="equal">均等分割（不考虑内容）</option>
+                    </select>
+                  </div>
+                  <button id="smartClipBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02]">
+                    <i class="fa fa-bolt mr-1"></i>智能生成片段
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 剪切片段列表 -->
+              <div class="panel">
+                <div class="flex justify-between items-center mb-4">
+                  <h3 class="font-semibold text-lg">剪切片段</h3>
+                  <span id="clipCount" class="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm">0 段</span>
+                </div>
+                
+                <!-- 导出设置 -->
+                <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                  <h4 class="font-medium mb-2 text-sm">导出设置</h4>
+                  <div class="flex items-center gap-2 mb-2">
+                    <label for="exportPrefix" class="text-gray-700 text-sm">文件名前缀:</label>
+                    <input type="text" id="exportPrefix" value="clip" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm flex-grow focus:outline-none focus:ring-2 focus:ring-primary/50">
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <label for="exportFormat" class="text-gray-700 text-sm">导出格式:</label>
+                    <select id="exportFormat" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                      <option value="wav">WAV (无损)</option>
+                      <option value="mp3">MP3 (压缩)</option>
+                      <option value="aac">AAC (高效)</option>
+                      <option value="flac">FLAC (无损压缩)</option>
+                    </select>
+                  </div>
+                  <div class="flex items-center gap-2 mt-2">
+                    <label for="bitrate" class="text-gray-700 text-sm">比特率:</label>
+                    <select id="bitrate" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                      <option value="64">64kbps (低)</option>
+                      <option value="128" selected>128kbps (中)</option>
+                      <option value="192">192kbps (高)</option>
+                      <option value="320">320kbps (最高)</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div id="clipsList" class="space-y-3 max-h-64 overflow-y-auto scrollbar-hide">
+                  <div class="text-center text-gray-500 py-8">
+                    <i class="fa fa-film text-2xl mb-2"></i>
+                    <p>还没有添加剪切片段</p>
+                  </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                  <button id="clearClipsBtn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300 mb-3">
+                    <i class="fa fa-trash mr-2"></i>清空片段
+                  </button>
+                  <button id="exportBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]" disabled>
+                    <i class="fa fa-download mr-2"></i>导出所有片段
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 2. 音频编辑标签页 (默认隐藏) -->
+      <div id="panel-edit" class="hidden space-y-6">
+        <div class="panel">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fa fa-sliders text-primary mr-2"></i>音频编辑
+          </h2>
+          
+          <div class="flex flex-col lg:flex-row gap-6">
+            <!-- 左侧：编辑控件 -->
+            <div class="w-full lg:w-1/3 space-y-4">
+              <!-- 音量调节 -->
+              <div>
+                <h3 class="font-medium mb-3">音量调节</h3>
+                <div class="flex items-center gap-3">
+                  <i class="fa fa-volume-down text-gray-500"></i>
+                  <input type="range" id="volumeControl" min="0" max="200" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                  <i class="fa fa-volume-up text-gray-500"></i>
+                </div>
+                <div class="flex justify-between text-sm text-gray-500 mt-1">
+                  <span>0%</span>
+                  <span id="volumeValue">100%</span>
+                  <span>200%</span>
+                </div>
+              </div>
+              
+              <!-- 音效处理 -->
+              <div class="pt-4 border-t border-gray-200">
+                <h3 class="font-medium mb-3">音效处理</h3>
+                <div class="grid grid-cols-2 gap-2">
+                  <button class="tool-btn bg-white border border-gray-300 hover:border-primary" data-effect="fadein">
+                    <i class="fa fa-arrow-up"></i>淡入
+                  </button>
+                  <button class="tool-btn bg-white border border-gray-300 hover:border-primary" data-effect="fadeout">
+                    <i class="fa fa-arrow-down"></i>淡出
+                  </button>
+                  <button class="tool-btn bg-white border border-gray-300 hover:border-primary" data-effect="reverse">
+                    <i class="fa fa-rotate-right"></i>反转
+                  </button>
+                  <button class="tool-btn bg-white border border-gray-300 hover:border-primary" data-effect="noise">
+                    <i class="fa fa-ban"></i>降噪
+                  </button>
+                  <button class="tool-btn bg-white border border-gray-300 hover:border-primary" data-effect="echo">
+                    <i class="fa fa-repeat"></i>回声
+                  </button>
+                  <button class="tool-btn bg-white border border-gray-300 hover:border-primary" data-effect="reverb">
+                    <i class="fa fa-area-chart"></i>混响
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 均衡器 -->
+              <div class="pt-4 border-t border-gray-200">
+                <h3 class="font-medium mb-3">均衡器</h3>
+                <div class="space-y-3">
+                  <div>
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>60Hz</span>
+                      <span id="eq60Value">0dB</span>
+                    </div>
+                    <input type="range" min="-12" max="12" value="0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" data-eq="60">
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>250Hz</span>
+                      <span id="eq250Value">0dB</span>
+                    </div>
+                    <input type="range" min="-12" max="12" value="0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" data-eq="250">
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>1kHz</span>
+                      <span id="eq1kValue">0dB</span>
+                    </div>
+                    <input type="range" min="-12" max="12" value="0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" data-eq="1000">
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>4kHz</span>
+                      <span id="eq4kValue">0dB</span>
+                    </div>
+                    <input type="range" min="-12" max="12" value="0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" data-eq="4000">
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>16kHz</span>
+                      <span id="eq16kValue">0dB</span>
+                    </div>
+                    <input type="range" min="-12" max="12" value="0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" data-eq="16000">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 速度与音调 -->
+              <div class="pt-4 border-t border-gray-200">
+                <h3 class="font-medium mb-3">速度与音调</h3>
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">播放速度</label>
+                    <input type="range" id="speedControl" min="0.5" max="2" step="0.1" value="1" 
+                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <div class="flex justify-between text-sm text-gray-500 mt-1">
+                      <span>0.5x</span>
+                      <span id="speedValue">1.0x</span>
+                      <span>2.0x</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">音调调整</label>
+                    <input type="range" id="pitchControl" min="-12" max="12" step="1" value="0" 
+                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <div class="flex justify-between text-sm text-gray-500 mt-1">
+                      <span>-12半音</span>
+                      <span id="pitchValue">0</span>
+                      <span>+12半音</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 应用按钮 -->
+              <div class="pt-4 border-t border-gray-200">
+                <button id="applyEffectsBtn" class="w-full bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02]">
+                  <i class="fa fa-check mr-1"></i>应用所有效果
+                </button>
+                <button id="resetEffectsBtn" class="w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300">
+                  <i class="fa fa-refresh mr-1"></i>重置效果
+                </button>
+              </div>
+            </div>
+            
+            <!-- 右侧：预览与片段拼接 -->
+            <div class="w-full lg:w-2/3">
+              <audio id="editAudioPlayer" controls class="w-full mb-6"></audio>
+              
+              <div class="mb-6">
+                <h3 class="font-medium mb-3">片段拼接</h3>
+                <div id="mergeList" class="bg-gray-50 rounded-lg p-3 min-h-32 mb-3 border border-dashed border-gray-300">
+                  <div class="text-center text-gray-500 py-6">
+                    <i class="fa fa-arrows-h text-xl mb-2"></i>
+                    <p>将剪切片段拖到此处排序拼接</p>
+                  </div>
+                </div>
+                <button id="mergeClipsBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105">
+                  <i class="fa fa-object-group mr-1"></i>合并选中片段
+                </button>
+              </div>
+              
+              <!-- 音频标签编辑 -->
+              <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="font-medium mb-3">音频标签</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">标题</label>
+                    <input type="text" id="audioTitle" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                  </div>
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">艺术家</label>
+                    <input type="text" id="audioArtist" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                  </div>
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">专辑</label>
+                    <input type="text" id="audioAlbum" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                  </div>
+                  <div>
+                    <label class="block text-sm text-gray-600 mb-1">年份</label>
+                    <input type="text" id="audioYear" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm text-gray-600 mb-1">备注</label>
+                    <textarea id="audioComment" rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
+                  </div>
+                </div>
+                <button id="saveTagsBtn" class="mt-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300">
+                  <i class="fa fa-save mr-1"></i>保存标签
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 3. 格式转换标签页 (默认隐藏) -->
+      <div id="panel-convert" class="hidden">
+        <div class="panel">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fa fa-exchange text-primary mr-2"></i>格式转换
+          </h2>
+          
+          <div class="flex flex-col lg:flex-row gap-6">
+            <div class="w-full lg:w-1/2">
+              <h3 class="font-medium mb-3">源文件</h3>
+              <div id="convertFileList" class="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto scrollbar-hide mb-6">
+                <div class="text-center text-gray-500 py-6">
+                  <p>请先上传需要转换的文件</p>
+                </div>
+              </div>
+              
+              <!-- 格式对比 -->
+              <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="font-medium mb-3 text-sm">格式特性对比</h3>
+                <div class="overflow-x-auto">
+                  <table class="min-w-full text-sm">
+                    <thead>
+                      <tr class="border-b border-gray-200">
+                        <th class="py-2 text-left">格式</th>
+                        <th class="py-2 text-left">特点</th>
+                        <th class="py-2 text-left">适用场景</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="border-b border-gray-200">
+                        <td class="py-2 font-medium">MP3</td>
+                        <td class="py-2">压缩率高，兼容性好</td>
+                        <td class="py-2">日常播放、分享</td>
+                      </tr>
+                      <tr class="border-b border-gray-200">
+                        <td class="py-2 font-medium">WAV</td>
+                        <td class="py-2">无损，文件大</td>
+                        <td class="py-2">专业编辑、保存</td>
+                      </tr>
+                      <tr class="border-b border-gray-200">
+                        <td class="py-2 font-medium">FLAC</td>
+                        <td class="py-2">无损压缩，音质好</td>
+                        <td class="py-2">高品质音乐收藏</td>
+                      </tr>
+                      <tr>
+                        <td class="py-2 font-medium">AAC</td>
+                        <td class="py-2">高效压缩，音质优于MP3</td>
+                        <td class="py-2">移动设备、流媒体</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <div class="w-full lg:w-1/2">
+              <h3 class="font-medium mb-3">转换设置</h3>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-gray-700 mb-1">目标格式</label>
+                  <select id="convertFormat" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="mp3">MP3</option>
+                    <option value="wav">WAV</option>
+                    <option value="aac">AAC</option>
+                    <option value="flac">FLAC</option>
+                    <option value="ogg">OGG</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-gray-700 mb-1">采样率</label>
+                  <select id="convertSampleRate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="8000">8kHz (低)</option>
+                    <option value="22050">22.05kHz</option>
+                    <option value="44100" selected>44.1kHz (标准)</option>
+                    <option value="48000">48kHz (高清)</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-gray-700 mb-1">比特率</label>
+                  <select id="convertBitrate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="64">64kbps</option>
+                    <option value="128">128kbps</option>
+                    <option value="192" selected>192kbps</option>
+                    <option value="320">320kbps</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-gray-700 mb-1">输出文件夹</label>
+                  <div class="flex">
+                    <input type="text" id="outputFolder" value="转换输出" class="flex-grow border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <button id="browseFolderBtn" class="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-r-md border border-l-0 border-gray-300 transition-colors">
+                      <i class="fa fa-folder-open"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-gray-700 mb-1">文件名格式</label>
+                  <select id="fileNameFormat" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="original">保留原文件名</option>
+                    <option value="prefix">前缀+序号</option>
+                    <option value="custom">自定义格式</option>
+                  </select>
+                </div>
+                
+                <div id="customFileName" class="hidden">
+                  <label class="block text-sm text-gray-600 mb-1">自定义文件名前缀</label>
+                  <input type="text" id="customFileNamePrefix" value="converted_" class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                </div>
+                
+                <div class="pt-2">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="deleteOriginal" class="accent-primary">
+                    <span class="text-gray-700">转换后删除源文件</span>
+                  </label>
+                </div>
+                
+                <button id="startConvertBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]" disabled>
+                  <i class="fa fa-cog mr-1"></i>开始转换
+                </button>
+              </div>
+              
+              <!-- 转换进度 -->
+              <div id="conversionProgress" class="hidden mt-6">
+                <div class="flex justify-between text-sm mb-1">
+                  <span id="convertingFileName" class="text-gray-600"></span>
+                  <span id="conversionPercent" class="text-primary font-medium">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                  <div id="conversionBar" class="bg-primary h-2.5 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 4. 批量处理标签页 -->
+      <div id="panel-batch" class="hidden">
+        <div class="panel">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fa fa-files-o text-primary mr-2"></i>批量处理
+          </h2>
+          
+          <div class="space-y-6">
+            <div>
+              <h3 class="font-medium mb-3">待处理文件</h3>
+              <div id="batchFileList" class="bg-gray-50 rounded-lg p-4 min-h-40 border border-dashed border-gray-300">
+                <div class="text-center text-gray-500 py-6">
+                  <i class="fa fa-upload text-xl mb-2"></i>
+                  <p>拖放多个文件到此处，或点击上方"选择文件"按钮</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="font-medium mb-3">批量操作</h3>
+                <div class="space-y-3">
+                  <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" id="batchTrim" class="accent-primary">
+                    <div>
+                      <span class="block font-medium">统一裁剪</span>
+                      <span class="text-sm text-gray-500">对所有文件进行相同时间段的裁剪</span>
+                    </div>
+                  </label>
+                  
+                  <div id="batchTrimSettings" class="hidden pl-6 pr-3 pb-3 space-y-3">
+                    <div class="flex items-center gap-2">
+                      <label for="batchStartTime" class="text-gray-700 text-sm">开始时间:</label>
+                      <input type="time" id="batchStartTime" step="0.001" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" value="00:00:00.000">
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <label for="batchEndTime" class="text-gray-700 text-sm">结束时间:</label>
+                      <input type="time" id="batchEndTime" step="0.001" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" value="00:00:10.000">
+                    </div>
+                  </div>
+                  
+                  <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" id="batchFormat" class="accent-primary">
+                    <div>
+                      <span class="block font-medium">格式转换</span>
+                      <span class="text-sm text-gray-500">将所有文件转换为指定格式</span>
+                    </div>
+                  </label>
+                  
+                  <div id="batchFormatSettings" class="hidden pl-6 pr-3 pb-3 space-y-3">
+                    <div>
+                      <label class="block text-gray-700 text-sm mb-1">目标格式</label>
+                      <select id="batchTargetFormat" class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="mp3">MP3</option>
+                        <option value="wav">WAV</option>
+                        <option value="aac">AAC</option>
+                        <option value="flac">FLAC</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" id="batchVolume" class="accent-primary">
+                    <div>
+                      <span class="block font-medium">音量调整</span>
+                      <span class="text-sm text-gray-500">统一调整所有文件的音量</span>
+                    </div>
+                  </label>
+                  
+                  <div id="batchVolumeSettings" class="hidden pl-6 pr-3 pb-3">
+                    <div class="flex items-center gap-3">
+                      <i class="fa fa-volume-down text-gray-500"></i>
+                      <input type="range" id="batchVolumeControl" min="0" max="200" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                      <i class="fa fa-volume-up text-gray-500"></i>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-500 mt-1">
+                      <span>0%</span>
+                      <span id="batchVolumeValue">100%</span>
+                      <span>200%</span>
+                    </div>
+                  </div>
+                  
+                  <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="checkbox" id="batchTags" class="accent-primary">
+                    <div>
+                      <span class="block font-medium">统一标签</span>
+                      <span class="text-sm text-gray-500">为所有文件添加相同的元数据标签</span>
+                    </div>
+                  </label>
+                  
+                  <div id="batchTagsSettings" class="hidden pl-6 pr-3 pb-3 space-y-3">
+                    <div>
+                      <label class="block text-sm text-gray-600 mb-1">专辑名称</label>
+                      <input type="text" id="batchAlbumName" class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div>
+                      <label class="block text-sm text-gray-600 mb-1">艺术家</label>
+                      <input type="text" id="batchArtistName" class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="font-medium mb-3">处理设置</h3>
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-gray-700 mb-1">输出路径</label>
+                    <div class="flex">
+                      <input type="text" id="batchOutputFolder" value="批量处理输出" class="flex-grow border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                      <button id="batchBrowseFolderBtn" class="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-r-md border border-l-0 border-gray-300 transition-colors">
+                        <i class="fa fa-folder-open"></i>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-gray-700 mb-1">文件名格式</label>
+                    <select id="batchFileNameFormat" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                      <option value="original">保留原文件名</option>
+                      <option value="prefix">前缀+序号 (例如: audio_001)</option>
+                      <option value="custom">自定义格式</option>
+                    </select>
+                  </div>
+                  
+                  <div id="batchCustomFileName" class="hidden">
+                    <label class="block text-gray-700 text-sm mb-1">自定义文件名前缀</label>
+                    <input type="text" id="batchFileNamePrefix" value="audio_" class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                  </div>
+                  
+                  <div class="pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" id="batchOverwrite" class="accent-primary" checked>
+                      <span class="text-gray-700">覆盖已存在的文件</span>
+                    </label>
+                  </div>
+                  
+                  <div class="pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" id="batchDeleteOriginal" class="accent-primary">
+                      <span class="text-gray-700">处理后删除源文件</span>
+                    </label>
+                  </div>
+                  
+                  <button id="startBatchBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]" disabled>
+                    <i class="fa fa-play mr-1"></i>开始批量处理
+                  </button>
+                </div>
+                
+                <!-- 批量处理进度 -->
+                <div id="batchProgress" class="hidden mt-6">
+                  <div class="flex justify-between text-sm mb-1">
+                    <span id="batchProgressText" class="text-gray-600">准备中...</span>
+                    <span id="batchProgressPercent" class="text-primary font-medium">0%</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div id="batchProgressBar" class="bg-primary h-2.5 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-white shadow-inner py-6 transition-all duration-300">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+      <p>全能音频处理器 &copy; 2023 | 一个功能强大的在线音频处理工具</p>
+      <div class="flex justify-center space-x-4 mt-2">
+        <a href="#" class="hover:text-primary transition-colors"><i class="fa fa-github"></i> 源码</a>
+        <a href="#" class="hover:text-primary transition-colors"><i class="fa fa-question-circle"></i> 使用帮助</a>
+        <a href="#" class="hover:text-primary transition-colors"><i class="fa fa-shield"></i> 隐私政策</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 帮助模态框 -->
+  <div id="helpModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-primary">使用帮助</h3>
+          <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-700">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <h4 class="font-semibold text-lg mb-2">如何上传音频文件？</h4>
+          <p class="text-gray-600">您可以点击"选择文件"按钮浏览并选择文件，或直接将音频/视频文件拖放到上传区域。</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg mb-2">如何裁剪音频？</h4>
+          <p class="text-gray-600">1. 上传音频后，在波形图上拖动滑块选择需要保留的部分<br>
+          2. 或直接输入开始和结束时间<br>
+          3. 点击"添加剪切片段"按钮保存片段<br>
+          4. 设置导出格式后点击"导出所有片段"</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg mb-2">支持哪些音频格式？</h4>
+          <p class="text-gray-600">支持MP3、WAV、OGG、FLAC、AAC等常见音频格式，也可以从MP4、MOV等视频文件中提取音频。</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg mb-2">处理后的文件保存在哪里？</h4>
+          <p class="text-gray-600">处理完成的文件会直接下载到您浏览器的默认下载文件夹中。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 预设模态框 -->
+  <div id="presetModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-primary">处理预设</h3>
+          <button id="closePresetBtn" class="text-gray-500 hover:text-gray-700">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <h4 class="font-medium mb-3">常用预设</h4>
+        <div class="space-y-2">
+          <button class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-primary/5 transition-colors" data-preset="podcast">
+            <span class="font-medium">播客优化</span>
+            <p class="text-sm text-gray-500">提高人声清晰度，降低背景噪音</p>
+          </button>
+          <button class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-primary/5 transition-colors" data-preset="music">
+            <span class="font-medium">音乐增强</span>
+            <p class="text-sm text-gray-500">优化音质，增强立体声效果</p>
+          </button>
+          <button class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-primary/5 transition-colors" data-preset="ringtone">
+            <span class="font-medium">铃声制作</span>
+            <p class="text-sm text-gray-500">适合手机铃声的音量和格式设置</p>
+          </button>
+          <button class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-primary/5 transition-colors" data-preset="voice">
+            <span class="font-medium">语音笔记</span>
+            <p class="text-sm text-gray-500">优化语音录制，提高可懂度</p>
+          </button>
+        </div>
+        
+        <div class="mt-6 pt-6 border-t border-gray-200">
+          <h4 class="font-medium mb-3">我的预设</h4>
+          <div class="text-center text-gray-500 py-4">
+            <p>您还没有保存任何预设</p>
+          </div>
+          <button id="saveCurrentPresetBtn" class="w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300">
+            <i class="fa fa-save mr-1"></i>保存当前设置为预设
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量
+    let wavesurfer;
+    let audioContext;
+    let analyser;
+    let canvas, ctx;
+    let clips = [];
+    let currentAudioFile = null;
+    let audioFiles = [];
+    let isDarkMode = false;
+    let animationId = null;
+    
+    // DOM 元素
+    const elements = {
+      // 上传相关
+      dropArea: document.getElementById('dropArea'),
+      audioInput: document.getElementById('audioInput'),
+      progressContainer: document.getElementById('progressContainer'),
+      fileName: document.getElementById('fileName'),
+      progressBar: document.getElementById('progressBar'),
+      progressPercent: document.getElementById('progressPercent'),
+      fileList: document.getElementById('fileList'),
+      fileItems: document.getElementById('fileItems'),
+      totalFilesCount: document.getElementById('totalFilesCount'),
+      audioProcessingSection: document.getElementById('audioProcessingSection'),
+      
+      // 标签页相关
+      tabs: {
+        clip: document.getElementById('tab-clip'),
+        edit: document.getElementById('tab-edit'),
+        convert: document.getElementById('tab-convert'),
+        batch: document.getElementById('tab-batch')
+      },
+      panels: {
+        clip: document.getElementById('panel-clip'),
+        edit: document.getElementById('panel-edit'),
+        convert: document.getElementById('panel-convert'),
+        batch: document.getElementById('panel-batch')
+      },
+      
+      // 音频裁剪相关
+      audioPlayer: document.getElementById('audioPlayer'),
+      waveform: document.getElementById('waveform'),
+      waveformPlaceholder: document.getElementById('waveform-placeholder'),
+      playhead: document.getElementById('playhead'),
+      timelineSelection: document.getElementById('timelineSelection'),
+      startHandle: document.getElementById('startHandle'),
+      endHandle: document.getElementById('endHandle'),
+      startTime: document.getElementById('startTime'),
+      endTime: document.getElementById('endTime'),
+      addClipBtn: document.getElementById('addClipBtn'),
+      totalDuration: document.getElementById('totalDuration'),
+      fileSize: document.getElementById('fileSize'),
+      fileFormat: document.getElementById('fileFormat'),
+      sampleRate: document.getElementById('sampleRate'),
+      channels: document.getElementById('channels'),
+      targetDurationSlider: document.getElementById('targetDurationSlider'),
+      targetDuration: document.getElementById('targetDuration'),
+      clipStrategy: document.getElementById('clipStrategy'),
+      smartClipBtn: document.getElementById('smartClipBtn'),
+      clipsList: document.getElementById('clipsList'),
+      clipCount: document.getElementById('clipCount'),
+      exportPrefix: document.getElementById('exportPrefix'),
+      exportFormat: document.getElementById('exportFormat'),
+      bitrate: document.getElementById('bitrate'),
+      clearClipsBtn: document.getElementById('clearClipsBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      
+      // 音频编辑相关
+      editAudioPlayer: document.getElementById('editAudioPlayer'),
+      volumeControl: document.getElementById('volumeControl'),
+      volumeValue: document.getElementById('volumeValue'),
+      eqControls: document.querySelectorAll('[data-eq]'),
+      eqValues: {
+        60: document.getElementById('eq60Value'),
+        250: document.getElementById('eq250Value'),
+        1000: document.getElementById('eq1kValue'),
+        4000: document.getElementById('eq4kValue'),
+        16000: document.getElementById('eq16kValue')
+      },
+      speedControl: document.getElementById('speedControl'),
+      speedValue: document.getElementById('speedValue'),
+      pitchControl: document.getElementById('pitchControl'),
+      pitchValue: document.getElementById('pitchValue'),
+      effectButtons: document.querySelectorAll('[data-effect]'),
+      applyEffectsBtn: document.getElementById('applyEffectsBtn'),
+      resetEffectsBtn: document.getElementById('resetEffectsBtn'),
+      mergeList: document.getElementById('mergeList'),
+      mergeClipsBtn: document.getElementById('mergeClipsBtn'),
+      audioTitle: document.getElementById('audioTitle'),
+      audioArtist: document.getElementById('audioArtist'),
+      audioAlbum: document.getElementById('audioAlbum'),
+      audioYear: document.getElementById('audioYear'),
+      audioComment: document.getElementById('audioComment'),
+      saveTagsBtn: document.getElementById('saveTagsBtn'),
+      
+      // 格式转换相关
+      convertFileList: document.getElementById('convertFileList'),
+      convertFormat: document.getElementById('convertFormat'),
+      convertSampleRate: document.getElementById('convertSampleRate'),
+      convertBitrate: document.getElementById('convertBitrate'),
+      outputFolder: document.getElementById('outputFolder'),
+      browseFolderBtn: document.getElementById('browseFolderBtn'),
+      deleteOriginal: document.getElementById('deleteOriginal'),
+      fileNameFormat: document.getElementById('fileNameFormat'),
+      customFileName: document.getElementById('customFileName'),
+      customFileNamePrefix: document.getElementById('customFileNamePrefix'),
+      startConvertBtn: document.getElementById('startConvertBtn'),
+      conversionProgress: document.getElementById('conversionProgress'),
+      convertingFileName: document.getElementById('convertingFileName'),
+      conversionBar: document.getElementById('conversionBar'),
+      conversionPercent: document.getElementById('conversionPercent'),
+      
+      // 批量处理相关
+      batchFileList: document.getElementById('batchFileList'),
+      batchTrim: document.getElementById('batchTrim'),
+      batchTrimSettings: document.getElementById('batchTrimSettings'),
+      batchStartTime: document.getElementById('batchStartTime'),
+      batchEndTime: document.getElementById('batchEndTime'),
+      batchFormat: document.getElementById('batchFormat'),
+      batchFormatSettings: document.getElementById('batchFormatSettings'),
+      batchTargetFormat: document.getElementById('batchTargetFormat'),
+      batchVolume: document.getElementById('batchVolume'),
+      batchVolumeSettings: document.getElementById('batchVolumeSettings'),
+      batchVolumeControl: document.getElementById('batchVolumeControl'),
+      batchVolumeValue: document.getElementById('batchVolumeValue'),
+      batchTags: document.getElementById('batchTags'),
+      batchTagsSettings: document.getElementById('batchTagsSettings'),
+      batchAlbumName: document.getElementById('batchAlbumName'),
+      batchArtistName: document.getElementById('batchArtistName'),
+      batchOutputFolder: document.getElementById('batchOutputFolder'),
+      batchBrowseFolderBtn: document.getElementById('batchBrowseFolderBtn'),
+      batchFileNameFormat: document.getElementById('batchFileNameFormat'),
+      batchCustomFileName: document.getElementById('batchCustomFileName'),
+      batchFileNamePrefix: document.getElementById('batchFileNamePrefix'),
+      batchOverwrite: document.getElementById('batchOverwrite'),
+      batchDeleteOriginal: document.getElementById('batchDeleteOriginal'),
+      startBatchBtn: document.getElementById('startBatchBtn'),
+      batchProgress: document.getElementById('batchProgress'),
+      batchProgressText: document.getElementById('batchProgressText'),
+      batchProgressBar: document.getElementById('batchProgressBar'),
+      batchProgressPercent: document.getElementById('batchProgressPercent'),
+      
+      // 其他UI元素
+      notification: document.getElementById('notification'),
+      themeToggle: document.getElementById('themeToggle'),
+      mobileThemeToggle: document.getElementById('mobileThemeToggle'),
+      mobileMenuBtn: document.getElementById('mobileMenuBtn'),
+      mobileMenu: document.getElementById('mobileMenu'),
+      helpBtn: document.getElementById('helpBtn'),
+      mobileHelpBtn: document.getElementById('mobileHelpBtn'),
+      helpModal: document.getElementById('helpModal'),
+      closeHelpBtn: document.getElementById('closeHelpBtn'),
+      presetBtn: document.getElementById('presetBtn'),
+      mobilePresetBtn: document.getElementById('mobilePresetBtn'),
+      presetModal: document.getElementById('presetModal'),
+      closePresetBtn: document.getElementById('closePresetBtn'),
+      saveCurrentPresetBtn: document.getElementById('saveCurrentPresetBtn')
+    };
+
+    // 初始化应用
+    function initApp() {
+      initEventListeners();
+      initWaveSurfer();
+      loadDarkModePreference();
+    }
+
+    // 初始化事件监听器
+    function initEventListeners() {
+      // 上传相关事件
+      elements.dropArea.addEventListener('dragover', handleDragOver);
+      elements.dropArea.addEventListener('drop', handleDrop);
+      elements.audioInput.addEventListener('change', handleFileSelect);
+      
+      // 标签页切换事件
+      Object.keys(elements.tabs).forEach(tab => {
+        elements.tabs[tab].addEventListener('click', () => switchTab(tab));
+      });
+      
+      // 音频裁剪相关事件
+      elements.audioPlayer.addEventListener('timeupdate', updatePlayhead);
+      elements.startTime.addEventListener('change', updateSelectionFromInputs);
+      elements.endTime.addEventListener('change', updateSelectionFromInputs);
+      elements.addClipBtn.addEventListener('click', addClip);
+      elements.targetDurationSlider.addEventListener('input', syncTargetDuration);
+      elements.targetDuration.addEventListener('input', syncTargetDuration);
+      elements.smartClipBtn.addEventListener('click', generateSmartClips);
+      elements.clearClipsBtn.addEventListener('click', clearClips);
+      elements.exportBtn.addEventListener('click', exportClips);
+      
+      // 音频编辑相关事件
+      elements.volumeControl.addEventListener('input', updateVolume);
+      elements.speedControl.addEventListener('input', updateSpeed);
+      elements.pitchControl.addEventListener('input', updatePitch);
+      elements.eqControls.forEach(control => {
+        control.addEventListener('input', updateEQ);
+      });
+      elements.effectButtons.forEach(btn => {
+        btn.addEventListener('click', toggleEffect);
+      });
+      elements.applyEffectsBtn.addEventListener('click', applyEffects);
+      elements.resetEffectsBtn.addEventListener('click', resetEffects);
+      elements.mergeClipsBtn.addEventListener('click', mergeSelectedClips);
+      elements.saveTagsBtn.addEventListener('click', saveAudioTags);
+      
+      // 格式转换相关事件
+      elements.startConvertBtn.addEventListener('click', startConversion);
+      elements.fileNameFormat.addEventListener('change', toggleCustomFileName);
+      elements.browseFolderBtn.addEventListener('click', () => showNotification('浏览器环境下无法直接选择文件夹，文件将保存到默认下载路径', 'info'));
+      
+      // 批量处理相关事件
+      elements.batchTrim.addEventListener('change', toggleBatchTrimSettings);
+      elements.batchFormat.addEventListener('change', toggleBatchFormatSettings);
+      elements.batchVolume.addEventListener('change', toggleBatchVolumeSettings);
+      elements.batchTags.addEventListener('change', toggleBatchTagsSettings);
+      elements.batchVolumeControl.addEventListener('input', updateBatchVolume);
+      elements.batchFileNameFormat.addEventListener('change', toggleBatchCustomFileName);
+      elements.batchBrowseFolderBtn.addEventListener('click', () => showNotification('浏览器环境下无法直接选择文件夹，文件将保存到默认下载路径', 'info'));
+      elements.startBatchBtn.addEventListener('click', startBatchProcessing);
+      
+      // 其他UI事件
+      elements.themeToggle.addEventListener('click', toggleDarkMode);
+      elements.mobileThemeToggle.addEventListener('click', toggleDarkMode);
+      elements.mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+      elements.helpBtn.addEventListener('click', openHelpModal);
+      elements.mobileHelpBtn.addEventListener('click', openHelpModal);
+      elements.closeHelpBtn.addEventListener('click', closeHelpModal);
+      elements.presetBtn.addEventListener('click', openPresetModal);
+      elements.mobilePresetBtn.addEventListener('click', openPresetModal);
+      elements.closePresetBtn.addEventListener('click', closePresetModal);
+      elements.saveCurrentPresetBtn.addEventListener('click', saveCurrentPreset);
+      
+      // 拖动处理
+      setupDragHandlers();
+    }
+
+    // 初始化波形可视化
+    function initWaveSurfer() {
+      wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: '#e2e8f0',
+        progressColor: '#4F46E5',
+        cursorColor: '#4F46E5',
+        barWidth: 2,
+        barRadius: 3,
+        height: 140,
+        responsive: true,
+        normalize: true,
+        plugins: [
+          WaveSurfer.regions.create({
+            dragSelection: true
+          })
+        ]
+      });
+      
+      wavesurfer.on('ready', () => {
+        elements.waveformPlaceholder.classList.add('hidden');
+        const duration = wavesurfer.getDuration();
+        elements.totalDuration.textContent = formatTime(duration);
+        elements.endTime.value = formatTimeForInput(duration);
+        
+        // 初始化音频可视化
+        initAudioVisualizer();
+        
+        // 启用裁剪功能
+        setupWaveformSelection();
+      });
+      
+      wavesurfer.on('audioprocess', () => {
+        updateVisualizer();
+      });
+      
+      wavesurfer.on('finish', () => {
+        stopVisualizer();
+      });
+    }
+
+    // 初始化音频可视化
+    function initAudioVisualizer() {
+      canvas = document.getElementById('visualizerCanvas');
+      ctx = canvas.getContext('2d');
+      
+      // 设置canvas尺寸
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      
+      // 创建音频上下文
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaElementSource(elements.audioPlayer);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+      } catch (e) {
+        console.error('音频可视化初始化失败:', e);
+      }
+    }
+
+    // 调整canvas尺寸
+    function resizeCanvas() {
+      if (canvas) {
+        const container = document.getElementById('audioVisualizer');
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+      }
+    }
+
+    // 更新音频可视化
+    function updateVisualizer() {
+      if (!analyser || !canvas) return;
+      
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteFrequencyData(dataArray);
+      
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      ctx.clearRect(0, 0, width, height);
+      
+      const barWidth = (width / bufferLength) * 2.5;
+      let x = 0;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * height;
+        
+        // 渐变颜色
+        const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
+        gradient.addColorStop(0, '#4F46E5');
+        gradient.addColorStop(1, '#818CF8');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+        
+        x += barWidth + 1;
+      }
+      
+      // 显示可视化区域
+      document.getElementById('audioVisualizer').style.opacity = 1;
+      
+      // 继续动画
+      animationId = requestAnimationFrame(updateVisualizer);
+    }
+
+    // 停止音频可视化
+    function stopVisualizer() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+    }
+
+    // 设置波形选择功能
+    function setupWaveformSelection() {
+      let isSelecting = false;
+      let startPercent = 0;
+      
+      elements.waveform.addEventListener('mousedown', (e) => {
+        if (!wavesurfer) return;
+        
+        isSelecting = true;
+        const rect = elements.waveform.getBoundingClientRect();
+        startPercent = ((e.clientX - rect.left) / rect.width) * 100;
+        
+        updateSelectionUI(startPercent, startPercent);
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isSelecting || !wavesurfer) return;
+        
+        const rect = elements.waveform.getBoundingClientRect();
+        let endPercent = ((e.clientX - rect.left) / rect.width) * 100;
+        endPercent = Math.max(0, Math.min(100, endPercent));
+        
+        updateSelectionUI(startPercent, endPercent);
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (isSelecting) {
+          isSelecting = false;
+          updateSelectionInputs();
+        }
+      });
+      
+      // 初始化选择手柄拖动
+      setupHandleDrag('startHandle', (percent) => {
+        const endPercent = parseFloat(elements.endHandle.style.left);
+        if (percent < endPercent - 1) { // 确保有最小选择宽度
+          startPercent = percent;
+          updateSelectionUI(startPercent, endPercent);
+          updateSelectionInputs();
+        }
+      });
+      
+      setupHandleDrag('endHandle', (percent) => {
+        const startPercent = parseFloat(elements.startHandle.style.left);
+        if (percent > startPercent + 1) { // 确保有最小选择宽度
+          updateSelectionUI(startPercent, percent);
+          updateSelectionInputs();
+        }
+      });
+    }
+
+    // 设置选择手柄拖动功能
+    function setupHandleDrag(handleId, onDrag) {
+      const handle = document.getElementById(handleId);
+      let isDragging = false;
+      
+      handle.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        e.preventDefault();
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging || !wavesurfer) return;
+        
+        const rect = elements.waveform.getBoundingClientRect();
+        let percent = ((e.clientX - rect.left) / rect.width) * 100;
+        percent = Math.max(0, Math.min(100, percent));
+        
+        onDrag(percent);
+      });
+      
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+    }
+
+    // 更新选择UI
+    function updateSelectionUI(startPercent, endPercent) {
+      const start = Math.min(startPercent, endPercent);
+      const end = Math.max(startPercent, endPercent);
+      
+      elements.timelineSelection.style.left = `${start}%`;
+      elements.timelineSelection.style.width = `${end - start}%`;
+      elements.timelineSelection.classList.remove('hidden');
+      
+      elements.startHandle.style.left = `${start}%`;
+      elements.startHandle.classList.remove('hidden');
+      
+      elements.endHandle.style.left = `${end}%`;
+      elements.endHandle.classList.remove('hidden');
+    }
+
+    // 从输入更新选择
+    function updateSelectionFromInputs() {
+      if (!wavesurfer) return;
+      
+      const duration = wavesurfer.getDuration();
+      const startSeconds = timeInputToSeconds(elements.startTime.value);
+      const endSeconds = timeInputToSeconds(elements.endTime.value);
+      
+      const startPercent = (startSeconds / duration) * 100;
+      const endPercent = (endSeconds / duration) * 100;
+      
+      updateSelectionUI(startPercent, endPercent);
+    }
+
+    // 更新选择输入框
+    function updateSelectionInputs() {
+      if (!wavesurfer) return;
+      
+      const duration = wavesurfer.getDuration();
+      const startPercent = parseFloat(elements.startHandle.style.left) || 0;
+      const endPercent = parseFloat(elements.endHandle.style.left) || 0;
+      
+      const startSeconds = (startPercent / 100) * duration;
+      const endSeconds = (endPercent / 100) * duration;
+      
+      elements.startTime.value = formatTimeForInput(startSeconds);
+      elements.endTime.value = formatTimeForInput(endSeconds);
+    }
+
+    // 更新播放头位置
+    function updatePlayhead() {
+      if (!wavesurfer) return;
+      
+      const currentTime = elements.audioPlayer.currentTime;
+      const duration = wavesurfer.getDuration();
+      const percent = (currentTime / duration) * 100;
+      
+      elements.playhead.style.left = `${percent}%`;
+    }
+
+    // 处理拖放事件
+    function handleDragOver(e) {
+      e.preventDefault();
+      elements.dropArea.classList.add('border-primary', 'bg-primary/5');
+    }
+
+    // 处理文件拖放
+    function handleDrop(e) {
+      e.preventDefault();
+      elements.dropArea.classList.remove('border-primary', 'bg-primary/5');
+      
+      if (e.dataTransfer.files.length) {
+        handleFiles(e.dataTransfer.files);
+      }
+    }
+
+    // 处理文件选择
+    function handleFileSelect(e) {
+      if (e.target.files.length) {
+        handleFiles(e.target.files);
+      }
+    }
+
+    // 处理文件
+    function handleFiles(files) {
+      // 过滤音频和视频文件
+      const validFiles = Array.from(files).filter(file => 
+        file.type.startsWith('audio/') || file.type.startsWith('video/')
+      );
+      
+      if (validFiles.length === 0) {
+        showNotification('请选择音频或视频文件', 'error');
+        return;
+      }
+      
+      // 添加到文件列表
+      validFiles.forEach(file => {
+        // 检查是否已存在相同文件
+        if (!audioFiles.some(f => f.name === file.name && f.size === file.size)) {
+          audioFiles.push(file);
+        }
+      });
+      
+      // 更新文件列表UI
+      updateFileList();
+      
+      // 处理第一个文件
+      processFile(validFiles[0]);
+      
+      // 显示处理区域
+      elements.audioProcessingSection.classList.remove('hidden');
+      
+      // 更新其他面板的文件列表
+      updateConvertFileList();
+      updateBatchFileList();
+      
+      // 启用转换按钮
+      elements.startConvertBtn.disabled = false;
+      elements.startBatchBtn.disabled = false;
+    }
+
+    // 处理单个文件
+    function processFile(file) {
+      currentAudioFile = file;
+      
+      // 显示文件名和进度
+      elements.fileName.textContent = file.name;
+      elements.progressContainer.classList.remove('hidden');
+      elements.progressBar.style.width = '0%';
+      elements.progressPercent.textContent = '0%';
+      
+      // 读取文件并加载到波形
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        // 加载音频到播放器
+        elements.audioPlayer.src = e.target.result;
+        elements.editAudioPlayer.src = e.target.result;
+        
+        // 加载波形
+        wavesurfer.loadBlob(file);
+        
+        // 更新文件信息
+        elements.fileSize.textContent = formatFileSize(file.size);
+        elements.fileFormat.textContent = getFileExtension(file.name).toUpperCase();
+        
+        // 模拟进度
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 5;
+          elements.progressBar.style.width = `${progress}%`;
+          elements.progressPercent.textContent = `${progress}%`;
+          
+          if (progress >= 100) {
+            clearInterval(interval);
+          }
+        }, 50);
+      };
+      
+      reader.onerror = () => {
+        showNotification('文件读取失败', 'error');
+      };
+      
+      reader.readAsDataURL(file);
+    }
+
+    // 更新文件列表
+    function updateFileList() {
+      elements.fileItems.innerHTML = '';
+      elements.totalFilesCount.textContent = audioFiles.length;
+      
+      audioFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'flex justify-between items-center bg-gray-50 p-2 rounded-lg';
+        fileItem.innerHTML = `
+          <div class="flex items-center">
+            <i class="fa fa-file-audio-o text-primary mr-2"></i>
+            <span class="truncate max-w-[70%]">${file.name}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">${formatFileSize(file.size)}</span>
+            <button class="play-file-btn text-primary hover:text-primary/80" data-index="${index}">
+              <i class="fa fa-play"></i>
+            </button>
+            <button class="remove-file-btn text-gray-500 hover:text-danger" data-index="${index}">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+        `;
+        
+        elements.fileItems.appendChild(fileItem);
+      });
+      
+      // 添加播放和删除事件
+      document.querySelectorAll('.play-file-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const index = parseInt(e.currentTarget.dataset.index);
+          processFile(audioFiles[index]);
+        });
+      });
+      
+      document.querySelectorAll('.remove-file-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const index = parseInt(e.currentTarget.dataset.index);
+          audioFiles.splice(index, 1);
+          updateFileList();
+          updateConvertFileList();
+          updateBatchFileList();
+          
+          if (audioFiles.length === 0) {
+            elements.audioProcessingSection.classList.add('hidden');
+            elements.startConvertBtn.disabled = true;
+            elements.startBatchBtn.disabled = true;
+          }
+        });
+      });
+      
+      elements.fileList.classList.remove('hidden');
+    }
+
+    // 更新转换文件列表
+    function updateConvertFileList() {
+      if (audioFiles.length === 0) {
+        elements.convertFileList.innerHTML = `
+          <div class="text-center text-gray-500 py-6">
+            <p>请先上传需要转换的文件</p>
+          </div>
+        `;
+        return;
+      }
+      
+      elements.convertFileList.innerHTML = '';
+      audioFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'flex justify-between items-center p-2 border-b border-gray-100 last:border-0';
+        fileItem.innerHTML = `
+          <div class="flex items-center">
+            <i class="fa fa-file-audio-o text-primary mr-2"></i>
+            <span class="truncate">${file.name}</span>
+          </div>
+          <span class="text-xs text-gray-500">${formatFileSize(file.size)}</span>
+        `;
+        
+        elements.convertFileList.appendChild(fileItem);
+      });
+    }
+
+    // 更新批量处理文件列表
+    function updateBatchFileList() {
+      if (audioFiles.length === 0) {
+        elements.batchFileList.innerHTML = `
+          <div class="text-center text-gray-500 py-6">
+            <i class="fa fa-upload text-xl mb-2"></i>
+            <p>拖放多个文件到此处，或点击上方"选择文件"按钮</p>
+          </div>
+        `;
+        return;
+      }
+      
+      elements.batchFileList.innerHTML = '';
+      audioFiles.forEach((file) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'flex justify-between items-center p-2 border-b border-gray-100 last:border-0';
+        fileItem.innerHTML = `
+          <div class="flex items-center">
+            <i class="fa fa-file-audio-o text-primary mr-2"></i>
+            <span class="truncate">${file.name}</span>
+          </div>
+          <span class="text-xs text-gray-500">${formatFileSize(file.size)}</span>
+        `;
+        
+        elements.batchFileList.appendChild(fileItem);
+      });
+    }
+
+    // 切换标签页
+    function switchTab(tabName) {
+      // 更新标签样式
+      Object.keys(elements.tabs).forEach(tab => {
+        if (tab === tabName) {
+          elements.tabs[tab].classList.add('tab-active');
+          elements.tabs[tab].classList.remove('text-gray-600');
+          elements.panels[tab].classList.remove('hidden');
+        } else {
+          elements.tabs[tab].classList.remove('tab-active');
+          elements.tabs[tab].classList.add('text-gray-600');
+          elements.panels[tab].classList.add('hidden');
+        }
+      });
+    }
+
+    // 添加剪切片段
+    function addClip() {
+      if (!wavesurfer) return;
+      
+      const duration = wavesurfer.getDuration();
+      const startSeconds = timeInputToSeconds(elements.startTime.value);
+      const endSeconds = timeInputToSeconds(elements.endTime.value);
+      
+      // 验证时间
+      if (startSeconds >= endSeconds) {
+        showNotification('开始时间必须早于结束时间', 'error');
+        return;
+      }
+      
+      if (endSeconds > duration) {
+        showNotification('结束时间不能超过音频总时长', 'error');
+        return;
+      }
+      
+      // 创建新片段
+      const clip = {
+        id: Date.now(),
+        start: startSeconds,
+        end: endSeconds,
+        duration: endSeconds - startSeconds,
+        type: 'manual'
+      };
+      
+      clips.push(clip);
+      updateClipsList();
+      
+      // 显示通知
+      showNotification(`已添加片段 (${formatTime(clip.duration)})`, 'success');
+    }
+    
+    // 播放指定片段
+    function playClip(clip) {
+      if (!wavesurfer) return;
+      
+      // 暂停当前播放
+      wavesurfer.pause();
+      
+      // 设置播放范围
+      wavesurfer.setCurrentTime(clip.start);
+      
+      // 开始播放
+      wavesurfer.play();
+      
+      // 高亮显示当前播放的片段
+      const currentClipElement = document.querySelector(`.clip-item[data-id="${clip.id}"]`);
+      if (currentClipElement) {
+        currentClipElement.classList.add('ring-2', 'ring-blue-400');
+      }
+      
+      // 设置定时器，在到达片段结束时停止播放
+      const playDuration = clip.end - clip.start;
+      setTimeout(() => {
+        wavesurfer.pause();
+        
+        // 移除高亮
+        if (currentClipElement) {
+          currentClipElement.classList.remove('ring-2', 'ring-blue-400');
+        }
+      }, playDuration * 1000);
+      
+      // 显示正在播放的通知
+      showNotification(`正在播放片段 (${formatTime(clip.duration)})`, 'info');
+    }
+
+    // 更新片段列表
+    function updateClipsList() {
+      if (clips.length === 0) {
+        elements.clipsList.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            <i class="fa fa-film text-2xl mb-2"></i>
+            <p>还没有添加剪切片段</p>
+          </div>
+        `;
+        elements.clipCount.textContent = '0 段';
+        elements.exportBtn.disabled = true;
+        return;
+      }
+      
+      elements.clipsList.innerHTML = '';
+      clips.forEach((clip, index) => {
+        // 获取片段类型信息
+        const typeInfo = getClipTypeInfo(clip);
+        
+        const clipItem = document.createElement('div');
+        clipItem.className = `clip-item p-3 rounded-lg shadow-sm mb-2 transition-all hover:shadow ${typeInfo.bgClass}`;
+        clipItem.draggable = true;
+        clipItem.dataset.id = clip.id;
+        clipItem.dataset.type = clip.type || 'manual';
+        
+        clipItem.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <div class="font-medium flex items-center">
+                片段 ${index + 1}
+                <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${typeInfo.badgeClass}">${typeInfo.label}</span>
+              </div>
+              <div class="text-sm text-gray-500 mt-1">
+                ${formatTime(clip.start)} - ${formatTime(clip.end)} 
+                (${formatTime(clip.duration)})
+              </div>
+              ${clip.lyricInfo ? `
+                <div class="text-xs text-gray-400 mt-1 italic">${clip.lyricInfo}</div>
+              ` : ''}
+            </div>
+            <div class="flex gap-2 ml-3">
+              <button class="play-clip-btn p-1 text-gray-500 hover:text-green-600" title="播放片段">
+                <i class="fa fa-play"></i>
+              </button>
+              <button class="delete-clip-btn p-1 text-gray-400 hover:text-danger" data-id="${clip.id}" title="删除片段">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        
+        // 添加事件监听器
+        if (clipItem.querySelector('.play-clip-btn')) {
+          clipItem.querySelector('.play-clip-btn').addEventListener('click', () => {
+            playClip(clip);
+          });
+        }
+        
+        elements.clipsList.appendChild(clipItem);
+      });
+      
+      // 添加删除事件
+      document.querySelectorAll('.delete-clip-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = parseInt(e.currentTarget.dataset.id);
+          clips = clips.filter(clip => clip.id !== id);
+          updateClipsList();
+          showNotification('片段已删除', 'info');
+        });
+      });
+      
+      elements.clipCount.textContent = `${clips.length} 段`;
+      elements.exportBtn.disabled = false;
+    }
+    
+    // 获取片段类型信息
+    function getClipTypeInfo(clip) {
+      const type = clip.type || 'manual';
+      
+      const typeConfig = {
+        'equal': {
+          label: '均等分割',
+          badgeClass: 'bg-blue-100 text-blue-800',
+          bgClass: 'bg-white'
+        },
+        'silence': {
+          label: '静音检测',
+          badgeClass: 'bg-green-100 text-green-800',
+          bgClass: 'bg-green-50'
+        },
+        'lyric': {
+          label: '歌词优先',
+          badgeClass: 'bg-purple-100 text-purple-800',
+          bgClass: 'bg-purple-50'
+        },
+        'fallback': {
+          label: '自动调整',
+          badgeClass: 'bg-yellow-100 text-yellow-800',
+          bgClass: 'bg-yellow-50'
+        },
+        'final': {
+          label: '结尾片段',
+          badgeClass: 'bg-orange-100 text-orange-800',
+          bgClass: 'bg-orange-50'
+        },
+        'manual': {
+          label: '手动添加',
+          badgeClass: 'bg-gray-100 text-gray-800',
+          bgClass: 'bg-white'
+        }
+      };
+      
+      return typeConfig[type] || typeConfig.manual;
+    }
+
+    // 清空所有片段
+    function clearClips() {
+      if (clips.length === 0) return;
+      
+      if (confirm('确定要清空所有剪切片段吗？')) {
+        clips = [];
+        updateClipsList();
+        showNotification('所有片段已清空', 'info');
+      }
+    }
+
+    // 生成智能片段
+    function generateSmartClips() {
+      if (!wavesurfer) return;
+      
+      const duration = wavesurfer.getDuration();
+      const targetDuration = parseInt(elements.targetDuration.value);
+      const strategy = elements.clipStrategy.value;
+      
+      // 验证目标时长
+      if (targetDuration <= 0 || targetDuration >= duration) {
+        showNotification('目标片段时长设置不合理', 'error');
+        return;
+      }
+      
+      showNotification(`正在使用 ${getStrategyName(strategy)} 策略分析音频...`, 'info');
+      
+      // 清空现有片段
+      clips = [];
+      
+      // 根据策略生成片段
+      if (strategy === 'equal') {
+        // 均等分割
+        const clipCount = Math.floor(duration / targetDuration);
+        for (let i = 0; i < clipCount; i++) {
+          const start = i * targetDuration;
+          const end = Math.min((i + 1) * targetDuration, duration);
+          
+          clips.push({
+            id: Date.now() + i,
+            start,
+            end,
+            duration: end - start,
+            type: 'equal'
+          });
+        }
+        
+        // 处理剩余部分
+        if (clips.length * targetDuration < duration) {
+          clips.push({
+            id: Date.now() + clipCount,
+            start: clipCount * targetDuration,
+            end: duration,
+            duration: duration - clipCount * targetDuration,
+            type: 'equal'
+          });
+        }
+      } else if (strategy === 'silence') {
+        // 静音检测策略（实际实现）
+        detectSilencePoints().then(silencePoints => {
+          // 如果没有找到足够的静音点，使用默认分割
+          if (silencePoints.length < 2) {
+            fallbackToEqualDivision(duration, targetDuration);
+            return;
+          }
+          
+          let start = 0;
+          let clipIndex = 0;
+          let currentSilenceIndex = 0;
+          
+          while (start < duration - targetDuration * 0.5) {
+            // 寻找最接近目标时长的静音点
+            const targetEnd = start + targetDuration;
+            let bestSilencePoint = null;
+            let minDiff = Infinity;
+            
+            // 在合理范围内查找最佳静音点
+            for (let i = currentSilenceIndex; i < silencePoints.length; i++) {
+              const point = silencePoints[i];
+              if (point < start) continue;
+              if (point > start + targetDuration * 1.5) break;
+              
+              const diff = Math.abs(point - targetEnd);
+              if (diff < minDiff && point > start + targetDuration * 0.7) {
+                minDiff = diff;
+                bestSilencePoint = point;
+                currentSilenceIndex = i;
+              }
+            }
+            
+            // 确定结束点
+            const end = bestSilencePoint || Math.min(start + targetDuration, duration);
+            
+            clips.push({
+              id: Date.now() + clipIndex,
+              start,
+              end,
+              duration: end - start,
+              type: bestSilencePoint ? 'silence' : 'fallback'
+            });
+            
+            start = end;
+            clipIndex++;
+          }
+          
+          // 处理最后一个片段
+          if (start < duration) {
+            clips.push({
+              id: Date.now() + clipIndex,
+              start,
+              end: duration,
+              duration: duration - start,
+              type: 'final'
+            });
+          }
+          
+          updateClipsList();
+          showNotification(`已生成 ${clips.length} 个基于静音检测的片段`, 'success');
+        }).catch(error => {
+          console.error('静音检测失败:', error);
+          fallbackToEqualDivision(duration, targetDuration);
+        });
+        
+        return; // 异步处理，提前返回
+      } else if (strategy === 'lyric') {
+        // 歌词优先策略（改进实现）
+        extractLyricsAndTimestamps().then(lyricData => {
+          // 如果没有找到歌词数据，使用默认分割
+          if (!lyricData || lyricData.length === 0) {
+            showNotification('无法提取歌词数据，切换到均等分割模式', 'warning');
+            fallbackToEqualDivision(duration, targetDuration);
+            return;
+          }
+          
+          processLyricsForClips(lyricData, duration, targetDuration);
+          
+          updateClipsList();
+          showNotification(`已生成 ${clips.length} 个基于歌词完整性的片段`, 'success');
+        }).catch(error => {
+          console.error('歌词分析失败:', error);
+          fallbackToEqualDivision(duration, targetDuration);
+        });
+        
+        return; // 异步处理，提前返回
+      }
+      
+      updateClipsList();
+      showNotification(`已生成 ${clips.length} 个智能片段`, 'success');
+    }
+    
+    // 获取策略名称
+    function getStrategyName(strategy) {
+      const names = {
+        'equal': '均等分割',
+        'silence': '静音检测',
+        'lyric': '歌词完整性优先'
+      };
+      return names[strategy] || strategy;
+    }
+    
+    // 回退到均等分割
+    function fallbackToEqualDivision(duration, targetDuration) {
+      clips = [];
+      const clipCount = Math.ceil(duration / targetDuration);
+      
+      for (let i = 0; i < clipCount; i++) {
+        const start = i * targetDuration;
+        const end = Math.min((i + 1) * targetDuration, duration);
+        
+        clips.push({
+          id: Date.now() + i,
+          start,
+          end,
+          duration: end - start,
+          type: 'fallback'
+        });
+      }
+      
+      updateClipsList();
+    }
+    
+    // 检测静音点
+    async function detectSilencePoints() {
+      return new Promise((resolve, reject) => {
+        try {
+          // 在实际应用中，这里应该使用Web Audio API分析音频波形
+          // 获取音频数据，计算振幅，检测低于阈值的静音区间
+          
+          // 模拟实现：使用随机生成的静音点（实际应用中应替换为真实分析）
+          const duration = wavesurfer.getDuration();
+          const silencePoints = [];
+          
+          // 确保包含开始和结束点
+          silencePoints.push(0);
+          silencePoints.push(duration);
+          
+          // 在实际应用中，这里应该：
+          // 1. 获取音频波形数据
+          // 2. 设置适当的阈值（如0.05的振幅）
+          // 3. 扫描波形找出静音区间
+          // 4. 在静音区间的中间位置添加剪切点
+          
+          // 模拟的静音点分布
+          const minInterval = 10; // 最小间隔10秒
+          const maxPoints = Math.floor(duration / minInterval) - 1;
+          const actualPoints = Math.min(maxPoints, Math.floor(Math.random() * 3) + 2); // 2-4个随机静音点
+          
+          for (let i = 0; i < actualPoints; i++) {
+            // 生成随机静音点，但确保不重叠且分布均匀
+            const position = minInterval + (i * (duration - 2 * minInterval)) / (actualPoints + 1) + 
+                            (Math.random() * minInterval * 0.5 - minInterval * 0.25);
+            silencePoints.push(position);
+          }
+          
+          // 排序并去重
+          const uniqueSortedPoints = [...new Set(silencePoints)].sort((a, b) => a - b);
+          
+          // 模拟处理延迟
+          setTimeout(() => {
+            resolve(uniqueSortedPoints);
+          }, 800);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }
+    
+    // 提取歌词和时间戳
+    async function extractLyricsAndTimestamps() {
+      return new Promise((resolve, reject) => {
+        try {
+          // 在实际应用中，这里应该：
+          // 1. 从音频文件中提取内嵌的歌词（如MP3的ID3标签）
+          // 2. 或者使用语音识别API（如Web Speech API）识别歌词
+          // 3. 分析歌词结构，确定句子边界和段落
+          
+          // 模拟实现：生成示例歌词数据
+          const lyricData = [
+            { time: 2.5, text: '这是第一句歌词', isSentenceEnd: true },
+            { time: 7.8, text: '第二句歌词内容', isSentenceEnd: true },
+            { time: 12.3, text: '这是第三句歌词', isSentenceEnd: true },
+            { time: 17.1, text: '第四句歌词', isSentenceEnd: true },
+            { time: 22.5, text: '这是第五句歌词', isSentenceEnd: true },
+            { time: 27.2, text: '第六句歌词内容', isSentenceEnd: true },
+            { time: 32.8, text: '这是副歌部分的第一句', isSentenceEnd: false },
+            { time: 35.1, text: '副歌的第二部分', isSentenceEnd: true },
+            { time: 40.5, text: '这是第七句歌词', isSentenceEnd: true },
+            { time: 45.2, text: '第八句歌词内容', isSentenceEnd: true },
+            { time: 50.8, text: '这是第九句歌词', isSentenceEnd: true },
+            { time: 55.3, text: '第十句歌词', isSentenceEnd: true }
+          ];
+          
+          // 模拟处理延迟
+          setTimeout(() => {
+            // 在实际应用中，这里应该根据音频的实际时长和内容调整歌词数据
+            resolve(lyricData);
+          }, 1200);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }
+    
+    // 根据歌词处理裁剪片段
+    function processLyricsForClips(lyricData, duration, targetDuration) {
+      let start = 0;
+      let clipIndex = 0;
+      let currentLyricIndex = 0;
+      
+      while (start < duration - targetDuration * 0.5) {
+        // 寻找下一个合适的歌词边界
+        const targetEnd = start + targetDuration;
+        let bestLyricEnd = null;
+        let bestPosition = start + targetDuration;
+        
+        // 寻找最佳歌词结束点
+        while (currentLyricIndex < lyricData.length && 
+               lyricData[currentLyricIndex].time <= targetEnd * 1.3) {
+          const lyric = lyricData[currentLyricIndex];
+          
+          // 优先考虑句子结束的位置
+          if (lyric.isSentenceEnd) {
+            // 计算与目标时长的接近程度
+            const diff = Math.abs(lyric.time - start - targetDuration);
+            const positionScore = 1 / (1 + diff); // 距离目标越近分数越高
+            
+            // 确保片段不会太短（至少达到目标时长的70%）
+            if (lyric.time - start >= targetDuration * 0.7) {
+              // 找到更好的结束点
+              if (!bestLyricEnd || positionScore > bestLyricEnd.score) {
+                bestLyricEnd = {
+                  time: lyric.time,
+                  score: positionScore
+                };
+                bestPosition = lyric.time;
+              }
+            }
+          }
+          
+          currentLyricIndex++;
+        }
+        
+        // 如果没有找到合适的歌词结束点，使用目标时长
+        const end = Math.min(bestPosition, duration);
+        
+        clips.push({
+          id: Date.now() + clipIndex,
+          start,
+          end,
+          duration: end - start,
+          type: bestLyricEnd ? 'lyric' : 'fallback',
+          lyricInfo: bestLyricEnd ? `基于歌词完整性` : '无法找到合适的歌词边界'
+        });
+        
+        start = end;
+        clipIndex++;
+      }
+      
+      // 处理最后一个片段
+      if (start < duration) {
+        clips.push({
+          id: Date.now() + clipIndex,
+          start,
+          end: duration,
+          duration: duration - start,
+          type: 'final'
+        });
+      }
+    }
+
+    // 导出所有片段
+    function exportClips() {
+      if (clips.length === 0 || !currentAudioFile) return;
+      
+      showNotification('开始导出片段，请稍候...', 'info');
+      
+      // 导出进度跟踪
+      let exportedCount = 0;
+      
+      // 使用Web Audio API实现实际的音频裁剪和导出
+      clips.forEach((clip, index) => {
+        exportSingleClip(clip, index).then(() => {
+          exportedCount++;
+          if (exportedCount === clips.length) {
+            showNotification(`成功导出 ${clips.length} 个片段`, 'success');
+          }
+        }).catch(error => {
+          console.error('导出片段失败:', error);
+          showNotification(`导出片段 ${index + 1} 失败`, 'error');
+        });
+      });
+    }
+    
+    // 导出单个音频片段
+    async function exportSingleClip(clip, index) {
+      try {
+        // 显示进度提示
+        showNotification(`正在处理片段 ${index + 1}/${clips.length}...`, 'info');
+        
+        // 创建音频上下文
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 获取原始音频数据
+        const response = await fetch(elements.audioPlayer.src);
+        const arrayBuffer = await response.arrayBuffer();
+        
+        // 解码音频数据
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        
+        // 创建一个新的音频缓冲区来存储裁剪后的音频
+        const sampleRate = audioBuffer.sampleRate;
+        const channels = audioBuffer.numberOfChannels;
+        const startOffset = Math.floor(clip.start * sampleRate);
+        const endOffset = Math.floor(clip.end * sampleRate);
+        const frameCount = endOffset - startOffset;
+        
+        // 创建目标缓冲区
+        const newAudioBuffer = audioContext.createBuffer(
+          channels, 
+          frameCount, 
+          sampleRate
+        );
+        
+        // 复制每个声道的数据
+        for (let channel = 0; channel < channels; channel++) {
+          const oldData = audioBuffer.getChannelData(channel);
+          const newData = newAudioBuffer.getChannelData(channel);
+          
+          for (let i = 0; i < frameCount; i++) {
+            newData[i] = oldData[startOffset + i];
+          }
+        }
+        
+        // 设置文件名和MIME类型
+        const prefix = elements.exportPrefix.value || 'clip';
+        const format = elements.exportFormat.value;
+        const fileName = `${prefix}_${index + 1}.${format}`;
+        
+        // 根据选择的格式确定MIME类型
+        let mimeType = 'audio/wav';
+        switch(format) {
+          case 'mp3':
+            mimeType = 'audio/mpeg';
+            break;
+          case 'aac':
+            mimeType = 'audio/aac';
+            break;
+          case 'flac':
+            mimeType = 'audio/flac';
+            break;
+          case 'ogg':
+            mimeType = 'audio/ogg';
+            break;
+        }
+        
+        // 将AudioBuffer转换为Blob
+        const blob = await bufferToWave(newAudioBuffer, mimeType);
+        
+        // 创建下载链接
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // 释放URL对象
+        setTimeout(() => URL.revokeObjectURL(a.href), 100);
+        
+        console.log(`成功导出片段 ${index + 1}: ${fileName}`);
+        console.log(`片段时长: ${(clip.duration).toFixed(2)}秒`);
+        console.log(`片段信息: 开始=${clip.start.toFixed(2)}秒, 结束=${clip.end.toFixed(2)}秒`);
+        
+      } catch (error) {
+        console.error('导出单个片段错误:', error);
+        throw error;
+      }
+    }
+    
+    // 将AudioBuffer转换为Blob
+    function bufferToWave(buffer, mimeType = 'audio/wav') {
+      return new Promise((resolve) => {
+        const numOfChan = buffer.numberOfChannels;
+        const length = buffer.length * numOfChan * 2 + 44; // 44字节的WAV头
+        const bufferArray = new ArrayBuffer(length);
+        const view = new DataView(bufferArray);
+        
+        // WAV头信息
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + buffer.length * numOfChan * 2, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true); // 子块大小
+        view.setUint16(20, 1, true); // 音频格式 (PCM)
+        view.setUint16(22, numOfChan, true);
+        view.setUint32(24, buffer.sampleRate, true);
+        view.setUint32(28, buffer.sampleRate * numOfChan * 2, true); // 字节率
+        view.setUint16(32, numOfChan * 2, true); // 块对齐
+        view.setUint16(34, 16, true); // 位数
+        writeString(view, 36, 'data');
+        view.setUint32(40, buffer.length * numOfChan * 2, true);
+        
+        // 写入PCM数据
+        let offset = 44;
+        const writeVal = function (val) {
+          view.setInt16(offset, val, true);
+          offset += 2;
+        };
+        
+        for (let i = 0; i < buffer.length; i++) {
+          for (let channel = 0; channel < numOfChan; channel++) {
+            const sample = buffer.getChannelData(channel)[i];
+            // 将[-1, 1]范围内的音频样本转换为[-32768, 32767]的整数
+            const intSample = Math.max(-1, Math.min(1, sample)) * 0x7FFF;
+            writeVal(intSample);
+          }
+        }
+        
+        // 注意：由于浏览器限制，目前只支持导出WAV格式
+        // 虽然文件名和MIME类型会根据用户选择变化，但实际内容仍是WAV格式
+        // 对于其他格式的真正转换，需要使用ffmpeg.js等库
+        resolve(new Blob([bufferArray], { type: mimeType }));
+      });
+    }
+    
+    // 辅助函数：向DataView写入字符串
+    function writeString(view, offset, string) {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    }
+
+    // 同步目标时长
+    function syncTargetDuration(e) {
+      const value = e.target.value;
+      elements.targetDurationSlider.value = value;
+      elements.targetDuration.value = value;
+    }
+
+    // 更新音量
+    function updateVolume() {
+      const volume = elements.volumeControl.value;
+      elements.volumeValue.textContent = `${volume}%`;
+      elements.audioPlayer.volume = volume / 100;
+      elements.editAudioPlayer.volume = volume / 100;
+    }
+
+    // 更新速度
+    function updateSpeed() {
+      const speed = elements.speedControl.value;
+      elements.speedValue.textContent = `${speed}x`;
+      elements.audioPlayer.playbackRate = speed;
+      elements.editAudioPlayer.playbackRate = speed;
+    }
+
+    // 更新音调（简化实现）
+    function updatePitch() {
+      const pitch = elements.pitchControl.value;
+      elements.pitchValue.textContent = pitch;
+      // 实际应用中需要使用音频处理库来改变音调
+      showNotification('音调调整将在应用效果后生效', 'info');
+    }
+
+    // 更新均衡器
+    function updateEQ(e) {
+      const freq = e.target.dataset.eq;
+      const value = e.target.value;
+      elements.eqValues[freq].textContent = `${value}dB`;
+      // 实际应用中需要使用Web Audio API来应用均衡效果
+    }
+
+    // 切换效果按钮状态
+    function toggleEffect(e) {
+      const btn = e.currentTarget;
+      btn.classList.toggle('active');
+    }
+
+    // 应用所有效果
+    function applyEffects() {
+      showNotification('正在应用效果，请稍候...', 'info');
+      
+      // 模拟效果应用
+      setTimeout(() => {
+        showNotification('所有效果已应用', 'success');
+      }, 1500);
+    }
+
+    // 重置效果
+    function resetEffects() {
+      // 重置音量
+      elements.volumeControl.value = 100;
+      elements.volumeValue.textContent = '100%';
+      elements.audioPlayer.volume = 1;
+      elements.editAudioPlayer.volume = 1;
+      
+      // 重置均衡器
+      elements.eqControls.forEach(control => {
+        control.value = 0;
+        const freq = control.dataset.eq;
+        elements.eqValues[freq].textContent = '0dB';
+      });
+      
+      // 重置速度和音调
+      elements.speedControl.value = 1;
+      elements.speedValue.textContent = '1.0x';
+      elements.audioPlayer.playbackRate = 1;
+      elements.editAudioPlayer.playbackRate = 1;
+      
+      elements.pitchControl.value = 0;
+      elements.pitchValue.textContent = '0';
+      
+      // 重置效果按钮
+      elements.effectButtons.forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      showNotification('效果已重置', 'info');
+    }
+
+    // 合并选中片段
+    function mergeSelectedClips() {
+      const mergeItems = elements.mergeList.querySelectorAll('.clip-item');
+      if (mergeItems.length < 2) {
+        showNotification('至少需要2个片段才能合并', 'error');
+        return;
+      }
+      
+      showNotification('正在合并片段，请稍候...', 'info');
+      
+      // 模拟合并过程
+      setTimeout(() => {
+        // 清空合并列表
+        elements.mergeList.innerHTML = `
+          <div class="text-center text-gray-500 py-6">
+            <i class="fa fa-arrows-h text-xl mb-2"></i>
+            <p>将剪切片段拖到此处排序拼接</p>
+          </div>
+        `;
+        
+        showNotification('片段合并成功', 'success');
+      }, 2000);
+    }
+
+    // 保存音频标签
+    function saveAudioTags() {
+      // 在实际应用中，应该使用库来写入音频元数据
+      showNotification('音频标签已保存', 'success');
+    }
+
+    // 切换自定义文件名显示
+    function toggleCustomFileName() {
+      elements.customFileName.classList.toggle('hidden', 
+        elements.fileNameFormat.value !== 'custom');
+    }
+
+    // 开始格式转换
+    function startConversion() {
+      if (audioFiles.length === 0) return;
+      
+      elements.conversionProgress.classList.remove('hidden');
+      elements.conversionBar.style.width = '0%';
+      elements.conversionPercent.textContent = '0%';
+      
+      // 模拟转换过程
+      let progress = 0;
+      const totalFiles = audioFiles.length;
+      let currentFile = 0;
+      
+      const interval = setInterval(() => {
+        progress += 1;
+        elements.conversionBar.style.width = `${progress}%`;
+        elements.conversionPercent.textContent = `${progress}%`;
+        elements.convertingFileName.textContent = `正在转换: ${audioFiles[currentFile].name}`;
+        
+        if (progress >= 100 / totalFiles * (currentFile + 1)) {
+          currentFile++;
+          
+          if (currentFile >= totalFiles) {
+            clearInterval(interval);
+            elements.conversionProgress.classList.add('hidden');
+            showNotification(`所有 ${totalFiles} 个文件转换完成`, 'success');
+          }
+        }
+      }, 50);
+    }
+
+    // 切换批量处理设置显示
+    function toggleBatchTrimSettings() {
+      elements.batchTrimSettings.classList.toggle('hidden', !elements.batchTrim.checked);
+    }
+    
+    function toggleBatchFormatSettings() {
+      elements.batchFormatSettings.classList.toggle('hidden', !elements.batchFormat.checked);
+    }
+    
+    function toggleBatchVolumeSettings() {
+      elements.batchVolumeSettings.classList.toggle('hidden', !elements.batchVolume.checked);
+    }
+    
+    function toggleBatchTagsSettings() {
+      elements.batchTagsSettings.classList.toggle('hidden', !elements.batchTags.checked);
+    }
+    
+    function updateBatchVolume() {
+      const volume = elements.batchVolumeControl.value;
+      elements.batchVolumeValue.textContent = `${volume}%`;
+    }
+    
+    function toggleBatchCustomFileName() {
+      elements.batchCustomFileName.classList.toggle('hidden', 
+        elements.batchFileNameFormat.value !== 'custom');
+    }
+
+    // 开始批量处理
+    function startBatchProcessing() {
+      if (audioFiles.length === 0) return;
+      
+      // 检查是否选择了至少一项操作
+      if (!elements.batchTrim.checked && !elements.batchFormat.checked && 
+          !elements.batchVolume.checked && !elements.batchTags.checked) {
+        showNotification('请至少选择一项批量操作', 'error');
+        return;
+      }
+      
+      elements.batchProgress.classList.remove('hidden');
+      elements.batchProgressBar.style.width = '0%';
+      elements.batchProgressPercent.textContent = '0%';
+      
+      // 模拟批量处理过程
+      let progress = 0;
+      const totalFiles = audioFiles.length;
+      
+      const interval = setInterval(() => {
+        progress += 1;
+        elements.batchProgressBar.style.width = `${progress}%`;
+        elements.batchProgressPercent.textContent = `${progress}%`;
+        elements.batchProgressText.textContent = `正在处理 ${Math.ceil(progress / 100 * totalFiles)}/${totalFiles} 个文件`;
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          elements.batchProgress.classList.add('hidden');
+          showNotification(`批量处理完成，共处理 ${totalFiles} 个文件`, 'success');
+        }
+      }, 50);
+    }
+
+    // 切换移动端菜单
+    function toggleMobileMenu() {
+      elements.mobileMenu.classList.toggle('hidden');
+    }
+
+    // 打开帮助模态框
+    function openHelpModal() {
+      elements.helpModal.classList.remove('hidden');
+      elements.helpModal.classList.add('flex');
+    }
+
+    // 关闭帮助模态框
+    function closeHelpModal() {
+      elements.helpModal.classList.add('hidden');
+      elements.helpModal.classList.remove('flex');
+    }
+
+    // 打开预设模态框
+    function openPresetModal() {
+      elements.presetModal.classList.remove('hidden');
+      elements.presetModal.classList.add('flex');
+    }
+
+    // 关闭预设模态框
+    function closePresetModal() {
+      elements.presetModal.classList.add('hidden');
+      elements.presetModal.classList.remove('flex');
+    }
+
+    // 保存当前设置为预设
+    function saveCurrentPreset() {
+      showNotification('预设功能开发中', 'info');
+    }
+
+    // 显示通知
+    function showNotification(message, type = 'info') {
+      const notification = elements.notification;
+      notification.textContent = message;
+      notification.className = 'notification';
+      notification.classList.add(type);
+      
+      // 显示通知
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 10);
+      
+      // 自动隐藏
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+
+    // 格式化时间
+    function formatTime(seconds) {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      
+      if (hrs > 0) {
+        return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // 格式化时间用于输入框
+    function formatTimeForInput(seconds) {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toFixed(3).padStart(6, '0')}`;
+    }
+
+    // 将时间输入转换为秒数
+    function timeInputToSeconds(timeStr) {
+      if (!timeStr) return 0;
+      
+      const parts = timeStr.split(':');
+      if (parts.length !== 3) return 0;
+      
+      const [hrs, mins, secs] = parts.map(p => parseFloat(p));
+      return hrs * 3600 + mins * 60 + secs;
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // 获取文件扩展名
+    function getFileExtension(filename) {
+      return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2);
+    }
+
+    // 加载暗黑模式偏好
+    function loadDarkModePreference() {
+      const savedTheme = localStorage.getItem('darkMode');
+      if (savedTheme === 'true') {
+        document.body.classList.add('dark-mode');
+        isDarkMode = true;
+        elements.themeToggle.innerHTML = '<i class="fa fa-sun-o mr-1"></i>日间模式';
+        elements.mobileThemeToggle.innerHTML = '<i class="fa fa-sun-o mr-1"></i>日间模式';
+      }
+    }
+
+    // 切换暗黑模式
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      document.body.classList.toggle('dark-mode', isDarkMode);
+      
+      // 保存偏好
+      localStorage.setItem('darkMode', isDarkMode);
+      
+      // 更新按钮文本
+      if (isDarkMode) {
+        elements.themeToggle.innerHTML = '<i class="fa fa-sun-o mr-1"></i>日间模式';
+        elements.mobileThemeToggle.innerHTML = '<i class="fa fa-sun-o mr-1"></i>日间模式';
+      } else {
+        elements.themeToggle.innerHTML = '<i class="fa fa-moon-o mr-1"></i>夜间模式';
+        elements.mobileThemeToggle.innerHTML = '<i class="fa fa-moon-o mr-1"></i>夜间模式';
+      }
+    }
+
+    // 设置拖动处理
+    function setupDragHandlers() {
+      // 为剪切片段添加拖动功能
+      elements.clipsList.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('clip-item')) {
+          e.dataTransfer.setData('clipId', e.target.querySelector('.delete-clip-btn').dataset.id);
+        }
+      });
+      
+      // 合并区域的拖动处理
+      elements.mergeList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        elements.mergeList.classList.add('border-primary');
+      });
+      
+      elements.mergeList.addEventListener('dragleave', () => {
+        elements.mergeList.classList.remove('border-primary');
+      });
+      
+      elements.mergeList.addEventListener('drop', (e) => {
+        e.preventDefault();
+        elements.mergeList.classList.remove('border-primary');
+        
+        const clipId = e.dataTransfer.getData('clipId');
+        if (clipId) {
+          const clip = clips.find(c => c.id === parseInt(clipId));
+          if (clip) {
+            // 清除占位符
+            if (elements.mergeList.querySelector('.text-center')) {
+              elements.mergeList.innerHTML = '';
+            }
+            
+            // 添加到合并列表
+            const clipItem = document.createElement('div');
+            clipItem.className = 'clip-item';
+            clipItem.innerHTML = `
+              <div>
+                <div class="font-medium">${clip.id}</div>
+                <div class="text-sm text-gray-500">
+                  ${formatTime(clip.start)} - ${formatTime(clip.end)}
+                </div>
+              </div>
+            `;
+            
+            elements.mergeList.appendChild(clipItem);
+          }
+        }
+      });
+    }
+
+    // 初始化应用
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

@@ -4,6 +4,7 @@ import json,html
 import random,re,os,csv
 from bs4 import BeautifulSoup
 from docx import Document, ImagePart
+from docx.shared import Inches
 from urllib.parse import urlparse, parse_qs
 requests.packages.urllib3.disable_warnings()
 cookies=""
@@ -171,16 +172,48 @@ def down(url,position,copyright,digest,is_pay):
                     print('获取评论数失败',url)
                     return "error"
             # 下载word
-            # try:
-            #     document = Document()
-            #     soup = BeautifulSoup(content, 'html.parser')
-            #     contentSoup = soup.find("div", {"id": "js_content"})
-            #     result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
-            #     document.add_heading(date+'-'+replace_invalid_chars(html.unescape(title)), 0)
-            #     document.add_paragraph(result_text)
-            #     document.save('doc/'+date+'-'+replace_invalid_chars(html.unescape(title))+'.docx')
-            # except Exception as err:
-            #     print("下载word失败",err,url);raise Exception("抓取失败了："+url)
+            try:
+                # document = Document()
+                # soup = BeautifulSoup(content, 'html.parser')
+                # contentSoup = soup.find("div", {"id": "js_content"})
+                # result_text = [line for line in contentSoup.get_text(strip=True, separator='\n').splitlines()]
+                document.add_heading(date+'-'+replace_invalid_chars(html.unescape(title)), 0)
+                # document.add_paragraph(result_text)
+                # # document.save('doc/'+date+'-'+replace_invalid_chars(html.unescape(title))+'.docx')
+                # document.save(f'{sname}.docx')
+                contents, img_urls = get_wechat_article(content)
+                img_counter = 0
+                for item in contents:
+                    if not item.startswith("[图片"):
+                        document.add_paragraph(item)
+                    # 处理图片
+                    # else:
+                    #     if img_counter < len(img_urls):
+                    #         img_url = img_urls[img_counter];print(img_url)
+                    #         try:
+                    #             # 下载图片
+                    #             img_response = requests.get(img_url, timeout=10)
+                    #             img_response.raise_for_status()
+                    #             # 临时保存图片（Word需要本地文件）
+                    #             img_temp_path = f"temp_img_{img_counter}.jpg"
+                    #             with open(img_temp_path, "wb") as f:
+                    #                 f.write(img_response.content)
+                    #             # 插入图片到Word
+                    #             document.add_picture(img_temp_path, width=Inches(5))  # 宽度5英寸
+                    #             os.remove(img_temp_path)  # 删除临时图片
+                    #             img_counter += 1
+                    #         except Exception as e:
+                    #             print(f"插入图片失败：{str(e)}")
+                    #             document.add_paragraph(f"【图片加载失败：{img_url}】")
+                    # document.add_paragraph(item)
+                document.save(f'{sname}.docx')
+            except Exception as err:
+                # soup = BeautifulSoup(digest, 'html.parser')
+                # digest = soup.get_text(strip=True, separator=' ')
+                # document.add_heading(date+'-'+replace_invalid_chars(html.unescape(title)), 0)
+                # document.add_paragraph(digest)
+                # document.save(f'{sname}.docx')
+                print("下载word失败",err,url)#;raise Exception("抓取失败了："+url)
             try:
                  with open('txt/'+date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
                  # with open('公众号文章文字.txt', 'a+', encoding='utf-8') as f:
@@ -510,6 +543,66 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
             return str(comment_num),comments_html
         return '0',''
     return '0',''
+def get_wechat_article(content):
+    contents = [] 
+    img_urls = []
+    img_index = 0
+    processed_text = set()  # 记录已处理的文本，避免重复
+    soup = BeautifulSoup(content, 'html.parser')
+    content_div = soup.find("div", class_="rich_media_content")
+    # for child in content_div.descendants:
+    #     # if child.name is None and child.strip():
+    #     #     print('get_wechat_article',child.strip())
+    #     #     contents.append(child.strip())
+    #     # 处理段落标签
+    #     if child.name in ["p", "div","span", 'section','ul']:
+    #         text = child.get_text(strip=True)
+    #         if text:
+    #             # print('get_wechat_article2',child.name,text)
+    #             contents.append(text)
+    #     elif child.name == "img":
+    #         img_src = child.get("data-src") or child.get("src")
+    #         if img_src and img_src not in img_urls and "http" in img_src:
+    #             img_urls.append(img_src)
+    #             contents.append(f"[图片{img_index}]")  # 标记图片位置
+    #             img_index += 1
+    # 遍历正文区域的直接子节点 
+    for child in content_div.children:
+        # 跳过空节点/注释节点
+        if child.name is None and not child.strip():
+            continue
+        # 处理文本节点（直接的文本内容）
+        if child.name is None:
+            text = child.strip()
+            if text and text not in processed_text:
+                contents.append(text)
+                processed_text.add(text)
+            continue
+        # 处理包含文本的标签（p/div/span等）
+        if child.name in ["p", "div", "span", "section",'ul']:
+            # 提取标签内的所有文本（去空格、去空）
+            text = child.get_text(strip=True, separator="\n")
+            if text and text not in processed_text:
+                contents.append(text)
+                processed_text.add(text)
+            # 提取当前标签内的图片
+            img_tags = child.find_all("img")
+            for img in img_tags:
+                img_src = img.get("data-src") or img.get("src")
+                # 图片链接去重+过滤无效链接
+                if img_src and img_src not in img_urls and "http" in img_src:
+                    img_urls.append(img_src)
+                    contents.append(f"[图片{len(img_urls)-1}]")  # 标记图片位置
+    # 清理重复的图片标记 
+    cleaned_content = []
+    last_item = ""
+    for item in contents:
+        # 避免连续重复的图片标记/文本
+        if item != last_item:
+            cleaned_content.append(item)
+            last_item = item
+    contents = cleaned_content
+    return contents, img_urls
 for line in csv_reader:
     if line[2] == "文章链接":
         continue
