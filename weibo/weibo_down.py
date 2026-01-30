@@ -289,6 +289,15 @@ class Weibo(object):
             print('Error: ', e)
             traceback.print_exc()
 
+    def get_long_original(self, weibo_link):
+        """获取长微博"""
+        try:
+            wb_content = self.get_long_weibo(weibo_link)
+            weibo_content = wb_content[wb_content.rfind(u'转发理由:'):]
+            return weibo_content
+        except Exception as e:
+            print('Error: ', e)
+            traceback.print_exc()
     def get_retweet(self, info, weibo_id):
         """获取转发微博"""
         try:
@@ -298,12 +307,17 @@ class Weibo(object):
             weibo_content = weibo_content[:weibo_content.rfind(u'赞')]
             a_text = info.xpath('div//a/text()')
             if u'全文' in a_text:
-                weibo_link = 'https://weibo.cn/comment/' + weibo_id
-                wb_content = self.get_long_retweet(weibo_link)
+                weibo_link = 'https://weibo.cn/comment/' + weibo_id;print("全文链接",weibo_link)
+                wb_content = self.get_long_retweet(weibo_link)#;print("wb_content",wb_content)
                 if wb_content:
                     weibo_content = wb_content
             retweet_reason = self.handle_garbled(info.xpath('div')[-1])
             retweet_reason = retweet_reason[:retweet_reason.rindex(u'赞')]
+            if u'全文' in retweet_reason:
+                weibo_link = 'https://weibo.cn/comment/' + weibo_id
+                retweet_reason = self.get_long_original(weibo_link)
+                if retweet_reason:
+                    retweet_reason = retweet_reason
             original_user = info.xpath("div/span[@class='cmt']/a/text()")
             if original_user:
                 original_user = original_user[0]

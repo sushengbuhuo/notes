@@ -99,27 +99,27 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
             if publish_info['type'] == 9:
                 article_type = '群发'
                 # 正常2 自己删除7 被举报违规8 未发送成功违规6
-                if publish_info['sent_result']['msg_status'] ==2:
-                    fans = publish_info['sent_status'].get('total',0)
-                elif publish_info['sent_result']['msg_status'] ==7 or publish_info['sent_result']['msg_status'] ==8:
-                    fans = publish_info['sent_status'].get('total',0)
+                # if publish_info['sent_result']['msg_status'] ==2:
+                    # fans = publish_info['sent_status'].get('total',0)
+                # elif publish_info['sent_result']['msg_status'] ==7 or publish_info['sent_result']['msg_status'] ==8:
+                    # fans = publish_info['sent_status'].get('total',0)
                     # msg_fail_reason = publish_info['sent_result']['msg_fail_reason']
-                elif publish_info['sent_result']['msg_status'] == 6:
+                # elif publish_info['sent_result']['msg_status'] == 6:
                     # msg_fail_reason = publish_info['sent_result']['msg_fail_reason']
-                    fail = 1
+                    # fail = 1
             for item in publish_info['appmsgex']:
                 try:
                     # if item['itemidx'] !=1:
                     #     print('过滤',item['title'],item['link'])
                     #     continue
-                    # if item['update_time'] > 1645113602:
+                    # if item['create_time'] > 1645113602:
                     #     continue
-                    # if item['update_time'] < 1672329600:
+                    # if item['create_time'] < 1672329600:
                     #     return True
                     print('文章数量',nums)
                     # if nums > 5:
                     #    return True
-                    date = time.strftime('%Y-%m-%d', time.localtime(item['update_time'])) # %H:%M:%S
+                    date = time.strftime('%Y-%m-%d', time.localtime(item['create_time'])) # %H:%M:%S
                     title = item['title']
                     link = html.unescape(item['link'])
                     if link in urls_history:
