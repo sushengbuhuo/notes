@@ -53,7 +53,7 @@ f = open(f'{sname}.csv', encoding='UTF8')
 csv_reader = csv.reader(f)
 print(len(urls))
 with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+','+'分享数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+ ','+'话题'+'\n')
+    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+','+'分享数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+ ','+'话题'+ ','+'内容'+'\n')
 with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
 def down(url,position,copyright,digest,is_pay):
@@ -103,7 +103,7 @@ def down(url,position,copyright,digest,is_pay):
         ct = ct.group(1)
         author = author.group(1)
         date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ct)))# %H:%M:%S
-        subjects = ''
+        subjects = '';txt=''
         album = re.search(r'var\s+album_info_list\s+=\s+([\s\S]*?)(?<=]);',content,flags=re.S)
         if album:
             subjects_title = re.findall(r"title:\s+'(.*?)',",album.group(1));print('话题',subjects_title)
@@ -220,12 +220,13 @@ def down(url,position,copyright,digest,is_pay):
                     soup = BeautifulSoup(content, 'html.parser')
                     contentSoup = soup.find("div", {"id": "js_content"})
                     result_text = [line for line in contentSoup.get_text().splitlines() if line.strip()]
+                    txt='\n'.join(result_text)
                     # result_text = re.sub(r'\n+', '\n', soup.get_text())
                     f.write('\n'.join(result_text)+ '\n\n'+ '\n\n')
             except Exception as err:
                 print('下载txt出错了',err,url)# 小绿书 https://mp.weixin.qq.com/s/Q-pUYKkSaq9i0rNAAXbE8g
                 soup = BeautifulSoup(digest, 'html.parser')
-                digest = soup.get_text(strip=True, separator=' ')
+                digest = soup.get_text(strip=True, separator=' ');txt=digest
                 with open('txt/'+date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
                 # with open('公众号文章文字.txt', 'a+', encoding='utf-8') as f:
                     f.write(digest+ '\n\n'+ '\n\n')
@@ -240,7 +241,7 @@ def down(url,position,copyright,digest,is_pay):
         with open(f'{fname}.txt', 'a+', encoding='utf-8') as f2:
             f2.write(url+ '\n')
         with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-            f.write(date+','+trimName(html.unescape(title)) + ','+url+ ','+trimName(html.unescape(digest))+ ','+trimName(html.unescape(author))+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+share_num+','+comments_num+ ','+reward_num+','+videos+','+audios+','+subjects+'\n')
+            f.write(date+','+trimName(html.unescape(title)) + ','+url+ ','+trimName(html.unescape(digest))+ ','+trimName(html.unescape(author))+','+cover+','+copyright+ ','+position+ ','+is_pay+ ','+country_name+','+province_name+','+read_num+','+like_num+','+old_like_num+','+share_num+','+comments_num+ ','+reward_num+','+videos+','+audios+','+subjects+','+trimName(txt)+'\n')
         save_history(url)
         return True
     except Exception as e:

@@ -112,14 +112,14 @@ def down(offset, fakeid, uin, key,pass_ticket,appmsg_token):
                     # if item['itemidx'] !=1:
                     #     print('过滤',item['title'],item['link'])
                     #     continue
-                    # if item['create_time'] > 1645113602:
+                    # if item['update_time'] > 1645113602:
                     #     continue
-                    # if item['create_time'] < 1672329600:
+                    # if item['update_time'] < 1672329600:
                     #     return True
                     print('文章数量',nums)
                     # if nums > 5:
                     #    return True
-                    date = time.strftime('%Y-%m-%d', time.localtime(item['create_time'])) # %H:%M:%S
+                    date = time.strftime('%Y-%m-%d', time.localtime(item['update_time'])) # %H:%M:%S
                     title = item['title']
                     link = html.unescape(item['link'])
                     if link in urls_history:
