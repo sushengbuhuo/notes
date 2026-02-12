@@ -51,9 +51,15 @@ urls=[]
 # urls=contents.split('\n')
 f = open(f'{sname}.csv', encoding='UTF8')
 csv_reader = csv.reader(f)
+doc_path = f'{sname}.docx'
+try:
+    document = Document(doc_path)
+except Exception as e:
+    print('doc err',e)
+    document = Document()
 print(len(urls))
 with open(f'{fname}.csv', 'a+', encoding=encoding) as f:
-    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'在看数'+','+'点赞数'+','+'分享数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+ ','+'话题'+ ','+'内容'+'\n')
+    f.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'文章简介'+ ','+'文章作者'+','+'文章封面'+','+'是否原创'+ ','+'文章位置'+ ','+'是否付费'+','+'文章发布国家'+ ','+'文章发布省份'+ ','+'阅读数'+','+'推荐数'+','+'点赞数'+','+'分享数'+ ','+'留言数'+ ','+'赞赏数'+','+'视频数'+ ','+'音频数'+ ','+'话题'+ ','+'内容'+'\n')
 with open(f'{sname}留言数据.csv', 'a+', encoding='utf-8-sig', newline='') as ff:
     ff.write('文章日期'+','+'文章标题' + ','+'文章链接'+ ','+'评论昵称'+ ','+'评论内容'+','+'评论点赞数'+','+'留言回复'+','+'留言时间'+','+'国家'+','+'省份'+'\n')
 def down(url,position,copyright,digest,is_pay):
@@ -184,35 +190,33 @@ def down(url,position,copyright,digest,is_pay):
                 contents, img_urls = get_wechat_article(content)
                 img_counter = 0
                 for item in contents:
-                    if not item.startswith("[图片"):
+                    if not item.startswith("[抓取文章图片"):
                         document.add_paragraph(item)
                     # 处理图片
-                    # else:
-                    #     if img_counter < len(img_urls):
-                    #         img_url = img_urls[img_counter];print(img_url)
-                    #         try:
-                    #             # 下载图片
-                    #             img_response = requests.get(img_url, timeout=10)
-                    #             img_response.raise_for_status()
-                    #             # 临时保存图片（Word需要本地文件）
-                    #             img_temp_path = f"temp_img_{img_counter}.jpg"
-                    #             with open(img_temp_path, "wb") as f:
-                    #                 f.write(img_response.content)
-                    #             # 插入图片到Word
-                    #             document.add_picture(img_temp_path, width=Inches(5))  # 宽度5英寸
-                    #             os.remove(img_temp_path)  # 删除临时图片
-                    #             img_counter += 1
-                    #         except Exception as e:
-                    #             print(f"插入图片失败：{str(e)}")
-                    #             document.add_paragraph(f"【图片加载失败：{img_url}】")
-                    # document.add_paragraph(item)
+                    else:
+                        if img_counter < len(img_urls):
+                            img_url = img_urls[img_counter];print(img_url)
+                            try:
+                                # 下载图片
+                                img_response = requests.get(img_url, timeout=10)
+                                img_response.raise_for_status()
+                                # 临时保存图片（Word需要本地文件）
+                                img_temp_path = f"temp_img_{img_counter}.jpg"
+                                with open(img_temp_path, "wb") as f:
+                                    f.write(img_response.content)
+                                # 插入图片到Word
+                                document.add_picture(img_temp_path, width=Inches(5))  # 宽度5英寸
+                                os.remove(img_temp_path)  # 删除临时图片
+                                img_counter += 1
+                            except Exception as e:
+                                print(f"插入图片失败：{str(e)}")
+                                document.add_paragraph(f"【图片加载失败：{img_url}】")
                 document.save(f'{sname}.docx')
             except Exception as err:
-                # soup = BeautifulSoup(digest, 'html.parser')
-                # digest = soup.get_text(strip=True, separator=' ')
-                # document.add_heading(date+'-'+replace_invalid_chars(html.unescape(title)), 0)
-                # document.add_paragraph(digest)
-                # document.save(f'{sname}.docx')
+                soup = BeautifulSoup(digest, 'html.parser')
+                digest = soup.get_text(strip=True, separator=' ')
+                document.add_paragraph(digest)
+                document.save(f'{sname}.docx')
                 print("下载word失败",err,url)#;raise Exception("抓取失败了："+url)
             try:
                  with open('txt/'+date[0:10]+'-'+replace_invalid_chars(html.unescape(title))+'.txt', 'a+', encoding='utf-8') as f:
@@ -284,6 +288,7 @@ def view(link,appmsg_token,uin,key,pass_ticket,__biz,sn,mid,idx):
     """
     headers = {
         "Cookie": re.sub('(\s+)','=',re.sub('\n',';',cookies)),
+        # "Cookie":'',
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x6309001c) XWEB/6500"
     }
     data = {
@@ -338,7 +343,7 @@ def view(link,appmsg_token,uin,key,pass_ticket,__biz,sn,mid,idx):
     #     old_like_num = content["appmsgstat"]['finder_like_num']
     time.sleep(random.randint(1, 2))
     print("文章阅读数:"+str(readNum))
-    print("文章在看数:"+str(likeNum))
+    print("文章推荐数:"+str(likeNum))
     print("文章点赞数:"+str(old_like_num))
     print("文章赞赏数:"+str(reward_num))
     print("文章分享数:"+str(share_num))#,str(content['comment_count'])
@@ -593,7 +598,7 @@ def get_wechat_article(content):
                 # 图片链接去重+过滤无效链接
                 if img_src and img_src not in img_urls and "http" in img_src:
                     img_urls.append(img_src)
-                    contents.append(f"[图片{len(img_urls)-1}]")  # 标记图片位置
+                    contents.append(f"[抓取文章图片{len(img_urls)-1}]")  # 标记图片位置
     # 清理重复的图片标记 
     cleaned_content = []
     last_item = ""
