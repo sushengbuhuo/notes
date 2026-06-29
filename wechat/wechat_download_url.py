@@ -516,18 +516,19 @@ def comments(content,date,headers,url_comment,biz,uin,key,pass_ticket,url):
                 ip_info = comment.get('ip_wording')
                 province_name = country_name = ''
                 if ip_info:
-                	country_name = ip_info['country_name']
-                	province_name = ip_info['province_name']
+                    country_name = ip_info['country_name']
+                    province_name = ip_info['province_name']
                 reply_content = reply_list[0]['content'] if len(reply_list) > 0 else ''
                 data_comments.append([comment_time,nick_name,content,like_num,reply_content])
                 comments_excel.append([date,title_article,url,nick_name,content,like_num,reply_content,comment_time,country_name,province_name])
                 # print(comment_time,nick_name,content,like_num)
-                comments_html = comments_html + f'<li class="js_comment_item discuss_item"><div class="discuss_item_hd"><div class="user_info"><div class="nickname_wrp"><img class="avatar" src="{logo_url}"><strong class="nickname">{nick_name}        来自{country_name}---{province_name}   {comment_time}</strong></div></div></div><div class="discuss_message"><span class="discuss_status"></span><div class="discuss_message_content js_comment_content">{content}</div></div>'
+                comments_html = comments_html + f'<li class="js_comment_item discuss_item"><div class="discuss_item_hd"><div class="user_info"><div class="nickname_wrp"><img class="avatar" src="{logo_url}"><strong class="nickname">{nick_name}        来自{country_name}---{province_name}   {comment_time}  👍 {like_num}</strong></div></div></div><div class="discuss_message"><span class="discuss_status"></span><div class="discuss_message_content js_comment_content">{content}</div></div>'
                 for reply in reply_list:
                     reply_nick_name = reply.get('nick_name')
                     reply_nick_content = reply.get('content')
                     reply_logo_url = reply.get('logo_url')
-                    comments_html = comments_html + f'<div class="reply_result js_reply_item "><div class="discuss_item_hd"><div class="user_info author_info"><div class="nickname_wrp"><div class="nickname">{reply_nick_name}</div></div></div></div><div class="discuss_message"><div class="discuss_message_content js_reply_content">{reply_nick_content}</div></div></div>'
+                    reply_like_num = reply.get('reply_like_num')
+                    comments_html = comments_html + f'<div class="reply_result js_reply_item "><div class="discuss_item_hd"><div class="user_info author_info"><div class="nickname_wrp"><div class="nickname">{reply_nick_name} 👍 {reply_like_num}</div></div></div></div><div class="discuss_message"><div class="discuss_message_content js_reply_content">{reply_nick_content}</div></div></div>'
                 comments_html = comments_html + '</li>'
                 # try:
                 #     with open(date+'_'+trimName(title_article)+'.csv', 'a+', encoding='utf-8') as f:
